@@ -5,38 +5,57 @@ var bcrypt = require("bcryptjs");
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
-  res.render("index", { title: "Express", name: "Seba" });
+  if (req.session && req.session.userId) {
+    if (req.session.userRole === 'admin') {
+      return res.redirect('/admin');
+    } else if (req.session.userRole === 'user') {
+      return res.redirect('/users');
+    }
+  }
+  res.render("index", { title: "Express", name: "Unknown user" });
 });
 
 router.get("/login", function (req, res, next) {
-  res.render("login", { title: "Login Page", layout: "layouts/auth" });
+  if (req.session && req.session.userId) {
+    if (req.session.userRole === 'admin') {
+      return res.redirect('/admin');
+    } else if (req.session.userRole === 'user') {
+      return res.redirect('/users');
+    }
+  }
+  res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth" });
 });
 
 router.get("/register", function (req, res, next) {
-  res.render("register", { title: "Register Page", layout: "layouts/auth" });
+  if (req.session && req.session.userId) {
+    if (req.session.userRole === 'admin') {
+      return res.redirect('/admin');
+    } else if (req.session.userRole === 'user') {
+      return res.redirect('/users');
+    }
+  }
+  res.render("register", { title: "สมัครสมาชิก", layout: "layouts/auth" });
 });
 
-router.post("/register", async  (req, res, next) => {
+router.post("/register", async (req, res, next) => {
   const { fname, lname, email, password, confirmPassword } = req.body;
   try {
-    
     if (!fname || !lname || !email || !password || !confirmPassword) {
-      return res.status(400).send("All fields are required");
+      return res.render("register", { title: "สมัครสมาชิก", layout: "layouts/auth", error: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
     }
+
     if (password !== confirmPassword) {
-      return res.status(400).send("Passwords do not match");
+      return res.render("register", { title: "สมัครสมาชิก", layout: "layouts/auth", error: "รหัสผ่านไม่ตรงกัน" });
     }
-    
-    // ตรวจสอบว่ามี email นี้แล้วหรือยัง
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).send("Email already registered");
+      return res.render("register", { title: "สมัครสมาชิก", layout: "layouts/auth", error: "อีเมลนี้ถูกใช้งานแล้ว" });
     }
 
-    // เข้ารหัสรหัสผ่านก่อนบันทึก
     const hashedPassword = await bcrypt.hash(password, 10);
 
-     const newUser = new User({
+    const newUser = new User({
       fname,
       lname,
       email,
@@ -48,38 +67,66 @@ router.post("/register", async  (req, res, next) => {
 
     await newUser.save();
 
-    res.send("User registered successfully");
+    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", success: "สมัครสมาชิกเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้" });
 
   } catch (error) {
     console.error(error);
-    res.status(500).send("Internal Server Error");
+    return res.render("register", { title: "สมัครสมาชิก", layout: "layouts/auth", error: "เกิดข้อผิดพลาดของระบบ" });
   }
-
 });
 
 router.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
-      return res.status(400).send("All fields are required");
+      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "กรุณากรอกอีเมลและรหัสผ่าน" });
     }
     
-    const user = await User.find ({ email });
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).send("Invalid email or password");
+      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).send("Invalid email or password");
+      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     }
 
-    res.send("Login successful");
+    req.session.userId = user._id;
+    req.session.userRole = user.userRole;
+    req.session.userName = user.fname;
+
+    
+    // redirect ตาม role
+    if (user.userRole === 'admin') {
+      return res.redirect('/admin');   // หน้า view ของ admin
+    } else {
+      return res.redirect('/users');   // หน้า view ของ user
+    }
 
   } catch (error) {
     console.error(error);
-    res.status(500).send("Internal Server Error");
+    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "เกิดข้อผิดพลาดของระบบ" });
   }
+});
+
+// route สำหรับ logout
+router.post("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: "ไม่สามารถออกจากระบบได้" });
+    }
+    res.json({ success: true, message: "ออกจากระบบเรียบร้อยแล้ว" });
+  });
+});
+
+router.get("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.redirect('/');
+    }
+    res.redirect('/');
+  });
 });
 
 module.exports = router;

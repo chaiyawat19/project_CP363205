@@ -1,40 +1,53 @@
-    <h1><%= title %></h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+  body{
+    background-color:rgb(46, 104, 239);
+  }
+</style>
+<body>
+        <h1><%= title %></h1>
     <form action="/register" method="POST">
         <div class="mb-3">
-            <label for="fname" class="form-label">First name</label>
+            <label for="fname" class="form-label">ชื่อ</label>
             <input
             type="text"
             class="form-control"
             id="fname"
             name="fname"
-            placeholder="enter your first name"
+            placeholder="กรุณากรอกชื่อจริง"
             required
             />
         </div>
         <div class="mb-3">
-            <label for="lname" class="form-label">Last name</label>
+            <label for="lname" class="form-label">นามสกุล</label>
             <input
             type="text"
             class="form-control"
             id="lname"
             name="lname"
-            placeholder="enter your last name"
+            placeholder="กรุณากรอกนามสกุล"
             required
             />
         </div>
         <div class="mb-3">
-            <label for="email" class="form-label">Email address</label>
+            <label for="email" class="form-label">อีเมล</label>
             <input
             type="email"
             class="form-control"
             id="email"
             name="email"
-            placeholder="enter your email"
+            placeholder="กรุณากรอกอีเมล"
             required
             />
         </div>
         <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
+            <label for="password" class="form-label">รหัสผ่าน</label>
             <input
             type="password"
             class="form-control"
@@ -44,7 +57,7 @@
             />
         </div>
         <div class="mb-3">
-            <label for="confirmPassword" class="form-label">Comfirm Password</label>
+            <label for="confirmPassword" class="form-label">ยืนยันรหัสผ่าน</label>
             <input
             type="password"
             class="form-control"
@@ -54,5 +67,7 @@
             />
         </div>
 
-        <button type="submit" class="btn btn-primary">Register</button>
+        <button type="submit" class="btn btn-primary">สมัครสมาชิก</button>
     </form>
+</body>
+</html>

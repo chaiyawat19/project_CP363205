@@ -1,64 +1,69 @@
 require('dotenv').config();
+const express = require('express');
+const session = require('express-session');
 const mongoose = require('mongoose');
 const expressLayouts = require('express-ejs-layouts');
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
-const port = 3000;
+// import routers
+const indexRouter = require('./routes/index');
+const adminRouter = require('./routes/admin');
+const userRouter = require('./routes/users');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var adminRouter = require('./routes/admin');
+const app = express();
 
-var app = express();
+const PORT = 3000;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
-app.set('layout', 'layouts/main'); // ไฟล์ layout หลัก
+app.set('layout', 'layouts/main'); 
 app.set('view engine', 'ejs');
 
+// middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js'));
 
+app.use(session({
+  secret: 'project_assetflow_secret', // สามารถตั้งอะไรก็ได้
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 1000*60*60 } // 1 ชั่วโมง
+}));
+
 // เชื่อม MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error(err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error(err));
 
-
+// routes
 app.use('/', indexRouter);
-app.use('/admin', adminRouter)
-app.use('/users', usersRouter);
+app.use('/admin', adminRouter);
+app.use('/users', userRouter);
 
-// catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
   res.status(err.status || 500);
   res.render('error');
 });
 
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
 
 module.exports = app;
 

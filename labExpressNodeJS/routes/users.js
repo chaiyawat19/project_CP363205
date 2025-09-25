@@ -1,9 +1,9 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
+const { isUser } = require('../middleware/auth');
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.get('/', isUser, (req, res) => {
+  res.render('indexUser', { title: 'หน้าหลัก User', name: req.session.userName });
 });
 
 module.exports = router;

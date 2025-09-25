@@ -1,10 +1,9 @@
 var express = require("express");
 var router = express.Router();
+const { isAdmin } = require ('../middleware/auth');
 
-router.get("/", function (req, res, next) {
-
-  res.send("Admin Dashboard");
+router.get('/', isAdmin, (req, res) => {
+  res.render('indexAdmin', { title: 'หน้าหลัก Admin', name: req.session.userName });
 });
-
 
 module.exports = router;
