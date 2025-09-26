@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <style>
+        body {
+            overflow-x: hidden;
+            background-color: #f8f9fa; /* สีพื้นหลังอ่อน */
+        }
+    
+        .container {
+            max-width: 400px; /* กำหนดความกว้างสูงสุดของฟอร์ม */
+            margin-top: 100px; /* เว้นระยะห่างจากด้านบน */
+            padding: 20px;
+            background-color: #ffffff; /* สีพื้นหลังของฟอร์ม */
+            border-radius: 8px; /* มุมโค้งมน */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* เงาเล็กน้อย */
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            width: 100%;
+        }
+    </style>
+  </head>
+  <body>
+    
+    <div class="container">
+        <%- body %>
+    </div>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
