@@ -3,7 +3,7 @@ const router = express.Router();
 const { isUser } = require('../middleware/auth');
 
 router.get('/', isUser, (req, res) => {
-  res.render('indexUser', { title: 'หน้าหลัก User', name: req.session.userName });
+  res.render('indexUser', { title: 'หน้าหลัก User', name: req.session.userName,layout: 'layouts/navuser'});
 });
 
 module.exports = router;
