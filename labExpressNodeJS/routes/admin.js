@@ -6,4 +6,15 @@ router.get('/', isAdmin, (req, res) => {
   res.render('indexAdmin', { title: 'หน้าหลัก Admin', name: req.session.userName , layout: 'layouts/navadmin'});
 });
 
+router.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error(err);
+      return res.redirect('/');
+    }
+    res.clearCookie('connect.sid'); // ลบ cookie ออกด้วย
+    res.redirect('/'); // กลับไปหน้า login หรือหน้าแรก
+  });
+});
+
 module.exports = router;

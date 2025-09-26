@@ -1,71 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="/css/bootstrap.min.css" />
     <style>
-      body {
-        overflow-x: hidden;
-      }
+        body {
+            overflow-x: hidden;
+        }
 
-      /* ทำให้ sidebar สูงเต็มหน้าจอ */
-      .bs-side-navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        width: 200px; /* กำหนดความกว้างของ sidebar */
-        flex-direction: column;
-        align-items: start;
-        padding-left: 1rem;
-        background-color: rgb(46, 104, 239);
-        padding-top: 1rem;
-      }
+        /* ทำให้ sidebar สูงเต็มหน้าจอ */
+        .bs-side-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 200px;
+            /* กำหนดความกว้างของ sidebar */
+            flex-direction: column;
+            align-items: start;
+            padding-left: 1rem;
+            background-color: rgb(46, 104, 239);
+            padding-top: 1rem;
+        }
 
-      /* กำหนดให้เนื้อหาขยับขวา */
-      .content-wrapper {
-        margin-left: 200px; /* ต้องตรงกับความกว้าง sidebar */
-        padding: 2rem;
-      }
+        /* กำหนดให้เนื้อหาขยับขวา */
+        .content-wrapper {
+            margin-left: 200px;
+            /* ต้องตรงกับความกว้าง sidebar */
+            padding: 2rem;
+        }
 
-
+        hr {
+            color: white;
+        }
     </style>
-  </head>
-  <body>
-  <nav class="navbar navbar-expand-lg bs-side-navbar">
-    <a class="navbar-brand text-white" href="#">AssetFlow</a>
+</head>
 
-    <ul class="navbar-nav flex-column">
-  <li class="nav-item">
-    <a class="nav-link active" aria-current="page" href="#">แดชบอร์ด</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="#">รายการอุปกรณ์</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="#">รายการยืม-คืนอุปกรณ์</a>
-  </li>
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-      Dropdown
-    </a>
-    <ul class="dropdown-menu">
-      <li><a class="dropdown-item" href="#">Action</a></li>
-      <li><a class="dropdown-item" href="#">Another action</a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="#">Something else here</a></li>
-    </ul>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link disabled" aria-disabled="true">Disabled</a>
-  </li>
-</ul>
+<body>
+    <nav class="navbar navbar-expand-lg bs-side-navbar">
+        <a class="navbar-brand text-white" href="#">AssetFlow</a>
 
-  </nav>
+        <ul class="navbar-nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active text-white" aria-current="page" href="#">แดชบอร์ด</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="#">รายการอุปกรณ์</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="#">รายการยืมและคืนอุปกรณ์</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="#">ประวัติการยืม</a>
+            </li>
+            <hr>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="#">การแจ้งเตือน</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="#">การตั้งค่า</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="/logout">ออกจากระบบ</a>
+            </li>
+        </ul>
 
-  <div class="content-wrapper">
-    <%- body %>
-  </div>
+    </nav>
+
+    <div class="content-wrapper">
+        <%- body %>
+    </div>
     <script src="/js/bootstrap.bundle.min.js"></script>
-  </body>
+</body>
+
 </html>
