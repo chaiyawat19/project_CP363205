@@ -31,39 +31,44 @@
         color: white;
       }
 
+       .active-link {
+        background-color: rgba(255, 255, 255, 0.2);
+        font-weight: bold;
+        border-radius: 5px;
+        }
 
     </style>
   </head>
   <body>
   <nav class="navbar navbar-expand-lg bs-side-navbar">
-    <a class="navbar-brand text-white" href="#">AssetFlow</a>
+    <a class="navbar-brand text-white" href="#"><b>AssetFlow</b></a>
 
     <ul class="navbar-nav flex-column">
-  <li class="nav-item">
-    <a class="nav-link active text-white" aria-current="page" href="#">แดชบอร์ด</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">รายการอุปกรณ์</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">รายการคำขอยืมอุปกรณ์</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">รายการคืนอุปกรณ์</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">ยันยืนการคืนอุปกรณ์</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">จัดการผู้ใช้</a>
-  </li>
-  <hr>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="#">การตั้งค่า</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link text-white" href="/logout">ออกจากระบบ</a>
-  </li>
+      <li class="nav-item">
+        <a class="nav-link text-white <%= activePage === 'dashboard' ? 'active-link' : '' %>" href="/admin">แดชบอร์ด</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">รายการอุปกรณ์</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">รายการคำขอยืมอุปกรณ์</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">รายการคืนอุปกรณ์</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">ยันยืนการคืนอุปกรณ์</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">จัดการผู้ใช้</a>
+      </li>
+    <hr>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="#">การตั้งค่า</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-white" href="/logout">ออกจากระบบ</a>
+    </li>
 </ul>
 
   </nav>

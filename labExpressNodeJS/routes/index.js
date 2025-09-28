@@ -26,6 +26,14 @@ router.get("/login", function (req, res, next) {
   res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth" });
 });
 
+router.get("/listitemuser", function (req,res,next){
+  if(req.session.userRole === 'admin'){
+    return res.redirect('/listitemadmin');
+  } else if (req.session.userRole === 'user'){
+    return res.redirect('/listitemuser');
+  }
+})
+
 router.get("/register", function (req, res, next) {
   if (req.session && req.session.userId) {
     if (req.session.userRole === 'admin') {

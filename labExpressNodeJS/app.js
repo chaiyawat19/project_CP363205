@@ -33,7 +33,7 @@ app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js'));
 
 app.use(session({
-  secret: 'project_assetflow_secret', // สามารถตั้งอะไรก็ได้
+  secret: 'project_assetflow_secret', 
   resave: false,
   saveUninitialized: true,
   cookie: { maxAge: 1000*60*60 } // 1 ชั่วโมง
@@ -48,6 +48,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/', indexRouter);
 app.use('/admin', adminRouter);
 app.use('/users', userRouter);
+app.use('/listitemuser',userRouter);
 
 app.use(function(req, res, next) {
   next(createError(404));

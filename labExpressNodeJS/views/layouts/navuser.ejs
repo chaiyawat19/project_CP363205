@@ -34,32 +34,38 @@
         hr {
             color: white;
         }
+        
+        .active-link {
+        background-color: rgba(255, 255, 255, 0.2);
+        font-weight: bold;
+        border-radius: 5px;
+        }
     </style>
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg bs-side-navbar">
-        <a class="navbar-brand text-white" href="#">AssetFlow</a>
+        <a class="navbar-brand text-white" href="/users">AssetFlow</a>
 
         <ul class="navbar-nav flex-column">
             <li class="nav-item">
-                <a class="nav-link active text-white" aria-current="page" href="#">แดชบอร์ด</a>
+                <a class="nav-link text-white <%= activePage === 'dashboard' ? 'active-link' : '' %>" href="/users">แดชบอร์ด</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white" href="#">รายการอุปกรณ์</a>
+                <a class="nav-link text-white <%= activePage === 'listitemuser' ? 'active-link' : '' %>" href="/users/listitemuser">รายการอุปกรณ์</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white" href="#">รายการยืมและคืนอุปกรณ์</a>
+                <a class="nav-link text-white <%= activePage === 'borrowreturn' ? 'active-link' : '' %>" href="#">รายการยืมและคืนอุปกรณ์</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white" href="#">ประวัติการยืม</a>
+                <a class="nav-link text-white <%= activePage === 'history' ? 'active-link' : '' %>" href="#">ประวัติการยืม</a>
             </li>
             <hr>
             <li class="nav-item">
-                <a class="nav-link text-white" href="#">การแจ้งเตือน</a>
+                <a class="nav-link text-white <%= activePage === 'notification' ? 'active-link' : '' %>" href="#">การแจ้งเตือน</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-white" href="#">การตั้งค่า</a>
+                <a class="nav-link text-white <%= activePage === 'setting' ? 'active-link' : '' %>" href="#">การตั้งค่า</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-white" href="/logout">ออกจากระบบ</a>
