@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { isUser } = require('../middleware/auth');
+const Equipment = require('../models/listEquipment');
+
 
 router.get('/', isUser, (req, res) => {
   res.render('indexUser', { 
@@ -22,13 +24,25 @@ router.get('/logout', (req, res) => {
   });
 });
 
-router.get('/listitemuser',(req,res) => {
-  res.render('listitemUser',{ 
-    title : 'อุปกรณ์ทั้งหมดในบริษัท', 
-    name: req.session.userName,
-    layout:'layouts/navuser',
-    activePage: 'listitemuser'
-  })
-})
+router.get('/listitemuser', async (req,res) => {
+  try {
+    const equipments = await Equipment.find({});
+    res.render('listitemUser',{ 
+      title : 'อุปกรณ์ทั้งหมดในบริษัท', 
+      name: req.session.userName,
+      layout:'layouts/navuser',
+      activePage: 'listitemuser',
+      equipments: equipments
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Database error");
+  }
+});
+
+module.exports = router;
+
+
+
 
 module.exports = router;
