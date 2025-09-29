@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <form
+      action="/admin/addEquipment"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      <input
+        type="text"
+        class="input form-control"
+        placeholder="ชื่ออุปกรณ์"
+        name="name"
+        required
+      />
+
+      <input
+        type="text"
+        class="input form-control"
+        placeholder="รายละเอียดอุปกรณ์"
+        name="description"
+      />
+
+      <input type="file" class="input form-control" name="image" />
+
+      <select class="form-select" name="category_id" required>
+        <option value="" selected>เลือกหมวดหมู่อุปกรณ์</option>
+        <% categories.forEach(function(category) { %>
+        <option value="<%= category._id %>"><%= category.name %></option>
+        <% }); %>
+      </select>
+
+      <input
+        type="text"
+        class="input form-control"
+        placeholder="สถานที่เก็บ"
+        name="location"
+      />
+
+      <button type="submit" class="btn btn-primary">เพิ่มอุปกรณ์</button>
+    </form>
+  </body>
+</html>
