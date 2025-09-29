@@ -1,44 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-</head>
-<body class="bg-light">
-  <div class="container mt-4">
-    <h1 class="mb-3">รายการอุปกรณ์</h1>
-    <p class="text-muted">อุปกรณ์ทั้งหมดในบริษัท</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body class="bg-light">
+    <div class="container mt-4">
+      <h1 class="mb-3">รายการอุปกรณ์</h1>
+      <p class="text-muted">อุปกรณ์ทั้งหมดในบริษัท</p>
 
-    <div class="row">
+      <div class="row">
         <% equipments.forEach(function(item) { %>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm">
             <% if(item.image) { %>
-                <img src="<%= item.image %>" class="card-img-top" alt="<%= item.name %>">
+            <img
+              src="/uploads/<%= item.image %>"
+              class="card-img-top"
+              alt="<%= item.name %>"
+              style="object-fit: contain;"
+            />
             <% } else { %>
-                <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No image">
+            <img
+              src="https://via.placeholder.com/300x200?text=No+Image"
+              class="card-img-top"
+              alt="No image"
+            />
             <% } %>
 
             <div class="card-body">
-                <h5 class="card-title"><%= item.name %></h5>
-                <p class="card-text">
-                <strong>หมวดหมู่:</strong> <%= item.category_id %><br>
-                <strong>รายละเอียด:</strong> <%= item.description %><br>
-                <strong>สถานะ:</strong> 
+              <h5 class="card-title"><%= item.name %></h5>
+              <p class="card-text">
+                <strong>หมวดหมู่:</strong> <%= item.category_id ?
+                item.category_id.name : 'ไม่มีหมวดหมู่' %><br />
+
+                <strong>รายละเอียด:</strong> <%= item.description %><br />
+                <strong>สถานะ:</strong>
                 <% if(item.status === "available") { %>
-                    <span class="badge bg-success">พร้อมใช้งาน</span>
+                <span class="badge bg-success">พร้อมใช้งาน</span>
                 <% } else { %>
-                    <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
-                <% } %><br>
+                <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
+                <% } %><br />
                 <strong>ตำแหน่ง:</strong> <%= item.location %>
-                </p>
+              </p>
+              <div class="row">
+                <div class="col-6">
+                  <a class="btn btn-light w-100" href="#"
+                    >ดูรายละเอียด</a
+                  >
+                </div>
+                <div class="col-6">
+                  <a class="btn btn-primary w-100" href="#">ยืมอุปกรณ์</a>
+                </div>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
         <% }) %>
-    </div>
-    </div>
+      </div>
 
-</body>
+      
+    </div>
+  </body>
 </html>

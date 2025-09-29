@@ -8,5 +8,39 @@
 <body>
     <h1>รายการอุปกรณ์</h1>
     <a href="/admin/addEquipment">เพิ่มอุปกรณ์</a>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ชื่ออุปกรณ์</th>
+                <th>ประเภท</th>
+                <th>รายละเอียด</th>
+                <th>สถานะ</th>
+                <th>รูปภาพ</th>
+                <th>สถานที่เก็บ</th>
+                <th>วันเวลาที่สร้าง</th>
+                <th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (equipmentList.length === 0) { %>
+                <tr>
+                    <td colspan="6">ไม่มีอุปกรณ์</td>
+                </tr>
+            <% } %>
+            <% equipmentList.forEach(equipment => { %>
+                <tr>
+                    <td><%= equipment.name %></td>
+                    <td><%= equipment.category_id.name %></td>
+                    <td><%= equipment.description %></td>
+                    <td><%= equipment.status %></td>
+                    <td><img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100"></td>
+                    <td><%= equipment.location %></td>
+                    <td><%= equipment.created_at.toLocaleDateString('th-TH')%></td>
+                    <td><a href="/admin/equipmentDetail/<%= equipment._id%>">จัดการอุปกรณ์</a></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
 </body>
 </html>

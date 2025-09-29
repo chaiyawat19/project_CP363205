@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isUser } = require('../middleware/auth');
 const Equipment = require('../models/listEquipment');
+const Category = require('../models/Category');
 
 
 router.get('/', isUser, (req, res) => {
@@ -26,7 +27,7 @@ router.get('/logout', (req, res) => {
 
 router.get('/listitemuser', async (req,res) => {
   try {
-    const equipments = await Equipment.find({});
+    const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
     res.render('listitemUser',{ 
       title : 'อุปกรณ์ทั้งหมดในบริษัท', 
       name: req.session.userName,

@@ -14,13 +14,23 @@ router.get('/', isAdmin, (req, res) => {
   });
 });
 
-router.get('/listitemuser', isAdmin, (req, res) => {
-  res.render('equipmentAdmin', { 
-    title: 'รายการอุปกรณ์',
-    name: req.session.userName , 
-    layout: 'layouts/navadmin',
-    activePage: 'listitemuser'
-  });
+router.get('/listitemuser', isAdmin, async (req, res) => {
+  try {
+    // ดึงข้อมูลอุปกรณ์, populate category_id เพื่อเอาชื่อหมวดหมู่
+    const listEqt = await listEquipment.find({ deleted_at: null }).populate('category_id');
+
+    res.render('equipmentAdmin', { 
+      title: 'รายการอุปกรณ์',
+      name: req.session.userName, 
+      layout: 'layouts/navadmin',
+      activePage: 'listitemuser',
+      equipmentList: listEqt 
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+  }
 });
 
 router.get('/addEquipment', isAdmin, async (req, res) => {
