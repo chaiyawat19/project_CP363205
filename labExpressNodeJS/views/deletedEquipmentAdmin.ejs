@@ -6,11 +6,8 @@
     <title><%= title %></title>
 </head>
 <body>
-    <h1>รายการอุปกรณ์</h1>
-    <a href="/admin/addEquipment">เพิ่มอุปกรณ์</a>
-    <a href="/admin/listcategory">จัดการประเภทอุปกรณ์</a>
-    <a href="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</a>
-    
+    <h1><%= title %></h1>
+    <a href="/admin/listitemuser">กลับไปยังรายการอุปกรณ์ปกติ</a>
 
     <table border="1">
         <thead>
@@ -21,20 +18,20 @@
                 <th>สถานะ</th>
                 <th>รูปภาพ</th>
                 <th>สถานที่เก็บ</th>
-                <th>วันเวลาที่สร้าง</th>
+                <th>วันเวลาที่ลบ</th>
                 <th>จัดการ</th>
             </tr>
         </thead>
         <tbody>
-            <% if (equipmentList.length === 0) { %>
+            <% if (deletedEquipmentList.length === 0) { %>
                 <tr>
-                    <td colspan="6">ไม่มีอุปกรณ์</td>
+                    <td colspan="8">ไม่มีอุปกรณ์ที่ถูกลบ</td>
                 </tr>
             <% } %>
-            <% equipmentList.forEach(equipment => { %>
+            <% deletedEquipmentList.forEach(equipment => { %>
                 <tr>
                     <td><%= equipment.name %></td>
-                    <td><%= equipment.category_id.name %></td>
+                    <td><%= equipment.category_id ? equipment.category_id.name : '-' %></td>
                     <td><%= equipment.description %></td>
                     <td> 
                         <% if (equipment.status === "available") { %>
@@ -46,12 +43,22 @@
                         <% } else { %>
                             <span class="badge bg-secondary">ไม่ทราบสถานะ</span>
                         <% } %>
-                        
                     </td>
-                    <td><img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100"></td>
+                    <td>
+                        <% if (equipment.image) { %>
+                            <img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100">
+                        <% } else { %>
+                            -
+                        <% } %>
+                    </td>
                     <td><%= equipment.location %></td>
-                    <td><%= equipment.created_at.toLocaleDateString('th-TH')%></td>
-                    <td><a href="/admin/equipmentDetail/<%= equipment._id%>">จัดการอุปกรณ์</a></td>
+                    <td><%= equipment.deleted_at.toLocaleDateString('th-TH') %></td>
+                    <td>
+                        <!-- ตัวอย่างปุ่มกู้คืน -->
+                        <form action="/admin/restoreEquipment/<%= equipment._id %>" method="post" style="display:inline;" onsubmit="return confirm('คุณต้องการกู้คืน <%= equipment.name %>?')">
+                            <button type="submit">กู้คืน</button>
+                        </form>
+                    </td>
                 </tr>
             <% }) %>
         </tbody>

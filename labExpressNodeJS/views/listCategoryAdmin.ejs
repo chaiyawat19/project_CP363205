@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <a href="/admin/listitemuser">กลับ</a>
+    <h1><%= title %></h1>
+   
+
+    <form action="/admin/addCategory" method="post">
+        <label for="name">ชื่อประเภทอุปกรณ์:</label>
+        <input type="text" id="name" name="name" required>
+        <button type="submit">เพิ่มประเภท</button>
+    </form>
+    
+        <table border="1" class="table">
+            <thead>
+                <th>รหัส</th>
+                <th>ชื่อประเภทอุปกรณ์</th>
+                <th colspan="2">จัดการ</th>
+            </thead>
+            <tbody>
+                <% categories.forEach(category => { %>
+                     
+                <tr>
+                    <td><%= category.id %></td>
+                    <td><%= category.name %></td>
+                    <td><a href="/admin/editcategory/<%= category._id %>">แก้ไข</a></td>
+                    <td><a href="/admin/editcategory/<%= category._id %>">ลบ</a></td>
+                </tr>    
+                <% }) %>
+            </tbody>
+        </table>
+    <div>
+      
+      
+    </div>
+   
+  </body>
+</html>

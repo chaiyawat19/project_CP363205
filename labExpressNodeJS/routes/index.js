@@ -12,7 +12,7 @@ router.get("/", function (req, res, next) {
       return res.redirect('/users');
     }
   }
-  res.render("index", { title: "Express", name: "Unknown user" });
+  res.render("index", { title: "AssetFlow" });
 });
 
 router.get("/login", function (req, res, next) {

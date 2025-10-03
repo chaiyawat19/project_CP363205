@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title%></title>
+</head>
+<body>
+    <a href="/admin/listitemuser">กลับ</a>
+    <h1><%= equipment.name%></h1>
+    <p>รายละเอียด: <%= equipment.description %></p>
+    <p>สถานที่เก็บ: <%= equipment.location %></p>
+    <p>หมวดหมู่: <%= equipment.category_id ? equipment.category_id.name : 'ไม่มีหมวดหมู่' %></p>
+    <% if (equipment.image) { %>
+        <img src="/uploads/<%= equipment.image %>" alt="<%= equipment.name %>" width="200">
+    <% } else { %>
+        <p>ไม่มีรูปภาพ</p>
+    <% } %>
+    <p>สถานะ: 
+    <% if (equipment.status === "available") { %>
+        <span class="badge bg-success">พร้อมใช้งาน</span>
+    <% } else if (equipment.status === "unavailable") { %>
+        <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
+    <% } else if (equipment.status === "repair") { %>
+        <span class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
+    <% } else { %>
+        <span class="badge bg-secondary">ไม่ทราบสถานะ</span>
+    <% } %>
+    </p>
+    <a class="btn btn-primary" href="/admin/editEquipment/<%= equipment._id %>">แก้ไขอุปกรณ์</a>
+    <a class="btn btn-danger" href="/admin/deleteEquipment/<%= equipment._id %>" onclick="return confirm('คุณแน่ใจหรือว่าต้องการลบ <%= equipment.name%> ')">ลบอุปกรณ์</a>
+   
+</body>
+</html>

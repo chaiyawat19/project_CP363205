@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+ 
+</head>
+<body class="p-4">
+
+    <a href="/admin/equipmentDetail/<%= equipment._id %>" class="btn btn-secondary mb-3">กลับ</a>
+    <h1><%= title %></h1>
+
+    <form action="/admin/editEquipment" method="post" enctype="multipart/form-data">
+        <!-- ID แอบซ่อน -->
+        <input type="hidden" name="id" value="<%= equipment._id %>">
+
+        <!-- ชื่ออุปกรณ์ -->
+        <div class="mb-3">
+            <label for="name" class="form-label">ชื่ออุปกรณ์:</label>
+            <input type="text" id="name" name="name" class="form-control" value="<%= equipment.name %>" required>
+        </div>
+
+        <!-- รูปภาพ -->
+        <div class="mb-3">
+            <label for="image" class="form-label">อัปโหลดรูปภาพ</label> 
+            <% if (equipment.image) { %>
+                <div class="mb-2">
+                    <img src="/uploads/<%= equipment.image %>" 
+                         alt="Equipment Image" 
+                         style="max-height: 150px; object-fit: contain; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                <small class="text-muted">ไฟล์ปัจจุบัน: <%= equipment.image %></small>
+            <% } else { %>
+                <small class="text-muted">ยังไม่มีไฟล์ที่อัปโหลด</small>
+            <% } %>
+            <input type="file" class="form-control mt-1" name="image" id="image">
+        </div>
+
+        <!-- หมวดหมู่ -->
+        <div class="mb-3">
+            <label for="category_id" class="form-label">หมวดหมู่:</label>
+            <select name="category_id" id="category_id" class="form-select">
+                <option value="">เลือกหมวดหมู่</option>
+                <% categories.forEach(function(category) { %>
+                    <option value="<%= category._id %>" 
+                        <%= selectedCategoryId && selectedCategoryId.toString() === category._id.toString() ? 'selected' : '' %>>
+                        <%= category.name %>
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+
+        <!-- รายละเอียด -->
+        <div class="mb-3">
+            <label for="description" class="form-label">รายละเอียดอุปกรณ์:</label>
+            <textarea id="description" name="description" class="form-control" rows="3"><%= equipment.description %></textarea>
+        </div>
+
+        <!-- สถานที่เก็บ -->
+        <div class="mb-3">
+            <label for="location" class="form-label">สถานที่เก็บ:</label>
+            <input type="text" id="location" name="location" class="form-control" value="<%= equipment.location %>">
+        </div>
+
+        <!-- สถานะ -->
+        <div class="mb-3">
+            <label for="status" class="form-label">สถานะ:</label>
+            <select id="status" name="status" class="form-select" required>
+                <option value="available" <%= equipment.status === 'available' ? 'selected' : '' %>>พร้อมใช้งาน</option>
+                <option value="unavailable" <%= equipment.status === 'unavailable' ? 'selected' : '' %>>ไม่พร้อมใช้งาน</option>
+                <option value="repair" <%= equipment.status === 'repair' ? 'selected' : '' %>>อยู่ระหว่างซ่อม</option>
+            </select>
+        </div>
+
+        <!-- ปุ่มบันทึก -->
+        <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+    </form>
+
+</body>
+</html>
