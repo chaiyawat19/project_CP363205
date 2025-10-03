@@ -3,12 +3,12 @@ const mongoose = require("mongoose");
 const borrowSchema = new mongoose.Schema({
   user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', // FK ไปที่ collection User
+      ref: 'Users', // FK ไปที่ collection User
       required: true
     },
     equipment_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Equipment', // FK ไปที่ collection Equipment
+      ref: 'Equipments', // FK ไปที่ collection Equipment
       required: true
     },
     return_date: {
