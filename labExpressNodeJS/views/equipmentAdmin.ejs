@@ -92,7 +92,6 @@
                 <% } %>
               </div>
             </div>
-
             <div class="card-body">
               <div class="d-flex justify-content-center my-2">
                 <div class="category mx-2"><%= equipment.category_id.name %></div>
@@ -100,8 +99,11 @@
               </div>
 
               <h5 class="card-title"><%= equipment.name %></h5>
-              <p class="card-text"><%= equipment.description %></p>
-
+              <p class="card-text h-6">
+                <%= equipment.description && equipment.description.length > 30 
+                        ? equipment.description.substring(0, 40) + '...' 
+                        : equipment.description %>
+            </p>
               <div class="botton">
                 <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
                 <a href="#" class="btn btn-primary">แก้ไข</a>
