@@ -1,60 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-</head>
-<body>
-    <h1>รายการอุปกรณ์</h1>
-    <a href="/admin/addEquipment">เพิ่มอุปกรณ์</a>
-    <a href="/admin/listcategory">จัดการประเภทอุปกรณ์</a>
-    <a href="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</a>
-    
+<html lang="th">
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ชื่ออุปกรณ์</th>
-                <th>ประเภท</th>
-                <th>รายละเอียด</th>
-                <th>สถานะ</th>
-                <th>รูปภาพ</th>
-                <th>สถานที่เก็บ</th>
-                <th>วันเวลาที่สร้าง</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (equipmentList.length === 0) { %>
-                <tr>
-                    <td colspan="6">ไม่มีอุปกรณ์</td>
-                </tr>
-            <% } %>
-            <% equipmentList.forEach(equipment => { %>
-                <tr>
-                    <td><%= equipment.name %></td>
-                    <td><%= equipment.category_id.name %></td>
-                    <td><%= equipment.description %></td>
-                    <td> 
-                        <% if (equipment.status === "available") { %>
-                            <span class="badge bg-success">พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "unavailable") { %>
-                            <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "repair") { %>
-                            <span class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
-                        <% } else { %>
-                            <span class="badge bg-secondary">ไม่ทราบสถานะ</span>
-                        <% } %>
-                        
-                    </td>
-                    <td><img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100"></td>
-                    <td><%= equipment.location %></td>
-                    <td><%= equipment.created_at.toLocaleDateString('th-TH')%></td>
-                    <td><a href="/admin/equipmentDetail/<%= equipment._id%>">จัดการอุปกรณ์</a></td>
-                </tr>
-            <% }) %>
-        </tbody>
-    </table>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+
+  <style>
+    .card-img-top {
+      height: 300px;
+      object-fit: cover;
+    }
+
+    .category {
+      background-color: rgba(55, 88, 249, 0.08);
+      border: 1px solid rgba(55, 88, 249, 0.3);
+      border-radius: 5px;
+      padding: 5px;
+      width: 30%;
+    }
+
+    .status {
+      position: absolute;
+      top: 10px;
+      right: 0;
+    }
+
+    .badge {
+      border-radius: 10px 0 0 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="d-flex align-items-center justify-content-between">
+    <div class="box1">
+      <h1>รายการอุปกรณ์</h1>
+      <small>จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</small>
+    </div>
+    <div class="box2">
+      <a href="/admin/addEquipment" class="btn btn-primary px-4 py-2">
+        เพิ่มอุปกรณ์ <i class="bi bi-plus-circle"></i>
+      </a>
+    </div>
+  </header>
+
+  <hr style="color: #3758F9;">
+
+  <div class="container">
+    <div class="row d-flex align-items-center">
+      <!-- 🔍 ช่องค้นหาแบบเรียลไทม์ -->
+      <div class="col-4">
+        <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
+      </div>
+
+      <!-- 🔄 เลือกแล้วเปลี่ยนหน้าอัตโนมัติ -->
+      <div class="col-4">
+        <select id="pageSelect" class="form-select my-3" aria-label="Default select example">
+          <option value="/admin/listcategory">จัดการประเภทอุปกรณ์</option>
+          <option value="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</option>
+        </select>
+      </div>
+      <div class="col-4"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="row" id="equipmentContainer">
+      <% equipmentList.forEach(equipment => { %>
+        <div class="col-4 equipment-card">
+          <div class="card text-center">
+            <div class="img-content">
+              <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
+              <div class="status">
+                <% if (equipment.status === "available") { %>
+                  <p class="badge bg-success p-3">พร้อมใช้งาน</p>
+                <% } else if (equipment.status === "unavailable") { %>
+                  <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
+                <% } else if (equipment.status === "repair") { %>
+                  <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
+                <% } else { %>
+                  <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="d-flex justify-content-center my-2">
+                <div class="category mx-2"><%= equipment.category_id.name %></div>
+                <div class="category mx-2"><%= equipment.location %></div>
+              </div>
+
+              <h5 class="card-title"><%= equipment.name %></h5>
+              <p class="card-text"><%= equipment.description %></p>
+
+              <div class="botton">
+                <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
+                <a href="#" class="btn btn-primary">แก้ไข</a>
+              </div>
+              <small class="font">
+                วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
+              </small>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <script>
+
+    const searchInput = document.getElementById("searchInput");
+    const cards = document.querySelectorAll(".equipment-card");
+
+    searchInput.addEventListener("keyup", function () {
+      const filter = this.value.toLowerCase();
+
+      cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(filter) ? "" : "none";
+      });
+    });
+
+
+    const pageSelect = document.getElementById("pageSelect");
+    pageSelect.addEventListener("change", function () {
+      const url = this.value;
+      if (url) {
+        window.location.href = url; 
+      }
+    });
+    
+  </script>
 </body>
+
 </html>
