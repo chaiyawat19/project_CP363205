@@ -114,7 +114,7 @@
                             </p>
                             <div class="botton">
                                 <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
-                                <a href="#" class="btn btn-primary">แก้ไข</a>
+                                <a href="/admin/equipmentDetail/<%= equipment._id%>" class="btn btn-primary">แก้ไข</a>
                             </div>
                             <small class="font">
                                 วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
@@ -140,7 +140,6 @@
 
             if (savedSearch) searchInput.value = savedSearch;
             if (savedStatus) statusFilter.value = savedStatus;
-            if (savedPageSelect) pageSelect1.value = savedPageSelect;
 
             // เรียกใช้ filter อีกครั้งตอนโหลดหน้า
             applySearchFilter();
@@ -184,7 +183,6 @@
         // เปลี่ยนหน้าอัตโนมัติ + บันทึกค่า
         pageSelect1.addEventListener("change", function () {
             const url = this.value;
-            localStorage.setItem("pageSelect1", this.value);
             if (url) window.location.href = url;
         });
     </script>
