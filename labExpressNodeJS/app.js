@@ -13,6 +13,8 @@ const indexRouter = require('./routes/index');
 const adminRouter = require('./routes/admin');
 const userRouter = require('./routes/users');
 
+
+
 const app = express();
 
 const PORT = 3001;
@@ -45,11 +47,14 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error(err));
 
 // routes
+
 app.use('/', indexRouter);
 app.use('/admin', adminRouter);
 app.use('/users', userRouter);
 app.use('/listitemuser',userRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 
 
 
