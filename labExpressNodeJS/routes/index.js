@@ -103,7 +103,7 @@ router.post("/login", async (req, res, next) => {
     req.session.userId = user._id;
     req.session.userRole = user.userRole;
     req.session.userName = user.fname;
-
+    req.session.userEmail = user.email;
     
     // redirect ตาม role
     if (user.userRole === 'admin') {

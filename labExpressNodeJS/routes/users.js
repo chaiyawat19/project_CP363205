@@ -3,15 +3,39 @@ const router = express.Router();
 const { isUser } = require('../middleware/auth');
 const Equipment = require('../models/listEquipment');
 const Category = require('../models/Category');
+const User = require('../models/User');
+const Borrow = require('../models/Borrow');
 
 
-router.get('/', isUser, (req, res) => {
-  res.render('indexUser', { 
-    title: 'หน้าหลัก User', 
-    name: req.session.userName,
-    layout: 'layouts/navuser',
-    activePage: 'dashboard' // อันนี้เอาไว้ทำ active จะได้รู้ว่าเราเปิดหน้าไหนอยู่
-  });
+router.get('/', isUser, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId);
+        const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
+        console.log('User found:', user); // เพิ่มบรรทัดนี้
+        const borrows = await Borrow.find({ user_id: req.session.userId }).populate('equipment_id').populate('user_id').sort({ created_at: -1 });
+
+
+        res.render('indexUser', { 
+            title: 'หน้าหลัก User', 
+            name: `${user.fname} ${user.lname}`, 
+            layout: 'layouts/navuser', 
+            activePage: 'dashboard', 
+            user: user,
+            equipments: equipments,
+            borrows: borrows
+        });
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        res.status(500).render('indexUser', { 
+            title: 'เกิดข้อผิดพลาดของระบบ', 
+            name: '', 
+            layout: 'layouts/navuser', 
+            activePage: 'dashboard', 
+            user: null,
+            equipments: [] ,
+            borrows: []
+        });
+    }
 });
 
 router.get('/logout', (req, res) => {
@@ -20,8 +44,8 @@ router.get('/logout', (req, res) => {
       console.error(err);
       return res.redirect('/');
     }
-    res.clearCookie('connect.sid'); // ลบ cookie ออกด้วย
-    res.redirect('/'); // กลับไปหน้า login หรือหน้าแรก
+    res.clearCookie('connect.sid'); 
+    res.redirect('/'); // 
   });
 });
 
