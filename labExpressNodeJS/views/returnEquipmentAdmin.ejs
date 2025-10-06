@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>รายการยืนยันการคืนอุปกรณ์</title>
+  <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body { background-color: #f5f6fa; }
+    .container { background: #fff; border-radius: 10px; padding: 25px; margin-top: 30px; }
+    table thead { background-color: #002b80; color: white; }
+    .status-waiting_return {
+      background-color: #d9e5ff; color: #2f54eb; border-radius: 8px;
+      padding: 3px 8px; font-size: 0.9em;
+    }
+    .status-returned {
+      background-color: #d4edda; color: #155724; border-radius: 8px;
+      padding: 3px 8px; font-size: 0.9em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h4 class="fw-bold">รายการยืนยันการคืนอุปกรณ์</h4>
+    <p class="text-secondary">เช็คสภาพอุปกรณ์เพื่อ ตรวจสอบความเสียหาย</p>
+
+    <!-- 🔍 ส่วนค้นหาและกรอง -->
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <input type="text" class="form-control w-25" placeholder="ค้นหา">
+      <select class="form-select w-auto">
+        <option>เดือนนี้</option>
+        <option>เดือนก่อนหน้า</option>
+      </select>
+      <select class="form-select w-auto">
+        <option>ทั้งหมด</option>
+        <option>รออนุมัติการคืน</option>
+        <option>คืนอุปกรณ์แล้ว</option>
+      </select>
+    </div>
+
+    <!-- 📋 ตารางรายการ -->
+    <table class="table table-bordered align-middle text-center">
+      <thead>
+        <tr>
+          <th>ลำดับ</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>อุปกรณ์</th>
+          <th>หมายเหตุ</th>
+          <th>สถานะ</th>
+          <th>วันเวลาที่คืน</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% borrows.forEach((item, index) => { %>
+          <tr>
+            <td><%= index + 1 %></td>
+            <td><strong><%= item.user_id.username %></strong></td>
+            <td><%= item.equipment_id.name %></td>
+            <td><%= item.note || '-' %></td>
+            <td>
+              <% if (item.status === 'waiting_return') { %>
+                <span class="status-waiting_return">รอคืนอุปกรณ์</span>
+              <% } else if (item.status === 'returned') { %>
+                <span class="status-returned">คืนอุปกรณ์แล้ว</span>
+              <% } %>
+            </td>
+            <td><%= item.actual_return_date ? item.actual_return_date.toLocaleString('th-TH') : '-' %></td>
+            <td>
+              <% if (item.status === 'waiting_return') { %>
+                <button
+                  class="btn btn-link text-primary p-0"
+                  data-bs-toggle="modal"
+                  data-bs-target="#confirmReturnModal"
+                  data-id="<%= item._id %>"
+                  data-name="<%= item.equipment_id.name %>"
+                  data-user="<%= item.user_id.username %>">
+                  ยืนยันการคืน
+                </button>
+              <% } else { %>
+                <span class="text-muted">-</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 🪟 Modal ยืนยันการคืน -->
+  <div class="modal fade" id="confirmReturnModal" tabindex="-1" aria-labelledby="confirmReturnLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content border-0 shadow-sm">
+        <form method="POST" id="confirmReturnForm">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">ยืนยันการคืนอุปกรณ์</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <p class="text-secondary">เช็คสภาพอุปกรณ์เพื่อ ตรวจสอบความเสียหาย</p>
+
+            <div class="mb-3">
+              <label class="form-label">ชื่อผู้ยืม</label>
+              <input type="text" class="form-control" id="modalUser" readonly>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">อุปกรณ์</label>
+              <input type="text" class="form-control" id="modalEquip" readonly>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">หมายเหตุ</label>
+              <input type="text" name="note" class="form-control" placeholder="คืนอุปกรณ์ภายในเวลาที่กำหนด" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">สภาพอุปกรณ์</label>
+              <select name="condition" class="form-select" required>
+                <option value="ปกติ">ปกติ</option>
+                <option value="ชำรุด">ชำรุด</option>
+                <option value="สูญหาย">สูญหาย</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">ส่ง</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧠 Script สำหรับเปลี่ยนข้อมูลใน Modal -->
+  <script>
+    const confirmModal = document.getElementById('confirmReturnModal');
+    confirmModal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const borrowId = button.getAttribute('data-id');
+      const equipName = button.getAttribute('data-name');
+      const userName = button.getAttribute('data-user');
+
+      document.getElementById('modalEquip').value = equipName;
+      document.getElementById('modalUser').value = userName;
+
+      // ตั้งค่า action ของฟอร์ม
+      document.getElementById('confirmReturnForm').action = `/admin/confirm-return/${borrowId}`;
+    });
+  </script>
+</body>
+</html>

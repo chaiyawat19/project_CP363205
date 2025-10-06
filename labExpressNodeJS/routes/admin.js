@@ -4,16 +4,49 @@ var Category = require("../models/Category");
 const { isAdmin } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
-const borrow = require("../models/Borrow")
+
+const Borrow = require("../models/Borrow")
 const User = require('../models/User');
 
-router.get('/', isAdmin, (req, res) => {
-  res.render('indexAdmin', { 
-    title: 'หน้าหลัก Admin', 
-    name: req.session.userName , 
-    layout: 'layouts/navadmin',
-    activePage: 'dashboard'
-  });
+// middleware ดึงข้อมูล user จาก session ก่อน render
+router.use(isAdmin, async (req, res, next) => {
+  try {
+    if (req.session.userId) {
+      const user = await User.findById(req.session.userId);
+      res.locals.user = user; 
+    } else {
+      res.locals.user = null;
+    }
+  } catch (err) {
+    console.error('Error loading user middleware:', err);
+    res.locals.user = null;
+  }
+  next();
+});
+
+router.get('/', isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).render('indexUser', { 
+        title: 'ไม่พบข้อมูลผู้ใช้',
+        user: null
+      });
+    }
+
+    res.render('indexAdmin', { 
+      title: 'หน้าหลัก Admin', 
+      layout: 'layouts/navadmin',
+      activePage: 'dashboard',
+      user: user
+    });
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).render('indexUser', { 
+      title: 'เกิดข้อผิดพลาดของระบบ', 
+      user: null,
+    });
+  }
 });
 
 router.get('/listitemuser', isAdmin, async (req, res) => {
@@ -207,7 +240,6 @@ router.post('/restoreEquipment/:id', isAdmin, async (req, res) => {
 });
 
 
-
 router.get('/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
@@ -255,25 +287,43 @@ router.post('/addCategory', isAdmin, async (req, res) => {
   }
 });
 
-router.get('/borrowRequest', isAdmin, async (req, res) => {
-  const userId = req.session.userId;
-    try {
-        const borrows = await Borrow.find()
-            .populate('user_id')
-            .populate('equipment_id')
-            .sort({ created_at: -1 });
+// ✅ หน้าแสดงรายการยืนยันการคืนอุปกรณ์
+router.get('/returnequipment', async (req, res) => {
+  try {
+    // ดึงข้อมูลทั้งหมด พร้อม join ข้อมูลผู้ใช้และอุปกรณ์
+    const borrows = await Borrow.find()
+      .populate('user_id')
+      .populate('equipment_id')
+      .sort({ created_at: -1 });
 
-        res.render('borrowRequestAdmin', {
-            title: 'รายการคำขอยืมอุปกรณ์',
-            borrows: borrows,
-            layout: 'layouts/navadmin',
-            activePage: 'borrowRequest'
-        });
+    res.render('returnEquipmentAdmin', {
+      borrows,
+      activePage: 'returnEquipment'
+    });
+  } catch (err) {
+    console.error('❌ Error fetching borrow list:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+  }
+});
 
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
-    }
+// ✅ ยืนยันการคืนอุปกรณ์
+router.post('/confirmreturn/:id', async (req, res) => {
+  try {
+    const borrowId = req.params.id;
+    const { note } = req.body;
+
+    // อัปเดตสถานะเป็น 'returned' พร้อมบันทึกวันคืนจริง
+    await Borrow.findByIdAndUpdate(borrowId, {
+      status: 'returned',
+      note,
+      actual_return_date: new Date()
+    });
+
+    res.redirect('/admin/returnequipment');
+  } catch (err) {
+    console.error('❌ Error confirming return:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
+  }
 });
 
 module.exports = router;
