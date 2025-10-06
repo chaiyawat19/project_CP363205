@@ -4,6 +4,8 @@ var Category = require("../models/Category");
 const { isAdmin } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
+const borrow = require("../models/Borrow")
+const User = require('../models/User');
 
 router.get('/', isAdmin, (req, res) => {
   res.render('indexAdmin', { 
@@ -251,6 +253,27 @@ router.post('/addCategory', isAdmin, async (req, res) => {
     console.error(err);
     res.status(500).send('เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์');
   }
+});
+
+router.get('/borrowRequest', isAdmin, async (req, res) => {
+  const userId = req.session.userId;
+    try {
+        const borrows = await Borrow.find()
+            .populate('user_id')
+            .populate('equipment_id')
+            .sort({ created_at: -1 });
+
+        res.render('borrowRequestAdmin', {
+            title: 'รายการคำขอยืมอุปกรณ์',
+            borrows: borrows,
+            layout: 'layouts/navadmin',
+            activePage: 'borrowRequest'
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    }
 });
 
 module.exports = router;

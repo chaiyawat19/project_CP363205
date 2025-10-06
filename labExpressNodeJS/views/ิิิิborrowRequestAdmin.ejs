@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+  </head>
+  <body>
+<%
+const getStatusBadge = (status) => {
+    switch (status) {
+        case 'waiting':
+            return '<span class="badge bg-warning text-dark">รออนุมัติ</span>';
+        case 'borrowed':
+            return '<span class="badge bg-primary">กำลังยืม</span>';
+        case 'returned':
+            return '<span class="badge bg-success">คืนแล้ว</span>';
+        case 'rejected':
+            return '<span class="badge bg-danger">ไม่อนุมัติ</span>';
+        case 'late':
+            return '<span class="badge bg-danger">เกินกำหนด</span>';
+        case 'lost':
+            return '<span class="badge bg-secondary">สูญหาย</span>';
+        default:
+            return `<span class="badge bg-secondary">${status}</span>`;
+    }
+};
+%>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">รายการคำขอยืมอุปกรณ์ (แอดมิน)</h2>
+    </div>
+    <div class="card shadow-sm p-4">
+        <% if (borrows && borrows.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>#</th>
+                            <th>ชื่อผู้ขอ</th>
+                            <th>อุปกรณ์</th>
+                            <th>วันที่กำหนดคืน</th>
+                            <th>สถานะ</th>
+                            <th>หมายเหตุ</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% borrows.forEach((borrow, index) => { %>
+                            <tr>
+                                <td><%= index+1 %></td>
+                                <td>
+                                    <%= typeof borrow.user_id === 'object'
+                                        ? ((borrow.user_id.firstName || '') + ' ' + (borrow.user_id.lastName || ''))
+                                        : 'ไม่พบชื่อ' %>
+                                </td>
+                                <td>
+                                    <strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %></strong>
+                                </td>
+                                <td>
+                                    <%= borrow.return_date ? new Date(borrow.return_date).toLocaleDateString('th-TH') : '-' %>
+                                </td>
+                                <td>
+                                    <%- getStatusBadge(borrow.status) %>
+                                </td>
+                                <td><%= borrow.note || '-' %></td>
+                                <td>
+                                    <% if (borrow.status === 'waiting') { %>
+                                        <form action="/admin/borrowRequest/<%= borrow._id %>/approve" method="POST" style="display: inline;">
+                                          <button type="submit" class="btn btn-sm btn-success">อนุมัติ</button>
+                                        </form>
+                                        <form action="/admin/borrowRequest/<%= borrow._id %>/reject" method="POST" style="display: inline;">
+                                          <button type="submit" class="btn btn-sm btn-danger">ไม่อนุมัติ</button>
+                                        </form>
+                                    <% } %>
+                                    <a href="/admin/request/<%= borrow._id %>" class="btn btn-sm btn-secondary">ดูรายละเอียด</a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info mb-0" role="alert">
+                ยังไม่มีคำขอยืมอุปกรณ์
+            </div>
+        <% } %>
+    </div>
+</div>
+</body>
+</html>
