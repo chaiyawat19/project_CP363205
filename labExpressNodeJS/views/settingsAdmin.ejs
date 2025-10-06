@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title> 
+    <style>
+        .content-area { max-width: 900px; margin: 30px auto; padding: 20px; }
+        .card { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .row { display: flex; gap: 20px; }
+        .row > * { flex: 1; }
+        .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; float: right; }
+        .btn-change-pass { background-color: transparent; color: #007bff; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    
+    <div class="content-area">
+
+        <% 
+            const msg = req.query.msg;
+            const err = req.query.err;
+            if(msg === 'updated') { %>
+                <div style="color: green; padding: 10px; background-color: #d4edda; border-radius: 4px; margin-bottom: 15px;">อัปเดตข้อมูลส่วนตัวสำเร็จแล้ว!</div>
+        <% } else if(msg === 'password_changed') { %>
+                <div style="color: green; padding: 10px; background-color: #d4edda; border-radius: 4px; margin-bottom: 15px;">เปลี่ยนรหัสผ่านสำเร็จแล้ว!</div>
+        <% } else if(err === 'wrongpass') { %>
+                <div style="color: red; padding: 10px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 15px;">รหัสผ่านเดิมไม่ถูกต้อง! โปรดลองใหม่อีกครั้ง</div>
+        <% } %>
+
+
+        <div class="card">
+        
+            <div class="header-controls">
+                <h2>ข้อมูลส่วนตัว</h2>
+                <button type="submit" form="personalForm" class="btn-primary">บันทึก</button>
+            </div>
+            
+            <form id="personalForm" action="/admin/setting" method="POST">
+                
+                <div class="row">
+                    <div class="input-group">
+                        <label for="fname">ชื่อต้น</label>
+                        <input type="text" id="fname" name="fname" value="<%= user.fname %>" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="lname">นามสกุล</label>
+                        <input type="text" id="lname" name="lname" value="<%= user.lname %>" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label for="email">อีเมล</label>
+                        <input type="email" id="email" name="email" value="<%= user.email %>" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="phone">เบอร์โทรศัพท์ (ถ้ามี)</label>
+                        <input type="text" id="phone" name="phone" value=""> 
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="department">แผนก</label>
+                    <input type="text" id="department" name="department" value="<%= user.department %>">
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>เปลี่ยนรหัสผ่าน</h2>
+            <form id="passwordForm" action="/admin/setting/password" method="POST">
+                <div class="input-group">
+                    <label for="oldPassword">รหัสผ่านเดิม</label>
+                    <input type="password" id="oldPassword" name="oldPassword" required>
+                </div>
+                <div class="input-group">
+                    <label for="newPassword">รหัสผ่านใหม่</label>
+                    <input type="password" id="newPassword" name="newPassword" required>
+                </div>
+                <div class="input-group">
+                    <label for="confirmPassword">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <button type="submit" class="btn-change-pass">บันทึกรหัสผ่านใหม่</button>
+            </form>
+        </div>
+
+    </div>
+</body>
+</html>
