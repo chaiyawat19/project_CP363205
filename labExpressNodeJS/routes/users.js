@@ -11,7 +11,6 @@ router.get('/', isUser, async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
         const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
-        console.log('User found:', user); // เพิ่มบรรทัดนี้
         const borrows = await Borrow.find({ user_id: req.session.userId }).populate('equipment_id').populate('user_id').sort({ created_at: -1 });
 
 
@@ -65,8 +64,35 @@ router.get('/listitemuser', async (req,res) => {
   }
 });
 
-module.exports = router;
+router.get('/historyBorrowed',async (req,res) =>{
+   try {
+        const user = await User.findById(req.session.userId);
+        const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
+        const borrows = await Borrow.find({ user_id: req.session.userId }).populate('equipment_id').populate('user_id').sort({ created_at: -1 });
 
+
+        res.render('historyBorrowedUser', { 
+            title: 'หน้าหลัก User', 
+            name: `${user.fname} ${user.lname}`, 
+            layout: 'layouts/navuser', 
+            activePage: 'history', 
+            user: user,
+            equipments: equipments,
+            borrows: borrows
+        });
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        res.status(500).render('indexUser', { 
+            title: 'เกิดข้อผิดพลาดของระบบ', 
+            name: '', 
+            layout: 'layouts/navuser', 
+            activePage: 'history', 
+            user: null,
+            equipments: [] ,
+            borrows: []
+        });
+    }
+});
 
 
 
