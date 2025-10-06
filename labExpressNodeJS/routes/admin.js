@@ -4,14 +4,47 @@ var Category = require("../models/Category");
 const { isAdmin } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
+const User = require('../models/User');
 
-router.get('/', isAdmin, (req, res) => {
-  res.render('indexAdmin', { 
-    title: 'หน้าหลัก Admin', 
-    name: req.session.userName , 
-    layout: 'layouts/navadmin',
-    activePage: 'dashboard'
-  });
+// middleware ดึงข้อมูล user จาก session ก่อน render
+router.use(isAdmin, async (req, res, next) => {
+  try {
+    if (req.session.userId) {
+      const user = await User.findById(req.session.userId);
+      res.locals.user = user; 
+    } else {
+      res.locals.user = null;
+    }
+  } catch (err) {
+    console.error('Error loading user middleware:', err);
+    res.locals.user = null;
+  }
+  next();
+});
+
+router.get('/', isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).render('indexUser', { 
+        title: 'ไม่พบข้อมูลผู้ใช้',
+        user: null
+      });
+    }
+
+    res.render('indexAdmin', { 
+      title: 'หน้าหลัก Admin', 
+      layout: 'layouts/navadmin',
+      activePage: 'dashboard',
+      user: user
+    });
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).render('indexUser', { 
+      title: 'เกิดข้อผิดพลาดของระบบ', 
+      user: null,
+    });
+  }
 });
 
 router.get('/listitemuser', isAdmin, async (req, res) => {

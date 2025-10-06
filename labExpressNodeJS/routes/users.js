@@ -6,6 +6,22 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 const Borrow = require('../models/Borrow');
 
+// middleware ดึงข้อมูล user จาก session ก่อน render
+router.use(isUser, async (req, res, next) => {
+  try {
+    if (req.session.userId) {
+      const user = await User.findById(req.session.userId);
+      res.locals.user = user; 
+    } else {
+      res.locals.user = null;
+    }
+  } catch (err) {
+    console.error('Error loading user middleware:', err);
+    res.locals.user = null;
+  }
+  next();
+});
+
 
 router.get('/', isUser, async (req, res) => {
     try {
