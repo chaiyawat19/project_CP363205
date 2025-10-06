@@ -49,26 +49,34 @@
 
   <div class="container">
     <div class="row d-flex align-items-center">
-      <!-- 🔍 ช่องค้นหาแบบเรียลไทม์ -->
-      <div class="col-4">
+      <div class="col-6">
         <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
       </div>
 
-      <!-- 🔄 เลือกแล้วเปลี่ยนหน้าอัตโนมัติ -->
-      <div class="col-4">
-        <select id="pageSelect" class="form-select my-3" aria-label="Default select example">
+      <div class="col-3">
+        <select id="pageSelect1" class="form-select my-3" aria-label="Default select example">
+          <option value="" selected disabled>หมวดหมู่การทำงาน</option>
           <option value="/admin/listcategory">จัดการประเภทอุปกรณ์</option>
           <option value="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</option>
         </select>
       </div>
-      <div class="col-4"></div>
+
+      <div class="col-3">
+        <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
+          <option value="" selected >สถานะการใช้งาน</option>
+          <option value="available">พร้อมใช้งาน</option>
+          <option value="unavailable">ไม่พร้อมใช้งาน</option>
+          <option value="repair">อยู่ระหว่างซ่อม</option>
+          <option value="unknown">ไม่ทราบสถานะ</option>
+        </select>
+      </div>
     </div>
   </div>
 
   <div class="container">
     <div class="row" id="equipmentContainer">
       <% equipmentList.forEach(equipment => { %>
-        <div class="col-4 equipment-card">
+        <div class="col-4 equipment-card" data-status="<%= equipment.status %>">
           <div class="card text-center">
             <div class="img-content">
               <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
@@ -109,29 +117,36 @@
   </div>
 
   <script>
-
+    // 🔍 ค้นหาแบบเรียลไทม์
     const searchInput = document.getElementById("searchInput");
     const cards = document.querySelectorAll(".equipment-card");
 
     searchInput.addEventListener("keyup", function () {
       const filter = this.value.toLowerCase();
-
       cards.forEach(card => {
         const text = card.innerText.toLowerCase();
         card.style.display = text.includes(filter) ? "" : "none";
       });
     });
 
-
-    const pageSelect = document.getElementById("pageSelect");
-    pageSelect.addEventListener("change", function () {
+    // 🔄 เปลี่ยนหน้าอัตโนมัติ
+    const pageSelect1 = document.getElementById("pageSelect1");
+    pageSelect1.addEventListener("change", function () {
       const url = this.value;
-      if (url) {
-        window.location.href = url; 
-      }
+      if (url) window.location.href = url;
     });
-    
+
+    // ⚙️ กรองตามสถานะ
+    const statusFilter = document.getElementById("statusFilter");
+    statusFilter.addEventListener("change", function () {
+      const selectedStatus = this.value;
+      cards.forEach(card => {
+        const cardStatus = card.getAttribute("data-status");
+        card.style.display = (selectedStatus === "" || selectedStatus === cardStatus)
+          ? ""
+          : "none";
+      });
+    });
   </script>
 </body>
-
 </html>
