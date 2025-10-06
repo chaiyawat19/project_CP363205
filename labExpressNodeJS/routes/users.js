@@ -41,9 +41,17 @@ router.get('/listitemuser', async (req,res) => {
   }
 });
 
+router.get("/notifications", isUser, function (req, res, next) {
+  res.render("notificationsUser", { 
+    title: "การแจ้งเตือน",
+    name: req.session.userName,
+    layout: 'layouts/navuser',
+    activePage: 'notifications'
+  });
+});
+
 module.exports = router;
 
 
 
 
-module.exports = router;
