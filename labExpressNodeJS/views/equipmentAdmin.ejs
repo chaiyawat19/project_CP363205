@@ -78,20 +78,20 @@
     <div class="container">
         <div class="row" id="equipmentContainer">
             <% equipmentList.forEach(equipment=> { %>
-                <div class="col-4 equipment-card" data-status="<%= equipment.status %>">
+                <div class="col-4 equipment-card g-4" data-status="<%= equipment.status %>">
                     <div class="card text-center">
                         <div class="img-content">
                             <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
                             <div class="status">
                                 <% if (equipment.status==="available" ) { %>
                                     <p class="badge bg-success p-3">พร้อมใช้งาน</p>
-                                    <% } else if (equipment.status==="unavailable" ) { %>
-                                        <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
-                                        <% } else if (equipment.status==="repair" ) { %>
-                                            <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
-                                            <% } else { %>
-                                                <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
-                                                <% } %>
+                                <% } else if (equipment.status==="unavailable" ) { %>
+                                    <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
+                                <% } else if (equipment.status==="repair" ) { %>
+                                    <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
+                                <% } else { %>
+                                    <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
+                                <% } %>
                             </div>
                         </div>
                         <div class="card-body">
