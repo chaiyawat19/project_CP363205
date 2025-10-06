@@ -1,22 +1,4 @@
 
-<%
-    // ตัวช่วยฟังก์ชันสำหรับแสดงสถานะ (ใช้สี Bootstrap)
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'waiting':
-                return '<span class="badge bg-warning text-dark">รอยืนยัน</span>';
-            case 'borrowed':
-                return '<span class="badge bg-primary">กำลังยืม</span>';
-            case 'returned':
-                return '<span class="badge bg-success">คืนแล้ว</span>';
-            case 'rejected':
-                return '<span class="badge bg-danger">ถูกปฏิเสธ</span>';
-            default:
-                return `<span class="badge bg-secondary">${status}</span>`;
-        }
-    };
-%>
-
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">ประวัติการยืมอุปกรณ์ของฉัน</h2>
@@ -42,7 +24,9 @@
                             <tr>
                                 <td><%= index + 1 %></td>
                                 <td>
-                                    <strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %></strong>
+                                    <strong>
+                                        <%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>
+                                    </strong>
                                 </td>
                                 <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
                                 <td>
@@ -51,13 +35,24 @@
                                 <td><%= borrow.note %></td>
                                 <td>
                                     <% if (borrow.status === 'borrowed') { %>
-                                        <form action="/users/return/<%= borrow._id %>" method="POST" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-success">คืนอุปกรณ์</button>
-                                        </form>
-                                    <% } else if (borrow.status === 'pending') { %>
+                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                            data-bs-target="#confirmReturnModal" data-bs-id="<%= borrow._id %>">
+                                            คืนอุปกรณ์
+                                        </button>
+                                    <% } else if (borrow.status === 'pending' || borrow.status === 'waiting' || borrow.status === 'waitingForReturn') { %>
                                         <button class="btn btn-sm btn-info disabled">รออนุมัติ</button>
                                     <% } else { %>
-                                        <a href="/users/borrow/detail/<%= borrow._id %>" class="btn btn-sm btn-secondary">ดูรายละเอียด</a>
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                            data-bs-toggle="modal" data-bs-target="#detailModal"
+                                            data-bs-id="<%= borrow._id %>"
+                                            data-bs-borrow-date="<%= new Date(borrow.created_at).toLocaleDateString('th-TH') %>"
+                                            data-bs-return-date="<%= new Date(borrow.return_date).toLocaleDateString('th-TH') %>"
+                                            data-bs-actual-return-date="<%= borrow.actual_return_date ? new Date(borrow.actual_return_date).toLocaleDateString('th-TH') : '-' %>"
+                                            data-bs-note="<%= borrow.note %>"
+                                            data-bs-status-html='<%= getStatusBadge(borrow.status) %>'
+                                            data-bs-equipment-name="<%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>">
+                                            ดูรายละเอียด
+                                        </button>
                                     <% } %>
                                 </td>
                             </tr>
@@ -73,3 +68,122 @@
 
     </div>
 </div>
+
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">รายละเอียดรายการยืม</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>อุปกรณ์:</strong> <span id="modalEquipmentName"></span></p>
+                <p><strong>สถานะ:</strong> <span id="modalStatus"></span></p>
+                <hr>
+                <p><strong>วันที่ยืม:</strong> <span id="modalBorrowDate"></span></p>
+                <p><strong>กำหนดคืน:</strong> <span id="modalReturnDate"></span></p>
+                <p><strong>วันที่คืนจริง:</strong> <span id="modalActualReturnDate"></span></p>
+                <hr>
+                <p><strong>หมายเหตุ:</strong> <span id="modalNote"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmReturnModal" tabindex="-1" aria-labelledby="confirmReturnModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmReturnModalLabel">ยืนยันการคืนอุปกรณ์</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="returnForm" method="POST">
+                <div class="modal-body">
+                    <p>คุณต้องการยืนยันการคืนอุปกรณ์ชิ้นนี้ใช่หรือไม่?</p>
+                    <p class="text-danger">การดำเนินการนี้จะเปลี่ยนสถานะเป็น **"รอยืนยัน"** (จากผู้ดูแลระบบ)</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-success">ยืนยันการคืน</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- 1. โค้ดสำหรับ Confirm Return Modal (เปลี่ยนไปใช้ AJAX) ---
+    const confirmReturnModalElement = document.getElementById('confirmReturnModal');
+    const returnForm = document.getElementById('returnForm');
+    const returnModalInstance = new bootstrap.Modal(confirmReturnModalElement); // สร้าง Instance Modal
+
+    if (returnForm) {
+        // ดักจับเหตุการณ์ Submit ของฟอร์ม
+        returnForm.addEventListener('submit', async function (event) {
+            event.preventDefault(); // 🛑 ป้องกันการ Submit แบบปกติ (ป้องกันการรีโหลดหน้า) 🛑
+            
+            const borrowId = event.target.action.split('/').pop(); // ดึง ID จาก Action URL
+            
+            try {
+                // ส่งคำร้องขอคืนอุปกรณ์แบบ Asynchronous (AJAX)
+                const response = await fetch(`/users/return/${borrowId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                });
+
+                if (response.ok) {
+                    returnModalInstance.hide(); 
+                    window.location.reload(); 
+
+                } else {
+                    const errorData = await response.json();
+                    alert('เกิดข้อผิดพลาดในการส่งคำร้อง: ' + (errorData.message || 'กรุณาลองใหม่อีกครั้ง'));
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
+            }
+        });
+
+        // ตั้งค่า Action URL เมื่อ Modal เปิด
+        confirmReturnModalElement.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const borrowId = button.getAttribute('data-bs-id');
+            returnForm.action = '/users/return/' + borrowId;
+        });
+    }
+
+        // --- 2. โค้ดสำหรับ Detail Modal ---
+        const detailModal = document.getElementById('detailModal');
+        if (detailModal) {
+            detailModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+
+                // ดึงข้อมูลทั้งหมดจาก Data Attributes
+                const equipmentName = button.getAttribute('data-bs-equipment-name');
+                const borrowDate = button.getAttribute('data-bs-borrow-date');
+                const returnDate = button.getAttribute('data-bs-return-date');
+                const actualReturnDate = button.getAttribute('data-bs-actual-return-date');
+                const note = button.getAttribute('data-bs-note');
+                const statusHtml = button.getAttribute('data-bs-status-html'); // นี่คือ HTML string
+
+                // ใส่ข้อมูลลงใน Modal
+                document.getElementById('modalEquipmentName').textContent = equipmentName;
+                document.getElementById('modalBorrowDate').textContent = borrowDate;
+                document.getElementById('modalReturnDate').textContent = returnDate;
+                document.getElementById('modalActualReturnDate').textContent = actualReturnDate;
+                document.getElementById('modalNote').textContent = note;
+
+                // ใช้ innerHTML สำหรับสถานะที่มี HTML tags (badge)
+                document.getElementById('modalStatus').innerHTML = statusHtml;
+            });
+        }
+    });
+</script>

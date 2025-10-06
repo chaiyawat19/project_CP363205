@@ -297,6 +297,7 @@ router.get('/borrowreturn', isUser, async (req, res) => {
         res.render('userBorrowHistory', {
             title: 'ประวัติการยืม',
             borrows: borrows,
+            getStatusBadge: getStatusBadge,
             layout: 'layouts/navuser',
             activePage: 'borrowreturn'
         });
@@ -304,6 +305,52 @@ router.get('/borrowreturn', isUser, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    }
+});
+
+const getStatusBadge = (status) => {
+    switch (status) {
+        case 'waiting':
+            return '<span class="badge bg-warning text-dark">รอยืนยัน</span>';
+        case 'borrowed':
+            return '<span class="badge bg-primary">กำลังยืม</span>';
+        case 'returned':
+            return '<span class="badge bg-success">คืนแล้ว</span>';
+        case 'rejected':
+            return '<span class="badge bg-danger">ถูกปฏิเสธ</span>';
+        case 'waitingForReturn': // สถานะใหม่ที่คุณเพิ่ม
+            return '<span class="badge bg-info">รอการยืนยันการคืน</span>';
+        default:
+            return `<span class="badge bg-secondary">${status}</span>`;
+    }
+};
+
+router.post('/return/:borrowId', isUser, async (req, res) => {
+    try {
+        const { borrowId } = req.params;
+        const userId = req.session.userId;
+
+        const borrowRecord = await Borrow.findOne({ 
+            _id: borrowId, 
+            user_id: userId,
+            status: 'borrowed'
+        });
+
+        if (!borrowRecord) {
+            return res.status(404).redirect('/users/borrowreturn'); 
+        }
+
+        borrowRecord.status = 'waitingForReturn'; 
+        
+        borrowRecord.actual_return_date = new Date(); 
+
+        await borrowRecord.save();
+
+        res.redirect('/users/borrowreturn'); 
+
+    } catch (err) {
+        console.error("Error submitting return request:", err);
+        res.status(500).redirect('/users/borrowreturn');
     }
 });
 
