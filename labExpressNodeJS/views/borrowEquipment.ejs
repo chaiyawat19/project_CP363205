@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <header class="d-flex align-items-center justify-content-between">
+        <div class="box1">
+            <h1>รายการยืม-คืนอุปกรณ์</h1>
+            <small>จัดการข้อมูลการยืม-คืนอุปกรณ์</small>
+        </div>
+    </header>
+    <hr style="color: #3758F9;">
+    <div class="container-fluid">
+        <div class="row d-flex align-items-center">
+            <div class="col-6">
+                <form action="/admin/Borrowequipment" method="GET" class="d-flex">
+                    <input type="search" name="search" id="searchInput" class="form-control" placeholder="ค้นหาจากรายชื่อ, อุปกรณ์, หรือหมายเหตุ..." value="<%= typeof query !== 'undefined' ? query : '' %>">
+                    <input type="submit" class="btn btn-secondary mx-2" value="ค้นหา">
+                </form>
+            </div>
+            <div class="col-3">
+                <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
+                    <option value="" selected>สถานะการใช้งาน</option>
+                    <option value="available">พร้อมใช้งาน</option>
+                    <option value="unavailable">ไม่พร้อมใช้งาน</option>
+                    <option value="repair">อยู่ระหว่างซ่อม</option>
+                    <option value="unknown">ไม่ทราบสถานะ</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <table class="table table-striped table-hover text-center ">
+        <thead>
+            <tr>
+                <th>ลำดับ</th>
+                <th>รายชื่อผู้ยืม</th>
+                <th>อุปกรณ์</th>
+                <th>หมายเหตุ</th>
+                <th>สถานะ</th>
+                <th>วัน-เวลาที่ต้องคืน</th>
+                <th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% borrows.forEach((borrow, index) => { %>
+                <tr>
+                    <td><%= index + 1 %></td>
+                    <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
+                    <td><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่มีข้อมูล' %></td>
+                    <td><%= borrow.note %></td>
+                    <% if (borrow.status==="waiting" ) { %>
+                        <td><p class="badge bg-warning">รอยืนยัน</p></td>
+                    <% } else if (borrow.status==="returned" ) { %>
+                        <td><p class="badge bg-info">คืนสินค้า</p></td>
+                    <% } %>
+                    <td><%= new Date(borrow.return_date).toLocaleString('th-TH') %></td>
+                    <td>
+                        <a href="#" class="btn btn-warning btn-sm">ดูรายละเอียด</a>
+                    </td>
+                </tr>
+            <% }) %>
+            <% if (borrows.length === 0) { %>
+                <tr>
+                    <td colspan="7" class="text-center">ไม่มีข้อมูลการยืม</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>
