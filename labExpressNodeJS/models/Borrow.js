@@ -25,8 +25,8 @@ const borrowSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['rejected','borrowed', 'returned', 'late', 'lost'],
-      default: 'waiting' // สถานะเริ่มต้นเป็น 'waiting' (รอการอนุมัติ
+      enum: ['waiting', 'rejected', 'borrowed', 'returned', 'late', 'lost'],
+      default: 'waiting' // สถานะเริ่มต้นเป็น 'waiting' (รอการอนุมัติ)
     }
   }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
