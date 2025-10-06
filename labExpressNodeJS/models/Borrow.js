@@ -8,7 +8,7 @@ const borrowSchema = new mongoose.Schema({
     },
     equipment_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Equipments', // FK ไปที่ collection Equipment
+      ref: 'Equipment', // FK ไปที่ collection Equipment
       required: true
     },
     return_date: {

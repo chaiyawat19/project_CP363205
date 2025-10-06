@@ -46,7 +46,7 @@ router.get('/listitemuser', async (req, res) => {
 router.get('/equipments/:id', async (req, res) => {
 
   const item = await Equipment.findById(req.params.id).populate('category_id');
-  
+
   if (!item) return res.status(404).send('ไม่พบอุปกรณ์');
 
   res.render('equipmentDetail', {
@@ -92,6 +92,28 @@ router.post('/borrow/:id', isUser, async (req, res) => {
     console.error(err);
     res.status(500).send('เกิดข้อผิดพลาด');
   }
+});
+
+router.get('/borrowreturn', isUser, async (req, res) => {
+    
+    const userId = req.session.userId; 
+    
+    try {
+        const borrows = await Borrow.find({ user_id: userId })
+            .populate('equipment_id') 
+            .sort({ created_at: -1 });
+
+        res.render('userBorrowHistory', {
+            title: 'ประวัติการยืม',
+            borrows: borrows,
+            layout: 'layouts/navuser',
+            activePage: 'borrowreturn'
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    }
 });
 
 module.exports = router;
