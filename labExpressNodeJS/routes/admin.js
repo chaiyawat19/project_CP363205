@@ -1,19 +1,20 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
-const { isAdmin } = require ('../middleware/auth');
+const { isAdmin } = require('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
 
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
 
+
 // middleware ดึงข้อมูล user จาก session ก่อน render
 router.use(isAdmin, async (req, res, next) => {
   try {
     if (req.session.userId) {
       const user = await User.findById(req.session.userId);
-      res.locals.user = user; 
+      res.locals.user = user;
     } else {
       res.locals.user = null;
     }
@@ -28,22 +29,22 @@ router.get('/', isAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     if (!user) {
-      return res.status(404).render('indexUser', { 
+      return res.status(404).render('indexUser', {
         title: 'ไม่พบข้อมูลผู้ใช้',
         user: null
       });
     }
 
-    res.render('indexAdmin', { 
-      title: 'หน้าหลัก Admin', 
+    res.render('indexAdmin', {
+      title: 'หน้าหลัก Admin',
       layout: 'layouts/navadmin',
       activePage: 'dashboard',
       user: user
     });
   } catch (error) {
     console.error('Error fetching user info:', error);
-    res.status(500).render('indexUser', { 
-      title: 'เกิดข้อผิดพลาดของระบบ', 
+    res.status(500).render('indexUser', {
+      title: 'เกิดข้อผิดพลาดของระบบ',
       user: null,
     });
   }
@@ -54,12 +55,12 @@ router.get('/listitemuser', isAdmin, async (req, res) => {
     // ดึงข้อมูลอุปกรณ์, populate category_id เพื่อเอาชื่อหมวดหมู่
     const listEqt = await listEquipment.find({ deleted_at: null }).populate('category_id');
 
-    res.render('equipmentAdmin', { 
+    res.render('equipmentAdmin', {
       title: 'รายการอุปกรณ์',
-      name: req.session.userName, 
+      name: req.session.userName,
       layout: 'layouts/navadmin',
       activePage: 'listitemuser',
-      equipmentList: listEqt 
+      equipmentList: listEqt
     });
 
   } catch (error) {
@@ -75,7 +76,7 @@ router.get('/addEquipment', isAdmin, async (req, res) => {
 
     console.log(categories); // ตอนนี้จะเป็น array ของ categories จริง ๆ
 
-    res.render('addEquipmentAdmin', { 
+    res.render('addEquipmentAdmin', {
       title: 'เพิ่มอุปกรณ์',
       name: req.session.userName,
       layout: 'layouts/navadmin',
@@ -137,7 +138,7 @@ router.get('/equipmentDetail/:id', isAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
-  } 
+  }
 });
 
 router.get('/editEquipment/:id', isAdmin, async (req, res) => {
@@ -190,7 +191,7 @@ router.post('/editEquipment', isAdmin, upload.single('image'), async (req, res) 
 
 router.get('/deleteEquipment/:id', isAdmin, async (req, res) => {
   try {
-    const id  = req.params.id;
+    const id = req.params.id;
     const equipment = await listEquipment.findById(id);
     if (!equipment) {
       return res.status(404).send('ไม่พบอุปกรณ์');
@@ -205,12 +206,9 @@ router.get('/deleteEquipment/:id', isAdmin, async (req, res) => {
   }
 });
 
-// GET /admin/deletedEquipment
 router.get('/deletedEquipment', isAdmin, async (req, res) => {
   try {
-    // ดึงเฉพาะอุปกรณ์ที่ถูก soft delete
     const deletedEquipmentList = await listEquipment.find({ deleted_at: { $ne: null } }).populate('category_id');
-
     res.render('deletedEquipmentAdmin', {
       title: 'รายการอุปกรณ์ที่ถูกลบ',
       layout: 'layouts/navadmin',
@@ -227,11 +225,9 @@ router.post('/restoreEquipment/:id', isAdmin, async (req, res) => {
   try {
     const equipment = await listEquipment.findById(req.params.id);
     if (!equipment) return res.status(404).send('ไม่พบอุปกรณ์');
-
-    equipment.status = 'available'; // เปลี่ยนสถานะกลับเป็น available
-    equipment.deleted_at = null; // กู้คืน
+    equipment.status = 'available';
+    equipment.deleted_at = null;
     await equipment.save();
-
     res.redirect('/admin/deletedEquipment');
   } catch (err) {
     console.error(err);
@@ -246,8 +242,8 @@ router.get('/logout', (req, res) => {
       console.error(err);
       return res.redirect('/');
     }
-    res.clearCookie('connect.sid'); // ลบ cookie ออกด้วย
-    res.redirect('/'); // กลับไปหน้า login หรือหน้าแรก
+    res.clearCookie('connect.sid');
+    res.redirect('/');
   });
 });
 
@@ -287,18 +283,19 @@ router.post('/addCategory', isAdmin, async (req, res) => {
   }
 });
 
+
 // ✅ หน้าแสดงรายการยืนยันการคืนอุปกรณ์
 router.get('/returnequipment', async (req, res) => {
   try {
-    // ดึงข้อมูลทั้งหมด พร้อม join ข้อมูลผู้ใช้และอุปกรณ์
     const borrows = await Borrow.find()
       .populate('user_id')
       .populate('equipment_id')
       .sort({ created_at: -1 });
-
     res.render('returnEquipmentAdmin', {
-      borrows,
-      activePage: 'returnEquipment'
+      title: 'รายการยืนยันการคืนอุปกรณ์',
+      layout: 'layouts/navadmin',
+      activePage: 'returnEquipment',
+      borrows: borrows
     });
   } catch (err) {
     console.error('❌ Error fetching borrow list:', err);
@@ -306,13 +303,12 @@ router.get('/returnequipment', async (req, res) => {
   }
 });
 
-// ✅ ยืนยันการคืนอุปกรณ์
+
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
     const { note } = req.body;
-
-    // อัปเดตสถานะเป็น 'returned' พร้อมบันทึกวันคืนจริง
+    
     await Borrow.findByIdAndUpdate(borrowId, {
       status: 'returned',
       note,
@@ -324,6 +320,20 @@ router.post('/confirmreturn/:id', async (req, res) => {
     console.error('❌ Error confirming return:', err);
     res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
   }
+});
+
+router.get('/Borrowequipment', isAdmin, async (req, res) => {
+
+  const borrows = await Borrow.find({})
+    .populate('equipment_id')
+    .populate('user_id')
+    .sort({ created_at: -1 });
+  res.render('borrowEquipment.ejs', {
+    title: 'รายการยืม-คืนอุปกรณ์',
+    layout: 'layouts/navadmin',
+    activePage: 'borrowEquipment',
+    borrows: borrows
+  }); -
 });
 
 module.exports = router;

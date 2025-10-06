@@ -237,6 +237,18 @@ router.get('/equipments/:id', async (req, res) => {
 });
 
 
+router.get("/notifications", isUser, function (req, res, next) {
+  res.render("notificationsUser", { 
+    title: "การแจ้งเตือน",
+    name: req.session.userName,
+    layout: 'layouts/navuser',
+    activePage: 'notifications'
+  });
+});
+
+
+
+
 router.post('/borrow/:id', isUser, async (req, res) => {
   try {
     const { id } = req.params;
