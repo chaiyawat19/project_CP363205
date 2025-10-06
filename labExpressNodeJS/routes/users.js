@@ -45,7 +45,8 @@ router.get('/listitemuser', async (req, res) => {
 
 router.get('/equipments/:id', async (req, res) => {
 
-  const item = await Equipment.findById(req.params.id);
+  const item = await Equipment.findById(req.params.id).populate('category_id');
+  
   if (!item) return res.status(404).send('ไม่พบอุปกรณ์');
 
   res.render('equipmentDetail', {

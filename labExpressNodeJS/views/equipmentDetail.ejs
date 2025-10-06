@@ -1,57 +1,72 @@
-
-
-<body class="bg-light">
-    <div class="container mt-4">
-        <a href="/users/listitemuser" class="btn btn-dark mb-3">กลับ</a>
-        <div class="card shadow-sm p-4">
-            <div class="row">
-                <div class="col-md-6 text-center">
-                    <% if (item.image) { %>
-                        <img src="/uploads/<%= item.image %>" alt="<%= item.name %>" class="img-fluid rounded" />
-                        <% } else { %>
-                            <img src="https://via.placeholder.com/400x300?text=No+Image" class="img-fluid rounded" />
-                            <% } %>
-                </div>
-
-                <div class="col-md-6">
-                    <h3>
-                        <%= item.name %>
-                    </h3>
-                    <p><strong>หมวดหมู่:</strong>
-                        <%= item.category || 'ไม่ระบุ' %>
-                    </p>
-                    <p><strong>รายละเอียด:</strong>
-                        <%= item.description %>
-                    </p>
-                    <p><strong>สถานที่เก็บ:</strong>
-                        <%= item.location %>
-                    </p>
-                    <p>
-                        <strong>สถานะ:</strong>
-                        <% if(item.status==='available' ) { %>
-                            <span class="badge bg-success">พร้อมใช้งาน</span>
-                            <% } else { %>
-                                <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
-                                <% } %>
-                    </p>
-
-                    <form action="/users/borrow/<%= item._id %>" method="POST">
-                        <input type="hidden" name="equipment_id" value="<%= item.id %>" />
-                        <input type="hidden" name="user_id" value="1" />
-
-                        <div class="mb-3">
-                            <label class="form-label">วันที่คืนอุปกรณ์</label>
-                            <input type="date" name="return_date" id="return_date" class="form-control" required />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">หมายเหตุ</label>
-                            <textarea name="note" class="form-control" rows="2" maxlength="100"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">ยืมอุปกรณ์</button>
-                    </form>
-                </div>
-            </div>
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm p-4 col-lg-6 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4 col-lg-6">
+            <a href="/users/listitemuser" class="btn btn-dark">กลับ</a>
         </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0 me-3">
+                <%= item.name %>
+            </h1>
+        </div>
+        <div class="text-center mb-4">
+            <% if (item.image) { %>
+                <img src="/uploads/<%= item.image %>" alt="<%= item.name %>" class="img-fluid rounded w-100"
+                    style="max-width: 50%; height: auto;" />
+                <% } else { %>
+                    <img src="https://via.placeholder.com/400x300?text=No+Image" class="img-fluid rounded" />
+                    <% } %>
+        </div>
+
+        <h4 class="mt-3">
+            <span class="badge text-primary border border-primary-subtle rounded-pill me-2"
+                style="background-color: #e0f0ff; ;">
+                <%= item.category_id ? item.category_id.name : 'ไม่ระบุ' %>
+            </span>
+        </h4>
+        <p>
+            <strong>รายละเอียด:</strong><br />
+            <%= item.description %>
+        </p>
+
+        <p>
+            <strong>สถานที่เก็บอุปกรณ์:</strong>
+            <%= item.location %>
+        </p>
+
+        <p>
+            <strong>สถานะ:</strong>
+            <% if(item.status==='available' ) { %>
+                <span class="badge bg-success">พร้อมใช้งาน</span>
+                <% } else { %>
+                    <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
+                    <% } %>
+        </p>
+
+        <% if (item.status==='available' ) { %>
+            <form action="/users/borrow/<%= item._id %>" method="POST">
+                <input type="hidden" name="equipment_id" value="<%= item.id %>" />
+
+                <div class="mb-3">
+                    <label class="form-label">วันที่คืนอุปกรณ์</label>
+                    <input type="date" name="return_date" id="return_date" class="form-control" required
+                        placeholder="วว/ดด/ปปปป" />
+                    <small class="form-text text-muted">
+                        *อุปกรณ์ชิ้นนี้ยืมได้ไม่เกิน 3 วัน
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">หมายเหตุ</label>
+                    <textarea name="note" class="form-control" rows="2" maxlength="100"
+                        placeholder="ใส่เหตุผลการยืมอุปกรณ์"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-2">ยืมอุปกรณ์</button>
+            </form>
+            <% } else { %>
+                <div class="alert alert-danger mt-4">
+                    อุปกรณ์นี้ไม่พร้อมใช้งานสำหรับการยืม
+                </div>
+                <% } %>
     </div>
-</body>
+</div>
