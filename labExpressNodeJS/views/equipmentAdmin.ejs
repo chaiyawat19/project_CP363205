@@ -2,153 +2,193 @@
 <html lang="th">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
 
-  <style>
-    .card-img-top {
-      height: 300px;
-      object-fit: cover;
-    }
+    <style>
+        .card-img-top {
+            height: 300px;
+            object-fit: cover;
+        }
 
-    .category {
-      background-color: rgba(55, 88, 249, 0.08);
-      border: 1px solid rgba(55, 88, 249, 0.3);
-      border-radius: 5px;
-      padding: 5px;
-      width: 30%;
-    }
+        .category {
+            background-color: rgba(55, 88, 249, 0.08);
+            border: 1px solid rgba(55, 88, 249, 0.3);
+            border-radius: 5px;
+            padding: 5px;
+            width: 30%;
+        }
 
-    .status {
-      position: absolute;
-      top: 10px;
-      right: 0;
-    }
+        .status {
+            position: absolute;
+            top: 10px;
+            right: 0;
+        }
 
-    .badge {
-      border-radius: 10px 0 0 10px;
-    }
-  </style>
+        .badge {
+            border-radius: 10px 0 0 10px;
+        }
+    </style>
 </head>
 
 <body>
-  <header class="d-flex align-items-center justify-content-between">
-    <div class="box1">
-      <h1>รายการอุปกรณ์</h1>
-      <small>จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</small>
-    </div>
-    <div class="box2">
-      <a href="/admin/addEquipment" class="btn btn-primary px-4 py-2">
-        เพิ่มอุปกรณ์ <i class="bi bi-plus-circle"></i>
-      </a>
-    </div>
-  </header>
-
-  <hr style="color: #3758F9;">
-
-  <div class="container">
-    <div class="row d-flex align-items-center">
-      <div class="col-6">
-        <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
-      </div>
-
-      <div class="col-3">
-        <select id="pageSelect1" class="form-select my-3" aria-label="Default select example">
-          <option value="" selected disabled>หมวดหมู่การทำงาน</option>
-          <option value="/admin/listcategory">จัดการประเภทอุปกรณ์</option>
-          <option value="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</option>
-        </select>
-      </div>
-
-      <div class="col-3">
-        <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
-          <option value="" selected >สถานะการใช้งาน</option>
-          <option value="available">พร้อมใช้งาน</option>
-          <option value="unavailable">ไม่พร้อมใช้งาน</option>
-          <option value="repair">อยู่ระหว่างซ่อม</option>
-          <option value="unknown">ไม่ทราบสถานะ</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="row" id="equipmentContainer">
-      <% equipmentList.forEach(equipment => { %>
-        <div class="col-4 equipment-card" data-status="<%= equipment.status %>">
-          <div class="card text-center">
-            <div class="img-content">
-              <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
-              <div class="status">
-                <% if (equipment.status === "available") { %>
-                  <p class="badge bg-success p-3">พร้อมใช้งาน</p>
-                <% } else if (equipment.status === "unavailable") { %>
-                  <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
-                <% } else if (equipment.status === "repair") { %>
-                  <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
-                <% } else { %>
-                  <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
-                <% } %>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="d-flex justify-content-center my-2">
-                <div class="category mx-2"><%= equipment.category_id.name %></div>
-                <div class="category mx-2"><%= equipment.location %></div>
-              </div>
-
-              <h5 class="card-title"><%= equipment.name %></h5>
-              <p class="card-text h-6">
-                <%= equipment.description && equipment.description.length > 30 
-                        ? equipment.description.substring(0, 40) + '...' 
-                        : equipment.description %>
-            </p>
-              <div class="botton">
-                <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
-                <a href="#" class="btn btn-primary">แก้ไข</a>
-              </div>
-              <small class="font">
-                วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
-              </small>
-            </div>
-          </div>
+    <header class="d-flex align-items-center justify-content-between">
+        <div class="box1">
+            <h1>รายการอุปกรณ์</h1>
+            <small>จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</small>
         </div>
-      <% }) %>
+        <div class="box2">
+            <a href="/admin/addEquipment" class="btn btn-primary px-4 py-2">
+                เพิ่มอุปกรณ์ <i class="bi bi-plus-circle"></i>
+            </a>
+        </div>
+    </header>
+
+    <hr style="color: #3758F9;">
+
+    <div class="container">
+        <div class="row d-flex align-items-center">
+            <div class="col-6">
+                <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
+            </div>
+
+            <div class="col-3">
+                <select id="pageSelect1" class="form-select my-3" aria-label="Default select example">
+                    <option value="" selected disabled>หมวดหมู่การทำงาน</option>
+                    <option value="/admin/listcategory">จัดการประเภทอุปกรณ์</option>
+                    <option value="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</option>
+                </select>
+            </div>
+
+            <div class="col-3">
+                <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
+                    <option value="" selected>สถานะการใช้งาน</option>
+                    <option value="available">พร้อมใช้งาน</option>
+                    <option value="unavailable">ไม่พร้อมใช้งาน</option>
+                    <option value="repair">อยู่ระหว่างซ่อม</option>
+                    <option value="unknown">ไม่ทราบสถานะ</option>
+                </select>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // 🔍 ค้นหาแบบเรียลไทม์
-    const searchInput = document.getElementById("searchInput");
-    const cards = document.querySelectorAll(".equipment-card");
+    <div class="container">
+        <div class="row" id="equipmentContainer">
+            <% equipmentList.forEach(equipment=> { %>
+                <div class="col-4 equipment-card" data-status="<%= equipment.status %>">
+                    <div class="card text-center">
+                        <div class="img-content">
+                            <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
+                            <div class="status">
+                                <% if (equipment.status==="available" ) { %>
+                                    <p class="badge bg-success p-3">พร้อมใช้งาน</p>
+                                    <% } else if (equipment.status==="unavailable" ) { %>
+                                        <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
+                                        <% } else if (equipment.status==="repair" ) { %>
+                                            <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
+                                            <% } else { %>
+                                                <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
+                                                <% } %>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-center my-2">
+                                <div class="category mx-2">
+                                    <%= equipment.category_id.name %>
+                                </div>
+                                <div class="category mx-2">
+                                    <%= equipment.location %>
+                                </div>
+                            </div>
 
-    searchInput.addEventListener("keyup", function () {
-      const filter = this.value.toLowerCase();
-      cards.forEach(card => {
-        const text = card.innerText.toLowerCase();
-        card.style.display = text.includes(filter) ? "" : "none";
-      });
-    });
+                            <h5 class="card-title">
+                                <%= equipment.name %>
+                            </h5>
+                            <p class="card-text h-6">
+                                <%= equipment.description && equipment.description.length> 30
+                                    ? equipment.description.substring(0, 40) + '...'
+                                    : equipment.description %>
+                            </p>
+                            <div class="botton">
+                                <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
+                                <a href="#" class="btn btn-primary">แก้ไข</a>
+                            </div>
+                            <small class="font">
+                                วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+        </div>
+    </div>
 
-    // 🔄 เปลี่ยนหน้าอัตโนมัติ
-    const pageSelect1 = document.getElementById("pageSelect1");
-    pageSelect1.addEventListener("change", function () {
-      const url = this.value;
-      if (url) window.location.href = url;
-    });
+    <script>
+        const searchInput = document.getElementById("searchInput");
+        const cards = document.querySelectorAll(".equipment-card");
+        const pageSelect1 = document.getElementById("pageSelect1");
+        const statusFilter = document.getElementById("statusFilter");
 
-    // ⚙️ กรองตามสถานะ
-    const statusFilter = document.getElementById("statusFilter");
-    statusFilter.addEventListener("change", function () {
-      const selectedStatus = this.value;
-      cards.forEach(card => {
-        const cardStatus = card.getAttribute("data-status");
-        card.style.display = (selectedStatus === "" || selectedStatus === cardStatus)
-          ? ""
-          : "none";
-      });
-    });
-  </script>
+        // โหลดค่าที่บันทึกไว้ก่อนหน้า
+        window.addEventListener("DOMContentLoaded", () => {
+            const savedSearch = localStorage.getItem("searchInput");
+            const savedStatus = localStorage.getItem("statusFilter");
+            const savedPageSelect = localStorage.getItem("pageSelect1");
+
+            if (savedSearch) searchInput.value = savedSearch;
+            if (savedStatus) statusFilter.value = savedStatus;
+            if (savedPageSelect) pageSelect1.value = savedPageSelect;
+
+            // เรียกใช้ filter อีกครั้งตอนโหลดหน้า
+            applySearchFilter();
+            applyStatusFilter();
+        });
+
+        // ฟังก์ชันกรองค้นหา
+        function applySearchFilter() {
+            const filter = searchInput.value.toLowerCase();
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(filter) ? "" : "none";
+            });
+        }
+
+        // ฟังก์ชันกรองสถานะ
+        function applyStatusFilter() {
+            const selectedStatus = statusFilter.value;
+            cards.forEach(card => {
+                const cardStatus = card.getAttribute("data-status");
+                if (selectedStatus === "" || cardStatus === selectedStatus) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        // ค้นหาแบบเรียลไทม์ + บันทึกค่า
+        searchInput.addEventListener("keyup", function () {
+            localStorage.setItem("searchInput", this.value);
+            applySearchFilter();
+        });
+
+        //กรองตามสถานะ + บันทึกค่า
+        statusFilter.addEventListener("change", function () {
+            localStorage.setItem("statusFilter", this.value);
+            applyStatusFilter();
+        });
+
+        // เปลี่ยนหน้าอัตโนมัติ + บันทึกค่า
+        pageSelect1.addEventListener("change", function () {
+            const url = this.value;
+            localStorage.setItem("pageSelect1", this.value);
+            if (url) window.location.href = url;
+        });
+    </script>
+
 </body>
+
 </html>
