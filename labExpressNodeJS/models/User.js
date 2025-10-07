@@ -11,4 +11,5 @@ const userSchema = new mongoose.Schema({
   department: { type: String, default: '' }
 }, { timestamps: true });
 
+
 module.exports = mongoose.model("User", userSchema);

@@ -1,9 +1,11 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
+var RepairRequest = require("../models/Reqair_requests");
 const { isAdmin } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
+const mongoose = require("mongoose");
 
 router.get('/', isAdmin, (req, res) => {
   res.render('indexAdmin', { 
@@ -250,6 +252,164 @@ router.post('/addCategory', isAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์');
+  }
+});
+
+// ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
+function formatThaiDate(date) {
+  if (!date) return '-';
+  return new Intl.DateTimeFormat('th-TH', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  }).format(new Date(date));
+}
+
+// หน้าแสดงรายการทั้งหมด (หรือกรองได้ด้วย query params)
+router.get('/reqair_requestsadmin', async (req, res, next) => {
+  try {
+    const q = req.query.q ? req.query.q.trim() : '';
+
+    // เริ่ม query หลัก (ไม่กรองชื่อที่ยังไม่ populate)
+    let items = await RepairRequest.find({})
+      .sort({ created_at: -1 })
+      .limit(500)
+      .populate('equipment_id', 'name status location')
+      .populate('user_id', 'fname lname email')
+      .lean();
+
+    // ถ้ามีคำค้นหา
+    if (q) {
+      const qLower = q.toLowerCase();
+      items = items.filter(it => {
+        const userFullName = it.user_id
+          ? `${it.user_id.fname} ${it.user_id.lname}`.toLowerCase()
+          : '';
+        const equipmentName = it.equipment_id
+          ? it.equipment_id.name.toLowerCase()
+          : '';
+        const description = it.issue_description
+          ? it.issue_description.toLowerCase()
+          : '';
+        return (
+          userFullName.includes(qLower) ||
+          equipmentName.includes(qLower) ||
+          description.includes(qLower)
+        );
+      });
+    }
+
+    res.render('reqair_requestsadmin', {
+      title: 'รายการคำร้องซ่อม (Admin)',
+      items,
+      query: { q, month: req.query.month || '', status: req.query.status || '' },
+      formatThaiDate
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+// ดูรายละเอียดคำร้อง 
+router.get('/reqair_requests_detailadmin/:id', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const item = await RepairRequest.findById(id)
+      .populate('equipment_id', 'name status location image')
+      .populate('user_id', 'fullname email')
+      .lean();
+
+    if (!item) return res.status(404).send('ไม่พบคำร้อง');
+
+    res.render('reqair_requests_detailAdmin', {
+      title: 'รายละเอียดคำร้องซ่อม',
+      item,
+      formatThaiDate
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const ALLOWED_STATUS = ['pending', 'in_progress', 'completed', 'rejected'];
+
+router.post('/reqair_requests_detailadmin/:id/reply', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(400).json({ success: false, message: 'Invalid id' });
+      }
+      return res.status(400).send('Invalid id');
+    }
+
+    const { admin_comment, status, completion_date } = req.body;
+
+    // Validate status ถ้ามีค่าเข้ามา
+    let newStatus = undefined;
+    if (typeof status === 'string' && status.trim() !== '') {
+      if (!ALLOWED_STATUS.includes(status)) {
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+          return res.status(400).json({ success: false, message: 'Invalid status value' });
+        }
+        return res.status(400).send('Invalid status value');
+      }
+      newStatus = status;
+    }
+
+    // แปลงวันที่ completion_date (ถามมาเป็น '' ให้ถือเป็น null)
+    let completionDate = undefined;
+    if (completion_date && completion_date !== '') {
+      const dt = new Date(completion_date);
+      if (isNaN(dt)) {
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+          return res.status(400).json({ success: false, message: 'Invalid completion_date' });
+        }
+        return res.status(400).send('Invalid completion_date');
+      }
+      completionDate = dt;
+    } else if (completion_date === '') {
+      // ถ้าส่งเป็นสตริงว่าง แปลว่าลบวันที่
+      completionDate = null;
+    }
+
+    // เตรียม object สำหรับอัปเดต
+    const update = {
+      // อัปเดต admin_comment เสมอ (กันกรณีไม่มีการส่งให้ ก็ไม่เปลี่ยน)
+    };
+    if (typeof admin_comment !== 'undefined') update.admin_comment = admin_comment;
+    if (typeof newStatus !== 'undefined') update.status = newStatus;
+    if (typeof completionDate !== 'undefined') update.completion_date = completionDate;
+
+    // อัปเดต updated_at ให้เป็นเวลาปัจจุบัน (ถ้ามี field ใน schema)
+    update.updated_at = new Date();
+
+    // ถ้าไม่มีอะไรจะอัพเดท ให้ตอบกลับ
+    if (Object.keys(update).length === 0) {
+      if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.json({ success: false, message: 'ไม่มีข้อมูลที่จะอัพเดท' });
+      }
+      return res.redirect(`/admin/reqair_requestsadmin/${id}`);
+    }
+
+    const updated = await RepairRequest.findByIdAndUpdate(id, { $set: update }, { new: true });
+
+    if (!updated) {
+      if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(404).json({ success: false, message: 'ไม่พบคำร้อง' });
+      }
+      return res.status(404).send('ไม่พบคำร้อง');
+    }
+
+    // ตอบกลับแบบ JSON ถ้า request มาจาก API
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({ success: true, item: updated });
+    }
+
+    // สำหรับ form submit ให้ redirect กลับไปที่หน้า detail พร้อม query message
+    return res.redirect(`/admin/reqair_requestsadmin?message=บันทึกสำเร็จ`);
+  } catch (err) {
+    next(err);
   }
 });
 

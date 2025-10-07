@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .equip-img { max-width:200px; border-radius:6px; }
+    .btn-status { min-width:120px; }
+    .field-label { font-weight:600; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h4 class="mb-3"><%= title %></h4>
+
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card mb-3">
+          <div class="card-body">
+            <p><span class="field-label">รหัสคำร้อง (ObjectId):</span> <%= item._id %></p>
+            <p><span class="field-label">ผู้แจ้ง:</span> <%= item.user_id && item.user_id.fullname ? item.user_id.fullname : (item.user_id || '-') %></p>
+            <% if (item.user_id && item.user_id.phone) { %>
+              <p><span class="field-label">เบอร์โทร:</span> <%= item.user_id.phone %></p>
+            <% } %>
+            <p><span class="field-label">อุปกรณ์:</span> <%= item.equipment_id && item.equipment_id.name ? item.equipment_id.name : (item.equipment_id || '-') %></p>
+            <% if (item.equipment_id && item.equipment_id.location) { %>
+              <p><span class="field-label">สถานที่:</span> <%= item.equipment_id.location %></p>
+            <% } %>
+            <p><span class="field-label">คำอธิบาย:</span><%= item.issue_description || '-' %></p>
+            <p><span class="field-label">วันที่แจ้ง:</span> <%= typeof formatThaiDate === 'function' ? formatThaiDate(item.created_at) : item.created_at %></p>
+
+            <% if (item.equipment_id && item.equipment_id.image) { %>
+              <p class="mt-2"><span class="field-label">รูปอุปกรณ์:</span></p>
+              <img src="/uploads/<%= item.equipment_id.image %>" alt="image" class="equip-img">
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <!-- ฟอร์มตอบกลับแอดมิน -->
+        <div class="card mb-3">
+          <div class="card-body">
+          <form id="adminReplyForm" action="/admin/reqair_requests_detailadmin/<%= item._id %>/reply" method="post">
+              <%= console.log(item) %>
+              <!-- คอมเมนต์แอดมิน (แก้ไขได้) -->
+              <div class="mb-3">
+                <label class="form-label field-label">คอมเมนต์แอดมิน</label>
+                <textarea name="admin_comment" class="form-control" rows="4" placeholder="เขียนข้อความตอบกลับผู้แจ้ง..."><%= item.admin_comment || '' %></textarea>
+              </div>
+
+              <!-- ปุ่มอัพเดทสถานะ -->
+              <div class="mb-3">
+                <label class="form-label field-label d-block mb-2">สถานะ</label>
+                <div class="btn-group btn-group-toggle d-flex" role="group" aria-label="สถานะ">
+                  <button type="button" class="btn btn-outline-secondary btn-status" data-status="pending">Pending</button>
+                  <button type="button" class="btn btn-outline-secondary btn-status" data-status="in_progress">In Progress</button>
+                  <button type="button" class="btn btn-outline-secondary btn-status" data-status="completed">Completed</button>
+                  <button type="button" class="btn btn-outline-secondary btn-status" data-status="rejected">Rejected</button>
+                </div>
+                <input type="hidden" name="status" id="statusInput" value="<%= item.status %>">
+              </div>
+
+              <!-- เลือกวันที่ซ่อมเสร็จ -->
+              <div class="mb-3">
+                <label class="form-label field-label">วันที่ซ่อมเสร็จ (เลือกถ้าต้องการ)</label>
+                <input type="date" name="completion_date" class="form-control"
+                       value="<%= item.completion_date ? new Date(item.completion_date).toISOString().slice(0,10) : '' %>">
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">ตอบกลับและบันทึก</button>
+                <a href="/admin/reqair_requestsadmin" class="btn btn-secondary">กลับ</a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ประวัติการตอบกลับ (ถ้ามี) และสถานะปัจจุบัน -->
+        <div class="card">
+          <div class="card-body">
+            <p class="field-label mb-1">สถานะปัจจุบัน</p>
+            <p><strong><%= item.status %></strong></p>
+
+            <p class="field-label mb-1">คอมเมนต์ล่าสุด</p>
+            <p><%= item.admin_comment || '-' %></p>
+
+            <p class="field-label mb-1">วันที่ซ่อมเสร็จ</p>
+            <p><%= item.completion_date ? (typeof formatThaiDate === 'function' ? formatThaiDate(item.completion_date) : item.completion_date) : '-' %></p>
+
+            <p class="text-muted small mt-2">แก้ไขล่าสุด: <%= typeof formatThaiDate === 'function' ? formatThaiDate(item.updated_at) : item.updated_at %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // ตั้งค่าปุ่มสถานะให้แสดงสถานะปัจจุบันเมื่อโหลดหน้า
+      const currentStatus = '<%= item.status %>';
+      const buttons = document.querySelectorAll('button[data-status]');
+      const statusInput = document.getElementById('statusInput');
+
+      function setActiveStatus(status) {
+        buttons.forEach(b => {
+          if (b.dataset.status === status) {
+            b.classList.remove('btn-outline-secondary');
+            b.classList.add('btn-primary');
+          } else {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-outline-secondary');
+          }
+        });
+        statusInput.value = status;
+      }
+
+      // init
+      setActiveStatus(currentStatus);
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function(){
+          const s = this.dataset.status;
+          setActiveStatus(s);
+        });
+      });
+
+      // ป้องกันการกด submit ซ้ำ (optional)
+      const form = document.getElementById('adminReplyForm');
+      form.addEventListener('submit', function(){
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerText = 'กำลังบันทึก...';
+        }
+      });
+    })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

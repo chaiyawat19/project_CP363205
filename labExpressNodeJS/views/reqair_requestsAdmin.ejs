@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .badge-pending { background:#f0ad4e; color:#fff; }
+    .badge-inprogress { background:#17a2b8; color:#fff; }
+    .badge-completed { background:#28a745; color:#fff; }
+    .badge-rejected { background:#dc3545; color:#fff; }
+    thead th { background:#0b5d9a; color:#fff; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="card shadow-sm">
+      <div class="card-header" style="background:linear-gradient(90deg,#0b5d9a,#0e6ca8); color:white;">
+        <h5 class="mb-0">รายการคำร้องซ่อม (Admin)</h5>
+      </div>
+      <div class="card-body">
+        <form id="filterForm" class="row g-2 align-items-center mb-3" action="/admin/reqair_requestsadmin" method="get">
+          <div class="col-md-4">
+            <div class="input-group">
+              <input type="text" name="q" class="form-control" placeholder="ค้นหา (อุปกรณ์, ผู้แจ้ง, คำอธิบาย)"
+                     value="<%= (query && query.q) ? query.q : '' %>">
+              <button class="btn btn-outline-secondary" type="submit">ค้นหา</button>
+            </div>
+          </div>
+          <!-- Alert เมื่อค้นหาแล้วไม่พบข้อมูล -->
+          <% if (query.q && items.length === 0) { %>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              ไม่พบข้อมูลที่ตรงกับ "<%= query.q %>"
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+
+          <div class="col-md-3">
+            <select name="month" class="form-select" onchange="document.getElementById('filterForm').submit()">
+              <option value="">เดือนทั้งหมด</option>
+              <!-- คุณอาจจะเติม options แบบไดนามิกได้ -->
+              <option value="2025-01" <%= (query && query.month) === '2025-01' ? 'selected' : '' %>>มกราคม 2025</option>
+              <option value="2025-02" <%= (query && query.month) === '2025-02' ? 'selected' : '' %>>กุมภาพันธ์ 2025</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <select name="status" class="form-select" onchange="document.getElementById('filterForm').submit()">
+              <option value="">สถานะทั้งหมด</option>
+              <option value="pending" <%= (query && query.status) === 'pending' ? 'selected' : '' %>>Pending</option>
+              <option value="in_progress" <%= (query && query.status) === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+              <option value="completed" <%= (query && query.status) === 'completed' ? 'selected' : '' %>>Completed</option>
+              <option value="rejected" <%= (query && query.status) === 'rejected' ? 'selected' : '' %>>Rejected</option>
+            </select>
+          </div>
+        </form>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th style="width:60px">ลำดับ</th>
+                <th>ผู้แจ้ง / อุปกรณ์</th>
+                <th>คำอธิบาย</th>
+                <th style="width:120px">สถานะ</th>
+                <th style="width:160px">วันที่แจ้ง</th>
+                <th style="width:140px">วันที่ซ่อมเสร็จ</th>
+                <th style="width:120px">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+            <% if (!items || items.length === 0) { %>
+              <tr><td colspan="7" class="text-center text-muted py-4">ไม่พบข้อมูล</td></tr>
+            <% } else { %>
+              <% items.forEach(function(it, idx) { %>
+                <tr>
+                  <td><%= idx + 1 %></td>
+                  <td>
+
+                    <div>
+                      <strong>
+                        <%= (it.user_id && it.user_id.fname && it.user_id.lname)
+                            ? it.user_id.fname + ' ' + it.user_id.lname
+                            : '-' %>
+                      </strong>
+                    </div>
+                   <div class="text-muted small">
+                    <%= (it.equipment_id && it.equipment_id.name)
+                        ? it.equipment_id.name
+                        : '-' %>
+                  </div>
+
+                  </td>
+                  <td style="max-width:320px; white-space:pre-wrap;">
+                    <%= it.issue_description || '-' %>
+                  </td>
+
+                  <td>
+                    <% if (it.status === 'pending') { %>
+                      <span class="badge badge-pending px-2 py-1">Pending</span>
+                    <% } else if (it.status === 'in_progress') { %>
+                      <span class="badge badge-inprogress px-2 py-1">In Progress</span>
+                    <% } else if (it.status === 'completed') { %>
+                      <span class="badge badge-completed px-2 py-1">Completed</span>
+                    <% } else if (it.status === 'rejected') { %>
+                      <span class="badge badge-rejected px-2 py-1">Rejected</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary"><%= it.status %></span>
+                    <% } %>
+                  </td>
+
+                  <td><%= formatThaiDate(it.created_at) %></td>
+                  <td><%= it.completion_date ? new Date(it.completion_date).toLocaleDateString('th-TH') : '-' %></td>
+                  <td>
+                    <a href="/admin/reqair_requests_detailadmin/<%= it._id %>" class="btn btn-sm btn-link">ดู</a>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
