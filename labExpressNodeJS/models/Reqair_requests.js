@@ -26,8 +26,4 @@ const RepairRequestSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model(
-  "RepairRequest",
-  RepairRequestSchema,
-  "repair_requests"
-); // ปรับชื่อ collection ถ้าจริงต่างกัน
+module.exports = mongoose.model("RepairRequest",RepairRequestSchema,"repair_requests"); 

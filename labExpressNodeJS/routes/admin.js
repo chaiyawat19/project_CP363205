@@ -2,294 +2,330 @@ var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
 var RepairRequest = require("../models/Reqair_requests");
-const { isAdmin } = require ('../middleware/auth');
+const { isAdmin } = require("../middleware/auth");
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
 const mongoose = require("mongoose");
 
-router.get('/', isAdmin, (req, res) => {
-  res.render('indexAdmin', { 
-    title: 'หน้าหลัก Admin', 
-    name: req.session.userName , 
-    layout: 'layouts/navadmin',
-    activePage: 'dashboard'
+router.get("/", isAdmin, (req, res) => {
+  res.render("indexAdmin", {
+    title: "หน้าหลัก Admin",
+    name: req.session.userName,
+    layout: "layouts/navadmin",
+    activePage: "dashboard",
   });
 });
 
-router.get('/listitemuser', isAdmin, async (req, res) => {
+router.get("/listitemuser", isAdmin, async (req, res) => {
   try {
     // ดึงข้อมูลอุปกรณ์, populate category_id เพื่อเอาชื่อหมวดหมู่
-    const listEqt = await listEquipment.find({ deleted_at: null }).populate('category_id');
+    const listEqt = await listEquipment
+      .find({ deleted_at: null })
+      .populate("category_id");
 
-    res.render('equipmentAdmin', { 
-      title: 'รายการอุปกรณ์',
-      name: req.session.userName, 
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-      equipmentList: listEqt 
+    res.render("equipmentAdmin", {
+      title: "รายการอุปกรณ์",
+      name: req.session.userName,
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      equipmentList: listEqt,
     });
-
   } catch (error) {
     console.error(error);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
   }
 });
 
-router.get('/addEquipment', isAdmin, async (req, res) => {
+router.get("/addEquipment", isAdmin, async (req, res) => {
   try {
     // ดึง categories จาก DB
     const categories = await Category.find({ deleted_at: null });
 
     console.log(categories); // ตอนนี้จะเป็น array ของ categories จริง ๆ
 
-    res.render('addEquipmentAdmin', { 
-      title: 'เพิ่มอุปกรณ์',
+    res.render("addEquipmentAdmin", {
+      title: "เพิ่มอุปกรณ์",
       name: req.session.userName,
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-      categories: categories  // ส่งไปที่ view
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      categories: categories, // ส่งไปที่ view
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
   }
 });
 
+router.post(
+  "/addEquipment",
+  isAdmin,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      // ดึงค่าจาก body
+      const { name, category_id, description, location } = req.body;
 
+      // ไฟล์รูป (ถ้ามี)
+      const image = req.file ? req.file.filename : null;
 
-router.post("/addEquipment", isAdmin, upload.single('image'), async (req, res) => {
-  try {
-    // ดึงค่าจาก body
-    const { name, category_id, description, location } = req.body;
+      // สร้าง object ใหม่
+      const newEquipment = new listEquipment({
+        name,
+        category_id,
+        description,
+        status: "available", // กำหนดค่า default
+        image,
+        location,
+      });
 
-    // ไฟล์รูป (ถ้ามี)
-    const image = req.file ? req.file.filename : null;
+      await newEquipment.save();
 
-    // สร้าง object ใหม่
-    const newEquipment = new listEquipment({
-      name,
-      category_id,
-      description,
-      status: 'available',   // กำหนดค่า default
-      image,
-      location
-    });
-
-    await newEquipment.save();
-
-    return res.redirect("/admin/listitemuser");
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send('Internal Server Error');
+      return res.redirect("/admin/listitemuser");
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send("Internal Server Error");
+    }
   }
-});
+);
 
-
-router.get('/equipmentDetail/:id', isAdmin, async (req, res) => {
+router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
   try {
     const equipmentId = req.params.id;
-    const equipment = await listEquipment.findById(equipmentId).populate('category_id');
+    const equipment = await listEquipment
+      .findById(equipmentId)
+      .populate("category_id");
     const categories = await Category.find({ deleted_at: null });
     if (!equipment) {
-      return res.status(404).send('ไม่พบอุปกรณ์');
+      return res.status(404).send("ไม่พบอุปกรณ์");
     }
-    res.render('equipmentDetailAdmin', {
-      title: 'รายละเอียดอุปกรณ์',
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-      equipment,
-      categories
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
-  } 
-});
-
-router.get('/editEquipment/:id', isAdmin, async (req, res) => {
-  try {
-    const equipmentId = req.params.id;
-    const equipment = await listEquipment.findById(equipmentId).populate('category_id');
-    const categories = await Category.find({ deleted_at: null });
-    if (!equipment) {
-      return res.status(404).send('ไม่พบอุปกรณ์');
-    }
-    res.render('editEquipmentAdmin', {
-      title: equipment.name,
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
+    res.render("equipmentDetailAdmin", {
+      title: "รายละเอียดอุปกรณ์",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
       equipment,
       categories,
-      selectedCategoryId: equipment.category_id ? equipment.category_id._id : null
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
   }
 });
 
-
-router.post('/editEquipment', isAdmin, upload.single('image'), async (req, res) => {
+router.get("/editEquipment/:id", isAdmin, async (req, res) => {
   try {
-    const { id, name, category_id, description, status, location } = req.body;
-    console.log("Editing equipment ID:", id);
-    const image = req.file ? req.file.filename : null;
-    const equipment = await listEquipment.findById(id);
+    const equipmentId = req.params.id;
+    const equipment = await listEquipment
+      .findById(equipmentId)
+      .populate("category_id");
+    const categories = await Category.find({ deleted_at: null });
     if (!equipment) {
-      return res.status(404).send('ไม่พบอุปกรณ์');
+      return res.status(404).send("ไม่พบอุปกรณ์");
     }
-    equipment.name = name;
-    equipment.category_id = category_id;
-    equipment.description = description;
-    equipment.status = status;
-    equipment.location = location;
-    if (image) {
-      equipment.image = image;
-    }
-    await equipment.save();
-    res.redirect('/admin/equipmentDetail/' + id);
+    res.render("editEquipmentAdmin", {
+      title: equipment.name,
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      equipment,
+      categories,
+      selectedCategoryId: equipment.category_id
+        ? equipment.category_id._id
+        : null,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
   }
 });
 
-router.get('/deleteEquipment/:id', isAdmin, async (req, res) => {
+router.post(
+  "/editEquipment",
+  isAdmin,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { id, name, category_id, description, status, location } = req.body;
+      console.log("Editing equipment ID:", id);
+      const image = req.file ? req.file.filename : null;
+      const equipment = await listEquipment.findById(id);
+      if (!equipment) {
+        return res.status(404).send("ไม่พบอุปกรณ์");
+      }
+      equipment.name = name;
+      equipment.category_id = category_id;
+      equipment.description = description;
+      equipment.status = status;
+      equipment.location = location;
+      if (image) {
+        equipment.image = image;
+      }
+      await equipment.save();
+      res.redirect("/admin/equipmentDetail/" + id);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+    }
+  }
+);
+
+router.get("/deleteEquipment/:id", isAdmin, async (req, res) => {
   try {
-    const id  = req.params.id;
+    const id = req.params.id;
     const equipment = await listEquipment.findById(id);
     if (!equipment) {
-      return res.status(404).send('ไม่พบอุปกรณ์');
+      return res.status(404).send("ไม่พบอุปกรณ์");
     }
     equipment.deleted_at = new Date();
-    equipment.status = 'unavailable'; // เปลี่ยนสถานะเป็น unavailable
+    equipment.status = "unavailable"; // เปลี่ยนสถานะเป็น unavailable
     await equipment.save();
-    res.redirect('/admin/listitemuser');
+    res.redirect("/admin/listitemuser");
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการลบข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการลบข้อมูล");
   }
 });
 
 // GET /admin/deletedEquipment
-router.get('/deletedEquipment', isAdmin, async (req, res) => {
+router.get("/deletedEquipment", isAdmin, async (req, res) => {
   try {
     // ดึงเฉพาะอุปกรณ์ที่ถูก soft delete
-    const deletedEquipmentList = await listEquipment.find({ deleted_at: { $ne: null } }).populate('category_id');
+    const deletedEquipmentList = await listEquipment
+      .find({ deleted_at: { $ne: null } })
+      .populate("category_id");
 
-    res.render('deletedEquipmentAdmin', {
-      title: 'รายการอุปกรณ์ที่ถูกลบ',
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-      deletedEquipmentList
+    res.render("deletedEquipmentAdmin", {
+      title: "รายการอุปกรณ์ที่ถูกลบ",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      deletedEquipmentList,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
   }
 });
 
-router.post('/restoreEquipment/:id', isAdmin, async (req, res) => {
+router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
   try {
     const equipment = await listEquipment.findById(req.params.id);
-    if (!equipment) return res.status(404).send('ไม่พบอุปกรณ์');
+    if (!equipment) return res.status(404).send("ไม่พบอุปกรณ์");
 
-    equipment.status = 'available'; // เปลี่ยนสถานะกลับเป็น available
+    equipment.status = "available"; // เปลี่ยนสถานะกลับเป็น available
     equipment.deleted_at = null; // กู้คืน
     await equipment.save();
 
-    res.redirect('/admin/deletedEquipment');
+    res.redirect("/admin/deletedEquipment");
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการกู้คืนอุปกรณ์');
+    res.status(500).send("เกิดข้อผิดพลาดในการกู้คืนอุปกรณ์");
   }
 });
 
-
-
-router.get('/logout', (req, res) => {
-  req.session.destroy(err => {
+router.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
     if (err) {
       console.error(err);
-      return res.redirect('/');
+      return res.redirect("/");
     }
-    res.clearCookie('connect.sid'); // ลบ cookie ออกด้วย
-    res.redirect('/'); // กลับไปหน้า login หรือหน้าแรก
+    res.clearCookie("connect.sid"); // ลบ cookie ออกด้วย
+    res.redirect("/"); // กลับไปหน้า login หรือหน้าแรก
   });
 });
 
-
-router.get('/listcategory', isAdmin, async (req, res) => {
+router.get("/listcategory", isAdmin, async (req, res) => {
   try {
     const categories = await Category.find({ deleted_at: null });
-    res.render('listCategoryAdmin', {
-      title: 'ประเภทอุปกรณ์',
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-      categories: categories
+    res.render("listCategoryAdmin", {
+      title: "ประเภทอุปกรณ์",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      categories: categories,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
   }
 });
 
-router.get('/addCategory', isAdmin, (req, res) => {
-  res.render('addCategoryAdmin', {
-    title: 'เพิ่มประเภทอุปกรณ์',
-    layout: 'layouts/navadmin',
-    activePage: 'listitemuser'
+router.get("/addCategory", isAdmin, (req, res) => {
+  res.render("addCategoryAdmin", {
+    title: "เพิ่มประเภทอุปกรณ์",
+    layout: "layouts/navadmin",
+    activePage: "listitemuser",
   });
 });
 
-router.post('/addCategory', isAdmin, async (req, res) => {
+router.post("/addCategory", isAdmin, async (req, res) => {
   try {
     const { name } = req.body;
     const newCategory = new Category({ name });
     await newCategory.save();
-    res.redirect('/admin/listcategory');
+    res.redirect("/admin/listcategory");
   } catch (err) {
     console.error(err);
-    res.status(500).send('เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์');
+    res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์");
   }
 });
 
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
 function formatThaiDate(date) {
-  if (!date) return '-';
-  return new Intl.DateTimeFormat('th-TH', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+  if (!date) return "-";
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(date));
 }
 
-// หน้าแสดงรายการทั้งหมด (หรือกรองได้ด้วย query params)
-router.get('/reqair_requestsadmin', async (req, res, next) => {
+// หน้าแสดงรายการทั้งหมด หรือกรองได้ด้วย query params
+router.get("/reqair_requestsadmin", async (req, res, next) => {
   try {
-    const q = req.query.q ? req.query.q.trim() : '';
+    // ดึงค่าจาก query string /admin/reqair_requestsadmin?q=ไมค์&month=2025-01&status=pending ใช้ .trim() เพื่อตัดช่องว่างข้างหน้าและข้างหลังออก ถ้าไม่มีค่าจะใช้ค่าเริ่มต้นเป็น "" (สตริงว่าง)
+    const q = req.query.q ? req.query.q.trim() : "";
+    const month = (req.query.month || "").trim(); 
+    const status = (req.query.status || "").trim();
 
-    // เริ่ม query หลัก (ไม่กรองชื่อที่ยังไม่ populate)
-    let items = await RepairRequest.find({})
+    //สร้างเงื่อนไขหลักในการค้นหา 
+    let queryCondition = {};
+
+    // กรองตามสถานะ
+    if (status) {
+      queryCondition.status = status;
+    }
+
+    // กรองตามเดือน
+    if (month) {
+      const [year, monthNum] = month.split("-");
+      const startDate = new Date(
+        parseInt(year),
+        parseInt(monthNum) - 1,1,0,0,0);
+      const endDate = new Date(
+        parseInt(year),
+        parseInt(monthNum), 0,23,59,59,999);
+      queryCondition.created_at = { $gte: startDate, $lte: endDate };
+    }
+
+    // ดึงข้อมูลจากฐานข้อมูล ใช้ find() เพื่อค้นข้อมูลคำร้องซ่อมตามเงื่อนไขที่สร้างไว้
+    let items = await RepairRequest.find(queryCondition)
       .sort({ created_at: -1 })
-      .limit(500)
-      .populate('equipment_id', 'name status location')
-      .populate('user_id', 'fname lname email')
+      .populate("equipment_id", "name status location")
+      .populate("user_id", "fname lname email")
       .lean();
 
-    // ถ้ามีคำค้นหา
+    // กรองข้อมูลด้วยคำค้น ถ้ามีคำค้นหา q ให้กรองต่อ 
     if (q) {
       const qLower = q.toLowerCase();
-      items = items.filter(it => {
+      items = items.filter((it) => {
         const userFullName = it.user_id
           ? `${it.user_id.fname} ${it.user_id.lname}`.toLowerCase()
-          : '';
+          : "";
         const equipmentName = it.equipment_id
           ? it.equipment_id.name.toLowerCase()
-          : '';
+          : "";
         const description = it.issue_description
           ? it.issue_description.toLowerCase()
-          : '';
+          : "";
         return (
           userFullName.includes(qLower) ||
           equipmentName.includes(qLower) ||
@@ -298,119 +334,188 @@ router.get('/reqair_requestsadmin', async (req, res, next) => {
       });
     }
 
-    res.render('reqair_requestsadmin', {
-      title: 'รายการคำร้องซ่อม (Admin)',
+    // สร้างรายการเดือนที่มีในฐานข้อมูล ใช้ Aggregation Pipeline เพื่อแปลงวันที่ (created_at) เป็นรูปแบบ "YYYY-MM" ,รวม (group) เดือนที่ซ้ำกัน, เรียงจากใหม่ไปเก่า
+    const monthsAgg = await RepairRequest.aggregate([
+      { $match: { created_at: { $exists: true, $ne: null } } },
+      {
+        $project: {
+          yearMonth: {
+            $dateToString: { format: "%Y-%m", date: "$created_at" },
+          },
+        },
+      },
+      { $group: { _id: "$yearMonth" } },
+      { $sort: { _id: -1 } },
+    ]);
+
+    const thaiMonths = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม", ];
+
+    const monthOptions = monthsAgg.map((m) => {
+      const [year, monthNum] = m._id.split("-");
+      const monthIndex = parseInt(monthNum) - 1;
+      const thaiYear = parseInt(year) + 543;
+      return {
+        value: m._id,
+        label: `${thaiMonths[monthIndex]} ${thaiYear}`,
+      };
+    });
+
+    //ตรวจสอบว่ามีผลลัพธ์ไหม 
+    const noResults = q && items.length === 0;
+
+    // ส่งไปหน้า view
+    res.render("reqair_requestsadmin", {
+      title: "รายการคำร้องซ่อม (Admin)",
       items,
-      query: { q, month: req.query.month || '', status: req.query.status || '' },
-      formatThaiDate
+      query: { q, month, status },
+      months: monthOptions, // ส่ง monthOptions ใช้เป็น months
+      statuses: ["pending", "in_progress", "completed", "cancelled"], // เพิ่มรายการสถานะ
+      statusLabels: {
+        // เพิ่มชื่อสถานะภาษาไทย
+        pending: "รอดำเนินการ",
+        in_progress: "กำลังดำเนินการ",
+        completed: "เสร็จสิ้น",
+        cancelled: "ยกเลิก",
+      },
+      layout: "layouts/navadmin",
+      activePage: "/admin/reqair_requestsadmin", // พิ่มบรรทัดนี้
+      formatThaiDate, //ฟังก์ชันที่ใช้แปลงวันที่เป็นภาษาไทย
+      noResults,
     });
   } catch (err) {
+    console.error("Error in reqair_requestsadmin:", err);
     next(err);
   }
 });
 
-
-// ดูรายละเอียดคำร้อง 
-router.get('/reqair_requests_detailadmin/:id', async (req, res, next) => {
+// ดูรายละเอียดคำร้อง
+router.get("/reqair_requests_detailadmin/:id", async (req, res, next) => {
   try {
     const id = req.params.id;
     const item = await RepairRequest.findById(id)
-      .populate('equipment_id', 'name status location image')
-      .populate('user_id', 'fullname email')
+      .populate("equipment_id", "name status location image")
+      .populate("user_id", "fullname email")
       .lean();
 
-    if (!item) return res.status(404).send('ไม่พบคำร้อง');
+    if (!item) return res.status(404).send("ไม่พบคำร้อง");
 
-    res.render('reqair_requests_detailAdmin', {
-      title: 'รายละเอียดคำร้องซ่อม',
+    res.render("reqair_requests_detailAdmin", {
+      title: "รายละเอียดคำร้องซ่อม",
       item,
-      formatThaiDate
+      formatThaiDate,
     });
   } catch (err) {
     next(err);
   }
 });
 
-const ALLOWED_STATUS = ['pending', 'in_progress', 'completed', 'rejected'];
+const ALLOWED_STATUS = ["pending", "in_progress", "completed", "rejected"];
 
-router.post('/reqair_requests_detailadmin/:id/reply', async (req, res, next) => {
-  try {
-    const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      if (req.headers.accept && req.headers.accept.includes('application/json')) {
-        return res.status(400).json({ success: false, message: 'Invalid id' });
-      }
-      return res.status(400).send('Invalid id');
-    }
+router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => {
+    try {
+      const id = req.params.id; //ดึงค่า id จาก URL (เช่น “652f1b87d3...”)
+      
 
-    const { admin_comment, status, completion_date } = req.body;
+      const { admin_comment, status, completion_date } = req.body;
 
-    // Validate status ถ้ามีค่าเข้ามา
-    let newStatus = undefined;
-    if (typeof status === 'string' && status.trim() !== '') {
-      if (!ALLOWED_STATUS.includes(status)) {
-        if (req.headers.accept && req.headers.accept.includes('application/json')) {
-          return res.status(400).json({ success: false, message: 'Invalid status value' });
+      // Validate status ถ้ามีค่าเข้ามา
+      let newStatus = undefined;
+      if (typeof status === "string" && status.trim() !== "") {
+        if (!ALLOWED_STATUS.includes(status)) {
+          if (
+            req.headers.accept &&
+            req.headers.accept.includes("application/json")
+          ) {
+            return res
+              .status(400)
+              .json({ success: false, message: "Invalid status value" });
+          }
+          return res.status(400).send("Invalid status value");
         }
-        return res.status(400).send('Invalid status value');
+        newStatus = status;
       }
-      newStatus = status;
-    }
 
-    // แปลงวันที่ completion_date (ถามมาเป็น '' ให้ถือเป็น null)
-    let completionDate = undefined;
-    if (completion_date && completion_date !== '') {
-      const dt = new Date(completion_date);
-      if (isNaN(dt)) {
-        if (req.headers.accept && req.headers.accept.includes('application/json')) {
-          return res.status(400).json({ success: false, message: 'Invalid completion_date' });
+      // แปลงวันที่ completion_date (ถามมาเป็น '' ให้ถือเป็น null)
+      let completionDate = undefined;
+      if (completion_date && completion_date !== "") {
+        const dt = new Date(completion_date);
+        if (isNaN(dt)) {
+          if (
+            req.headers.accept &&
+            req.headers.accept.includes("application/json")
+          ) {
+            return res
+              .status(400)
+              .json({ success: false, message: "Invalid completion_date" });
+          }
+          return res.status(400).send("Invalid completion_date");
         }
-        return res.status(400).send('Invalid completion_date');
+        completionDate = dt;
+      } else if (completion_date === "") {
+        // ถ้าส่งเป็นสตริงว่าง แปลว่าลบวันที่
+        completionDate = null;
       }
-      completionDate = dt;
-    } else if (completion_date === '') {
-      // ถ้าส่งเป็นสตริงว่าง แปลว่าลบวันที่
-      completionDate = null;
-    }
 
-    // เตรียม object สำหรับอัปเดต
-    const update = {
-      // อัปเดต admin_comment เสมอ (กันกรณีไม่มีการส่งให้ ก็ไม่เปลี่ยน)
-    };
-    if (typeof admin_comment !== 'undefined') update.admin_comment = admin_comment;
-    if (typeof newStatus !== 'undefined') update.status = newStatus;
-    if (typeof completionDate !== 'undefined') update.completion_date = completionDate;
+      // เตรียม object สำหรับอัปเดต
+      const update = {
+        // อัปเดต admin_comment เสมอ (กันกรณีไม่มีการส่งให้ ก็ไม่เปลี่ยน)
+      };
+      
+      if (typeof admin_comment !== "undefined")
+        update.admin_comment = admin_comment;
+      if (typeof newStatus !== "undefined") update.status = newStatus;
+      if (typeof completionDate !== "undefined")
+        update.completion_date = completionDate;
 
-    // อัปเดต updated_at ให้เป็นเวลาปัจจุบัน (ถ้ามี field ใน schema)
-    update.updated_at = new Date();
+      // อัปเดต updated_at ให้เป็นเวลาปัจจุบัน (ถ้ามี field ใน schema)
+      update.updated_at = new Date();
 
-    // ถ้าไม่มีอะไรจะอัพเดท ให้ตอบกลับ
-    if (Object.keys(update).length === 0) {
-      if (req.headers.accept && req.headers.accept.includes('application/json')) {
-        return res.json({ success: false, message: 'ไม่มีข้อมูลที่จะอัพเดท' });
+      // ถ้าไม่มีอะไรจะอัพเดท ให้ตอบกลับ
+      if (Object.keys(update).length === 0) {
+        if (
+          req.headers.accept &&
+          req.headers.accept.includes("application/json")
+        ) {
+          return res.json({
+            success: false,
+            message: "ไม่มีข้อมูลที่จะอัพเดท",
+          });
+        }
+        return res.redirect(`/admin/reqair_requestsadmin/${id}`);
       }
-      return res.redirect(`/admin/reqair_requestsadmin/${id}`);
-    }
 
-    const updated = await RepairRequest.findByIdAndUpdate(id, { $set: update }, { new: true });
+      const updated = await RepairRequest.findByIdAndUpdate(
+        id,
+        { $set: update },
+        { new: true }
+      );
 
-    if (!updated) {
-      if (req.headers.accept && req.headers.accept.includes('application/json')) {
-        return res.status(404).json({ success: false, message: 'ไม่พบคำร้อง' });
+      if (!updated) {
+        if (
+          req.headers.accept &&
+          req.headers.accept.includes("application/json")
+        ) {
+          return res
+            .status(404)
+            .json({ success: false, message: "ไม่พบคำร้อง" });
+        }
+        return res.status(404).send("ไม่พบคำร้อง");
       }
-      return res.status(404).send('ไม่พบคำร้อง');
-    }
 
-    // ตอบกลับแบบ JSON ถ้า request มาจาก API
-    if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.json({ success: true, item: updated });
-    }
+      // ตอบกลับแบบ JSON ถ้า request มาจาก API
+      if (
+        req.headers.accept &&
+        req.headers.accept.includes("application/json")
+      ) {
+        return res.json({ success: true, item: updated });
+      }
 
-    // สำหรับ form submit ให้ redirect กลับไปที่หน้า detail พร้อม query message
-    return res.redirect(`/admin/reqair_requestsadmin?message=บันทึกสำเร็จ`);
-  } catch (err) {
-    next(err);
+      // สำหรับ form submit ให้ redirect กลับไปที่หน้า detail พร้อม query message
+      return res.redirect(`/admin/reqair_requestsadmin?message=บันทึกสำเร็จ`);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 module.exports = router;
