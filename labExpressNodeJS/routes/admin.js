@@ -465,6 +465,65 @@ router.get('/Borrowequipment', isAdmin, async (req, res) => {
 
 });
 
+router.get("/borrow_Details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const borrow = await Borrow.findById(id)
+      .populate('user_id')
+      .populate('equipment_id')
+      .lean();
+
+    if (!borrow) return res.status(404).send("ไม่พบข้อมูลการยืม");
+
+    res.render("borrowEquipmentDetails", {
+      title: "รายละเอียดการยืมอุปกรณ์",
+      formatThaiDate,
+      layout: "layouts/navadmin",
+      activePage: "borrowEquipment",
+      borrow: borrow 
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
+  }
+});
+router.post("/borrow/update/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "borrowed", 
+      return_date: req.body.Date, 
+      note: req.body.note,   
+    });
+
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+  }
+});
+router.get("/borrow/reject/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "rejected", 
+    });
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+  }
+});
+
+
+
+
+
+
+
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
 function formatThaiDate(date) {
   if (!date) return "-";
