@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        .container {
+            padding: 20px;
+        }
+        .btn {
+            padding: 8px 15px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: black;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .badge-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-user {
+            background-color: #6c757d;
+            color: white;
+        }
+        .user-profile {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        
+        <a href="/admin/manage_user/add" class="btn btn-success">+ เพิ่มผู้ใช้ใหม่</a>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>รูปโปรไฟล์</th>
+                    <th>ชื่อผู้ใช้</th>
+                    <th>อีเมล</th>
+                    <th>บทบาท</th>
+                    <th>แผนก</th>
+                    <th>วันที่สร้าง</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (users.length === 0) { %>
+                    <tr>
+                        <td colspan="7" style="text-align: center;">ไม่พบข้อมูลผู้ใช้</td>
+                    </tr>
+                <% } else { %>
+                    <% users.forEach(user => { %>
+                    <tr>
+                        <td>
+                            <img src="<%= user.userProfile %>" alt="Profile" class="user-profile">
+                        </td>
+                        <td><%= user.fname %> <%= user.lname %></td>
+                        <td><%= user.email %></td>
+                        <td>
+                            <span class="badge <%= user.userRole === 'admin' ? 'badge-admin' : 'badge-user' %>">
+                                <%= user.userRole %>
+                            </span>
+                        </td>
+                        <td><%= user.department || '-' %></td>
+                        <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
+                        <td>
+                            <a href="/admin/manage_user/edit/<%= user._id %>" class="btn btn-warning">แก้ไข</a>
+                            <form action="/admin/manage_user/delete/<%= user._id %>" method="POST" style="display: inline;" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?');">
+                                <button type="submit" class="btn btn-danger">ลบ</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
