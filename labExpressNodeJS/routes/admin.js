@@ -281,12 +281,11 @@ function formatThaiDate(date) {
 // หน้าแสดงรายการทั้งหมด หรือกรองได้ด้วย query params
 router.get("/reqair_requestsadmin", async (req, res, next) => {
   try {
-    // ดึงค่าจาก query string /admin/reqair_requestsadmin?q=ไมค์&month=2025-01&status=pending ใช้ .trim() เพื่อตัดช่องว่างข้างหน้าและข้างหลังออก ถ้าไม่มีค่าจะใช้ค่าเริ่มต้นเป็น "" (สตริงว่าง)
     const q = req.query.q ? req.query.q.trim() : "";
     const month = (req.query.month || "").trim(); 
+    const year = (req.query.year || "").trim();
     const status = (req.query.status || "").trim();
 
-    //สร้างเงื่อนไขหลักในการค้นหา 
     let queryCondition = {};
 
     // กรองตามสถานะ
@@ -294,26 +293,37 @@ router.get("/reqair_requestsadmin", async (req, res, next) => {
       queryCondition.status = status;
     }
 
-    // กรองตามเดือน
-    if (month) {
-      const [year, monthNum] = month.split("-");
-      const startDate = new Date(
-        parseInt(year),
-        parseInt(monthNum) - 1,1,0,0,0);
-      const endDate = new Date(
-        parseInt(year),
-        parseInt(monthNum), 0,23,59,59,999);
+    // ⭐ กรองตามเดือนและปี (แก้ใหม่)
+    if (year && month) {
+      // กรณี 1: เลือกทั้งปีและเดือน (เช่น ปี 2025 + มกราคม)
+      const monthNum = parseInt(month);
+      const startDate = new Date(parseInt(year), monthNum - 1, 1, 0, 0, 0);
+      const endDate = new Date(parseInt(year), monthNum, 0, 23, 59, 59, 999);
+      queryCondition.created_at = { $gte: startDate, $lte: endDate };
+      
+    } else if (!year && month) {
+      // ⭐ กรณี 2: เลือก "ปีทั้งหมด" + เลือกเดือน (เช่น มกราคม ของทุกปี)
+      const monthNum = parseInt(month);
+      queryCondition.$expr = {
+        $eq: [{ $month: "$created_at" }, monthNum]
+      };
+      
+    } else if (year && !month) {
+      // กรณี 3: เลือกแค่ปี ไม่เลือกเดือน (แสดงทั้งปี)
+      const startDate = new Date(parseInt(year), 0, 1, 0, 0, 0);
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59, 999);
       queryCondition.created_at = { $gte: startDate, $lte: endDate };
     }
+    // กรณี 4: ไม่เลือกทั้งปีและเดือน = แสดงข้อมูลทั้งหมด (ไม่มี queryCondition.created_at)
 
-    // ดึงข้อมูลจากฐานข้อมูล ใช้ find() เพื่อค้นข้อมูลคำร้องซ่อมตามเงื่อนไขที่สร้างไว้
+    // ดึงข้อมูลจากฐานข้อมูล
     let items = await RepairRequest.find(queryCondition)
       .sort({ created_at: -1 })
       .populate("equipment_id", "name status location")
       .populate("user_id", "fname lname email")
       .lean();
 
-    // กรองข้อมูลด้วยคำค้น ถ้ามีคำค้นหา q ให้กรองต่อ 
+    // กรองข้อมูลด้วยคำค้น
     if (q) {
       const qLower = q.toLowerCase();
       items = items.filter((it) => {
@@ -334,53 +344,100 @@ router.get("/reqair_requestsadmin", async (req, res, next) => {
       });
     }
 
-    // สร้างรายการเดือนที่มีในฐานข้อมูล ใช้ Aggregation Pipeline เพื่อแปลงวันที่ (created_at) เป็นรูปแบบ "YYYY-MM" ,รวม (group) เดือนที่ซ้ำกัน, เรียงจากใหม่ไปเก่า
-    const monthsAgg = await RepairRequest.aggregate([
+    // ดึงรายการปีที่มีในฐานข้อมูล
+    const yearsAgg = await RepairRequest.aggregate([
       { $match: { created_at: { $exists: true, $ne: null } } },
       {
         $project: {
-          yearMonth: {
-            $dateToString: { format: "%Y-%m", date: "$created_at" },
-          },
-        },
+          year: { $year: "$created_at" }
+        }
       },
-      { $group: { _id: "$yearMonth" } },
-      { $sort: { _id: -1 } },
+      { $group: { _id: "$year" } },
+      { $sort: { _id: -1 } }
     ]);
 
-    const thaiMonths = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม", ];
+    const availableYears = yearsAgg.map(y => y._id);
 
-    const monthOptions = monthsAgg.map((m) => {
-      const [year, monthNum] = m._id.split("-");
-      const monthIndex = parseInt(monthNum) - 1;
-      const thaiYear = parseInt(year) + 543;
-      return {
-        value: m._id,
-        label: `${thaiMonths[monthIndex]} ${thaiYear}`,
-      };
-    });
+    const thaiMonths = [
+      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", 
+      "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
+      "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
 
-    //ตรวจสอบว่ามีผลลัพธ์ไหม 
-    const noResults = q && items.length === 0;
+    // ⭐ สร้างรายการเดือน (แก้ใหม่)
+    let monthOptions = [];
+
+    if (year) {
+      // กรณีเลือกปี - แสดงเดือนที่มีข้อมูลในปีนั้น
+      const monthsInYearAgg = await RepairRequest.aggregate([
+        { 
+          $match: { 
+            created_at: { 
+              $gte: new Date(parseInt(year), 0, 1),
+              $lte: new Date(parseInt(year), 11, 31, 23, 59, 59, 999)
+            } 
+          } 
+        },
+        {
+          $project: {
+            month: { $month: "$created_at" }
+          }
+        },
+        { $group: { _id: "$month" } },
+        { $sort: { _id: 1 } }
+      ]);
+
+      const availableMonths = monthsInYearAgg.map(m => m._id);
+
+      monthOptions = Array.from({ length: 12 }, (_, i) => {
+        const monthNum = (i + 1).toString();
+        const label = thaiMonths[i];
+        const hasData = availableMonths.includes(i + 1);
+        return { value: monthNum, label, hasData };
+      });
+
+    } else {
+      // ⭐ กรณีเลือก "ปีทั้งหมด" - แสดง 12 เดือนให้เลือก
+      // ดึงเดือนที่มีข้อมูลจากทุกปี
+      const allMonthsAgg = await RepairRequest.aggregate([
+        { $match: { created_at: { $exists: true, $ne: null } } },
+        {
+          $project: {
+            month: { $month: "$created_at" }
+          }
+        },
+        { $group: { _id: "$month" } },
+        { $sort: { _id: 1 } }
+      ]);
+
+      const availableMonths = allMonthsAgg.map(m => m._id);
+
+      monthOptions = Array.from({ length: 12 }, (_, i) => {
+        const monthNum = (i + 1).toString();
+        const label = thaiMonths[i];
+        const hasData = availableMonths.includes(i + 1);
+        return { value: monthNum, label, hasData };
+      });
+    }
 
     // ส่งไปหน้า view
     res.render("reqair_requestsadmin", {
       title: "รายการคำร้องซ่อม (Admin)",
       items,
-      query: { q, month, status },
-      months: monthOptions, // ส่ง monthOptions ใช้เป็น months
-      statuses: ["pending", "in_progress", "completed", "cancelled"], // เพิ่มรายการสถานะ
+      query: { q, month, year, status },
+      years: availableYears,
+      months: monthOptions,
+      statuses: ["pending", "in_progress", "completed", "rejected"],
       statusLabels: {
-        // เพิ่มชื่อสถานะภาษาไทย
         pending: "รอดำเนินการ",
         in_progress: "กำลังดำเนินการ",
         completed: "เสร็จสิ้น",
-        cancelled: "ยกเลิก",
+        rejected: "ยกเลิก",
       },
       layout: "layouts/navadmin",
-      activePage: "/admin/reqair_requestsadmin", // พิ่มบรรทัดนี้
-      formatThaiDate, //ฟังก์ชันที่ใช้แปลงวันที่เป็นภาษาไทย
-      noResults,
+      activePage: "/admin/reqair_requestsadmin",
+      formatThaiDate,
+      noResults: q && items.length === 0,
     });
   } catch (err) {
     console.error("Error in reqair_requestsadmin:", err);
@@ -394,15 +451,17 @@ router.get("/reqair_requests_detailadmin/:id", async (req, res, next) => {
     const id = req.params.id;
     const item = await RepairRequest.findById(id)
       .populate("equipment_id", "name status location image")
-      .populate("user_id", "fullname email")
+      .populate("user_id", "fname lname email")
       .lean();
 
     if (!item) return res.status(404).send("ไม่พบคำร้อง");
 
     res.render("reqair_requests_detailAdmin", {
-      title: "รายละเอียดคำร้องซ่อม",
+     title: "รายละเอียดคำร้องซ่อม",
       item,
       formatThaiDate,
+      layout: "layouts/navadmin",
+      activePage: "/admin/reqair_requestsadmin",
     });
   } catch (err) {
     next(err);

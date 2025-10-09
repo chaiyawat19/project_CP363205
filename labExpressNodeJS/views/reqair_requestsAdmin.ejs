@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <title><%= title %></title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style>
     .badge-pending { background:#f0ad4e; color:#fff; }
     .badge-inprogress { background:#17a2b8; color:#fff; }
@@ -23,6 +25,11 @@
       min-width: 200px;
     }
     
+    .year-select {
+      min-width: 120px;
+      max-width: 150px;
+    }
+    
     .month-select, .status-select {
       min-width: 150px;
       max-width: 200px;
@@ -30,6 +37,26 @@
     
     .reset-btn {
       min-width: 80px;
+      background-color: #8220f1;
+      color: white;
+    }
+    .reset-btn:hover {
+      background-color: #2b91f7;
+      color: white;
+    }
+    
+    .btn-description {
+      display: block;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
+      padding: 0.375rem 0;
+      font-size: 0.875rem;
+    }
+    
+    /* ⭐ Style สำหรับเดือนที่ไม่มีข้อมูล */
+    option:disabled {
+      color: #ccc !important;
     }
     
     @media (max-width: 992px) {
@@ -40,14 +67,15 @@
         flex: 1 1 100%;
         margin-bottom: 0.5rem;
       }
-      .month-select, .status-select {
+      .year-select, .month-select, .status-select {
         flex: 1;
+        min-width: 120px;
       }
     }
   </style>
 </head>
-<body class="">
-  <h1 class="mb-3"> รายการคำร้องซ่อม (Admin)</h1>
+<body>
+  <h1 class="mb-3">รายการคำร้องซ่อม (Admin)</h1>
   <div class="card p-4">
     <div class="card-body">
       <form id="filterForm" class="mb-3" action="/admin/reqair_requestsadmin" method="get">
@@ -59,21 +87,40 @@
               <input type="text" 
                      name="q" 
                      class="form-control" 
-                     placeholder="🔍 ค้นหา (อุปกรณ์, ผู้แจ้ง, คำอธิบาย)"
+                     placeholder="ค้นหา (อุปกรณ์, ผู้แจ้ง, คำอธิบาย)"
                      value="<%= (query && query.q) ? query.q : '' %>">
-              <button class="btn btn-primary" type="submit">ค้นหา</button>
+              <button class="btn btn-primary" type="submit">
+                <i class="fa fa-search"></i> ค้นหา
+              </button>
             </div>
           </div>
 
-          <!-- เลือกเดือน -->
+          <!-- ⭐ เลือกปี -->
+          <select name="year" 
+                  id="yearSelect"
+                  class="form-select year-select" 
+                  onchange="document.getElementById('filterForm').submit()">
+            <option value="">ปีทั้งหมด</option>
+            <% if (years && years.length) { %>
+              <% years.forEach(function(y) { %>
+                <option value="<%= y %>" <%= query.year == y ? 'selected' : '' %>>
+                  <%= y + 543 %>
+                </option>
+              <% }); %>
+            <% } %>
+          </select>
+
+          <!-- ⭐ เลือกเดือน (ลบ disabled ออก - ให้เลือกได้เสมอ) -->
           <select name="month" 
                   class="form-select month-select" 
                   onchange="document.getElementById('filterForm').submit()">
-            <option value="">📅 เดือนทั้งหมด</option>
+            <option value="">เดือนทั้งหมด</option>
             <% if (months && months.length) { %>
               <% months.forEach(function(m) { %>
-                <option value="<%= m.value %>" <%= query.month === m.value ? 'selected' : '' %>>
-                  <%= m.label %>
+                <option value="<%= m.value %>" 
+                        <%= query.month === m.value ? 'selected' : '' %>
+                        <%= !m.hasData ? 'disabled' : '' %>>
+                  <%= m.label %><%= !m.hasData ? ' (ไม่มีข้อมูล)' : '' %>
                 </option>
               <% }); %>
             <% } %>
@@ -83,7 +130,7 @@
           <select name="status" 
                   class="form-select status-select" 
                   onchange="document.getElementById('filterForm').submit()">
-            <option value="">⚙️ ทุกสถานะ</option>
+            <option value="">ทุกสถานะ</option>
             <% if (statuses && statuses.length) { %>
               <% statuses.forEach(function(s) { %>
                 <option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>>
@@ -95,23 +142,26 @@
 
           <!-- ปุ่มรีเซ็ต -->
           <a href="/admin/reqair_requestsadmin" 
-             class="btn btn-secondary reset-btn"
-             title="รีเซ็ตการค้นหา">
-            🔄 รีเซ็ต
+             class="btn btn-blue reset-btn"
+             title="รีเซ็ตค่า">
+            รีเซ็ตค่า
           </a>
 
         </div>
       </form>
 
       <!-- Alert เมื่อไม่พบข้อมูล -->
-      <% if ((query.q || query.month || query.status) && items.length === 0) { %>
+      <% if ((query.q || query.month || query.year || query.status) && items.length === 0) { %>
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
-          <strong>⚠️ ไม่พบข้อมูล</strong>
+          <strong>ไม่พบข้อมูล</strong>
           <% if (query.q) { %>
             ที่ตรงกับคำค้นหา "<strong><%= query.q %></strong>"
           <% } %>
+          <% if (query.year) { %>
+            ในปี <strong><%= parseInt(query.year) + 543 %></strong>
+          <% } %>
           <% if (query.month) { %>
-            ในเดือน <strong><%= query.month %></strong>
+            เดือน <strong><%= query.month %></strong>
           <% } %>
           <% if (query.status) { %>
             สำหรับสถานะ "<strong><%= statusLabels[query.status] || query.status %></strong>"
@@ -121,11 +171,12 @@
       <% } %>
 
       <!-- แสดงผลการกรอง -->
-      <% if (query.q || query.month || query.status) { %>
+      <% if (query.q || query.month || query.year || query.status) { %>
         <div class="alert alert-info mb-3">
           <small>
-            📊 แสดง <strong><%= items.length %></strong> รายการ
+            แสดง <strong><%= items.length %></strong> รายการ
             <% if (query.q) { %> | คำค้นหา: "<strong><%= query.q %></strong>"<% } %>
+            <% if (query.year) { %> | ปี: <strong><%= parseInt(query.year) + 543 %></strong><% } %>
             <% if (query.month) { %> | เดือน: <strong><%= query.month %></strong><% } %>
             <% if (query.status) { %> | สถานะ: <strong><%= statusLabels[query.status] || query.status %></strong><% } %>
           </small>
@@ -137,13 +188,13 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th style="width:50px">#</th>
-              <th style="width:180px">ผู้แจ้ง / อุปกรณ์</th>
+              <th style="width:50px">ลำดับ</th>
+              <th style="width:180px">อุปกรณ์/ผู้แจ้ง</th>
               <th>คำอธิบาย</th>
               <th style="width:110px">สถานะ</th>
               <th style="width:140px">วันที่แจ้ง</th>
               <th style="width:120px">วันที่ซ่อมเสร็จ</th>
-              <th style="width:80px">จัดการ</th>
+              <th style="width:140px">จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -160,15 +211,15 @@
                 <td>
                   <div>
                     <strong>
-                      <%= (it.user_id && it.user_id.fname && it.user_id.lname)
-                          ? it.user_id.fname + ' ' + it.user_id.lname
-                          : '-' %>
+                      <%= (it.equipment_id && it.equipment_id.name)
+                        ? it.equipment_id.name
+                        : '-' %>
                     </strong>
                   </div>
                   <div class="text-muted small">
-                    <%= (it.equipment_id && it.equipment_id.name)
-                        ? it.equipment_id.name
-                        : '-' %>
+                    <%= (it.user_id && it.user_id.fname && it.user_id.lname)
+                      ? it.user_id.fname + ' ' + it.user_id.lname
+                      : '-' %>
                   </div>
                 </td>
                 <td>
@@ -179,13 +230,13 @@
                 </td>
                 <td>
                   <% if (it.status === 'pending') { %>
-                    <span class="badge badge-pending px-2 py-1">Pending</span>
+                    <span class="badge badge-pending px-2 py-1">รอดำเนินการ</span>
                   <% } else if (it.status === 'in_progress') { %>
-                    <span class="badge badge-inprogress px-2 py-1">In Progress</span>
+                    <span class="badge badge-inprogress px-2 py-1">กำลังดำเนินการ</span>
                   <% } else if (it.status === 'completed') { %>
-                    <span class="badge badge-completed px-2 py-1">Completed</span>
+                    <span class="badge badge-completed px-2 py-1">เสร็จสิ้น</span>
                   <% } else if (it.status === 'rejected') { %>
-                    <span class="badge badge-rejected px-2 py-1">Rejected</span>
+                    <span class="badge badge-rejected px-2 py-1">ยกเลิก</span>
                   <% } else { %>
                     <span class="badge bg-secondary"><%= it.status %></span>
                   <% } %>
@@ -200,7 +251,7 @@
                 </td>
                 <td>
                   <a href="/admin/reqair_requests_detailadmin/<%= it._id %>" 
-                     class="btn btn-sm btn-primary"
+                     class="btn btn-primary btn-description"
                      title="ดูรายละเอียด">
                     ดูรายละเอียด
                   </a>
@@ -214,6 +265,5 @@
 
     </div>
   </div>
-  
 </body>
 </html>
