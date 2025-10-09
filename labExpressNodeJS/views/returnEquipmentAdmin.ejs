@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายการยืนยันการคืนอุปกรณ์</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายการยืนยันการคืนอุปกรณ์</title>
 </head>
 <body>
-    <header class="d-flex align-items-center justify-content-between">
-        <div class="box1">
-            <h1>รายการยืนยันคืนอุปกรณ์</h1>
-            <small>เช็คสภาพอุปกรณ์เพื่อรวจสอบความเสียหาย</small>
-        </div>
-    </header>
-    <hr style="color: #3758F9;">
-    <div class="container-fluid">
-        <div class="row d-flex align-items-center">
-            <div class="col-6">
-                <form action="/admin/returnequipment" method="GET" class="d-flex">
-                    <input type="search" name="search" id="searchInput" class="form-control" placeholder="ค้นหาจากรายชื่อ, อุปกรณ์, หรือหมายเหตุ..." value="<%= typeof query !== 'undefined' ? query : '' %>">
-                    <input type="submit" class="btn btn-secondary mx-2" value="ค้นหา">
-                </form>
-            </div>
-             <div class="col-3">
-                <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
-                    <option>เดือนนี้</option>
-                    <option>เดือนก่อนหน้า</option>
-                </select>
-            </div>
-            <div class="col-3">
-                <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
-                    <option value="" selected>ทั้งหมด</option>
-                    <option value="available">คืนอุปกรณ์แล้ว</option>
-                    <option value="unavailable">รออนุมัติการคืน</option>
-                    <option value="borrowed">กำลังยืมอยู่</option>
-                </select>
-            </div>
-        </div>
+  <header class="d-flex align-items-center justify-content-between p-3">
+    <div class="box1">
+      <h1>รายการยืนยันคืนอุปกรณ์</h1>
+      <small>เช็คสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</small>
     </div>
-    <table class="table table-bordered align-middle text-center">
-      <thead>
+  </header>
+
+  <hr style="color: #3758F9;">
+
+  <div class="container-fluid px-4">
+    <div class="row align-items-center mb-3">
+      <div class="col-6">
+        <form action="/admin/returnequipment" method="GET" class="d-flex">
+          <input type="search" name="search" id="searchInput" class="form-control" placeholder="ค้นหาจากรายชื่อ, อุปกรณ์, หรือหมายเหตุ..." value="<%= typeof query !== 'undefined' ? query : '' %>">
+          <input type="submit" class="btn btn-secondary mx-2" value="ค้นหา">
+        </form>
+      </div>
+      <div class="col-3">
+        <select id="monthFilter" class="form-select">
+          <option>เดือนนี้</option>
+          <option>เดือนก่อนหน้า</option>
+        </select>
+      </div>
+      <div class="col-3">
+        <select id="statusFilter" class="form-select">
+          <option value="" selected>ทั้งหมด</option>
+          <option value="returned">คืนอุปกรณ์แล้ว</option>
+          <option value="waiting_return">รออนุมัติการคืน</option>
+        </select>
+      </div>
+    </div>
+
+    <table class="table table-bordered align-middle text-center bg-white">
+      <thead class="table-primary">
         <tr>
           <th>ลำดับ</th>
           <th>ชื่อ-นามสกุล</th>
@@ -53,24 +54,29 @@
         <% borrows.forEach((borrow, index) => { %>
           <tr>
             <td><%= index + 1 %></td>
-            <td><%= borrow.user_id.fname %><%= borrow.user_id.lname %></td>
+            <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
             <td><%= borrow.equipment_id.name %></td>
             <td><%= borrow.note || '-' %></td>
             <td>
-              <% if (borrow.status === 'waiting') { %>
-                <p class="badge bg-info">รอคืนอุปกรณ์</p>
+              <% if (borrow.status === 'waiting_return') { %>
+                <span class="badge bg-warning text-dark">รอคืนอุปกรณ์</span>
               <% } else if (borrow.status === 'returned') { %>
-                <p class="badge bg-success">คืนอุปกรณ์แล้ว</p>
+                <span class="badge bg-success">คืนอุปกรณ์แล้ว</span>
               <% } else if (borrow.status === 'borrowed') { %>
-                <p class="badge bg-warning">กำลังยืมอยู่</span>
+                <!-- <span class="badge bg-info text-dark">กำลังยืมอยู่</span> -->
               <% } %>
             </td>
+            <td><%= borrow.actual_return_date ? borrow.actual_return_date.toLocaleString('th-TH') : '-' %></td>
             <td>
-              <%= borrow.actual_return_date ? borrow.actual_return_date.toLocaleString('th-TH') : '-' %>
-            </td>
-            <td>
-              <% if (borrow.status === 'waiting') { %>
-                <a href="/admin/approve-return/<%= borrow._id %>" class="btn btn-primary btn-sm">ยืนยันการคืน</a>
+              <% if (borrow.status === 'waiting_return') { %>
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmModal"
+                        data-id="<%= borrow._id %>"
+                        data-user="<%= borrow.user_id.fname + ' ' + borrow.user_id.lname %>"
+                        data-equipment="<%= borrow.equipment_id.name %>">
+                  ยืนยันการคืน
+                </button>
               <% } else { %>
                 <span class="text-muted">-</span>
               <% } %>
@@ -80,5 +86,47 @@
       </tbody>
     </table>
   </div>
+
+  <!-- ✅ Modal ยืนยันการคืน -->
+  <div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="confirmForm" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title">ยืนยันการคืนอุปกรณ์</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted mb-3">เลือกสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</p>
+            <div class="mb-3">
+              <label class="form-label">หมายเหตุ</label>
+              <input type="text" name="note" class="form-control" placeholder="คืนอุปกรณ์ภายในเวลาที่กำหนด">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">สภาพอุปกรณ์</label>
+              <select name="condition" class="form-select" required>
+                <option value="ปกติ">ปกติ</option>
+                <option value="เสียหาย">เสียหาย</option>
+                <option value="สูญหาย">สูญหาย</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">ส่ง</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    // ✅ อัปเดต action ของ form ตอนกดปุ่ม "ยืนยันการคืน"
+    const confirmModal = document.getElementById('confirmModal');
+    confirmModal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-id');
+      document.getElementById('confirmForm').action = `/admin/confirmreturn/${id}`;
+    });
+  </script>
 </body>
 </html>

@@ -303,7 +303,6 @@ router.get('/returnequipment', async (req, res) => {
   }
 });
 
-
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
@@ -323,7 +322,6 @@ router.post('/confirmreturn/:id', async (req, res) => {
 });
 
 router.get('/Borrowequipment', isAdmin, async (req, res) => {
-
   const borrows = await Borrow.find({})
     .populate('equipment_id')
     .populate('user_id')
@@ -333,7 +331,9 @@ router.get('/Borrowequipment', isAdmin, async (req, res) => {
     layout: 'layouts/navadmin',
     activePage: 'borrowEquipment',
     borrows: borrows
-  }); -
+  });
+
 });
+
 
 module.exports = router;
