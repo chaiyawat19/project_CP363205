@@ -1,363 +1,44 @@
-<!DOCTYPE html>
-<html lang="th">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <%= title %> - AssetFlow
-    </title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<div class="container">
+    <h1 class="mt-4"><%= title %> (<%= name %>)</h1>
+    <p>Active Page: <%= activePage %></p>
 
-        body {
-            background-color: #f5f7fa;
-        }
-
-        .header {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            color: #2c3e50;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-
-        .filter-section {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .filter-label {
-            display: block;
-            color: #2c3e50;
-            font-size: 14px;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .filter-select {
-            width: 100%;
-            max-width: 300px;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #2c3e50;
-            background-color: white;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%232c3e50' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            padding-right: 40px;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #5b7cff;
-        }
-
-        .notification-card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .notification-card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .notification-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .notification-user {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .user-info h3 {
-            color: #2c3e50;
-            font-size: 16px;
-            margin-bottom: 3px;
-        }
-
-        .user-info p {
-            color: #7f8c8d;
-            font-size: 13px;
-        }
-
-        .notification-badge {
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .badge-pending {
-            background-color: #ffc812;
-            color: #000000;
-        }
-
-        .notification-details {
-            padding: 15px 0;
-            border-top: 1px solid #ecf0f1;
-            border-bottom: 1px solid #ecf0f1;
-        }
-
-        .detail-row {
-            display: flex;
-            padding: 8px 0;
-            font-size: 14px;
-        }
-
-        .detail-label {
-            color: #7f8c8d;
-            min-width: 130px;
-            font-weight: 500;
-        }
-
-        .detail-value {
-            color: #2c3e50;
-            font-weight: 400;
-        }
-
-        .notification-footer {
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .duration-tag {
-            background-color: #e8f4f8;
-            color: #0891b2;
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .view-btn {
-            background: linear-gradient(135deg, #5b7cff 0%, #4c63d2 100%);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .view-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(91, 124, 255, 0.4);
-        }
-
-        .empty-state {
-            background: white;
-            border-radius: 10px;
-            padding: 60px 30px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state-icon {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecef 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-        }
-
-        .empty-state h3 {
-            color: #2c3e50;
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .notification-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .notification-footer {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .detail-row {
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .detail-label {
-                min-width: auto;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-
-        <div class="header">
-            <h1>การแจ้งเตือน</h1>
-            <p>จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</p>
-        </div>
-
-
-        <div class="filter-section">
-            <label class="filter-label">ประเภทการแจ้งเตือน</label>
-            <select class="filter-select">
-                <option value="all">เลือกประเภทการแจ้งเตือน</option>
-                <option value="pending">อ่านแล้ว</option>
-                <option value="approved">ยังไม่ได้อ่าน</option>
-                <option value="rejected">ทั้งหมด</option>
-            </select>
-        </div>
-
-        <div class="notification-card">
-            <div class="notification-header">
-                <div class="notification-user">
-                    <div class="user-avatar">A</div>
-                    <div class="user-info">
-                        <h3>Admin</h3>
-                        <p>จาก admin</p>
-                    </div>
+    <div class="notification-list mt-4">
+        <% if (notifications && notifications.length > 0) { %>
+            <h2>รายการแจ้งเตือน</h2>
+            
+            <% notifications.forEach(function(notification) { %>
+                <div class="card mb-3 <%= notification.read ? 'bg-light' : 'bg-warning-subtle' %>">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <%= notification.title %>
+                            <% if (!notification.read) { %>
+                                <span class="badge bg-danger ms-2">ใหม่!</span>
+                            <% } %>
+                        </h5>
+                        <p class="card-text"><%= notification.message %></p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                วันที่: <%= notification.createdAt.toLocaleDateString() %> 
+                                เวลา: <%= notification.createdAt.toLocaleTimeString() %>
+                            </small>
+                        </p>
+                        <p><%= notification.isRead%></p>
+                        <form action="/admin/notification/mark-read/<%= notification._id %>" method="post">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                ทำเครื่องหมายว่าอ่านแล้ว
+                            </button>
+                        </form>
+                        </div>
+                         
                 </div>
-                <span class="notification-badge badge-pending">12 นาทีที่แล้ว</span>
+               
+            <% }); %>
+
+        <% } else { %>
+            <div class="alert alert-info" role="alert">
+                <p>⚠️ ไม่มีการแจ้งเตือนในขณะนี้</p>
             </div>
-
-            <div class="notification-details">
-                <p style="color: #2c3e50; font-size: 14px; line-height: 1.6;">
-                    ตอนนี้กำลังตรวจสอบอุปกรณ์ จะแจ้งให้ทราบภายในวันที่ 24 สิงหาคม 2567 ขอขอบคุณสำหรับการแจ้งซ่อมครับ
-                </p>
-            </div>
-
-            <div class="notification-footer">
-                <button class="view-btn">ดูรายละเอียด</button>
-            </div>
-        </div>
-
-        <div class="notification-card">
-            <div class="notification-header">
-                <div class="notification-user">
-                    <div class="user-avatar">S</div>
-                    <div class="user-info">
-                        <h3>รายงานการยืมเครื่องมือเครื่องใช้</h3>
-                        <p>จาก ระบบ</p>
-                    </div>
-                </div>
-                <span class="notification-badge badge-pending">2 วันที่แล้ว</span>
-            </div>
-
-            <div class="notification-details">
-                <div class="detail-row">
-                    <span class="detail-label">อุปกรณ์ที่ยืม:</span>
-                    <span class="detail-value">Sony A7R III</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">วันที่ยืม:</span>
-                    <span class="detail-value">18/08/2025 12:20:12</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">วันที่ต้องคืน:</span>
-                    <span class="detail-value">20/08/2025 08:00:00</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">ระยะเวลาที่กำหนด:</span>
-                    <span class="detail-value">2 วัน</span>
-                </div>
-            </div>
-
-            <div class="notification-footer">
-                <button class="view-btn">ดูรายละเอียด</button>
-            </div>
-        </div>
-
-        <!-- Empty State (แสดงเมื่อไม่มีข้อมูล - ซ่อนไว้ก่อน) -->
-        <!-- <div class="empty-state">
-      <div class="empty-state-icon">🔔</div>
-      <h3>ยังไม่มีการแจ้งเตือน</h3>
-      <p>เมื่อมีการแจ้งเตือนใหม่จะแสดงที่นี่</p>
-    </div> -->
-
+        <% } %>
     </div>
-
-    <script>
-        // Filter functionality (จะทำงานจริงเมื่อมีข้อมูลจาก backend)
-        document.querySelector('.filter-select').addEventListener('change', function (e) {
-            console.log('Filter selected:', e.target.value);
-            // TODO: เมื่อมีข้อมูลจาก backend จะ filter ตามประเภทที่เลือก
-        });
-
-        // View detail buttons
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                console.log('View notification detail');
-                // TODO: เมื่อมีข้อมูลจาก backend จะเปิดหน้ารายละเอียด
-                alert('ฟีเจอร์นี้จะทำงานเมื่อมีข้อมูลจาก backend');
-            });
-        });
-    </script>
-</body>
-
-</html>
+</div>

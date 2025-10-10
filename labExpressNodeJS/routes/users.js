@@ -5,7 +5,8 @@ const Equipment = require('../models/listEquipment');
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Borrow = require('../models/Borrow');
-const Department = require('../models/Department');;
+const Department = require('../models/Department');
+const Notification = require('../models/Notification');
 
 // middleware ดึงข้อมูล user จาก session ก่อน render
 router.use(isUser, async (req, res, next) => {
@@ -216,15 +217,6 @@ router.get('/equipments/:id', async (req, res) => {
 });
 
 
-router.get("/notifications", isUser, function (req, res, next) {
-  res.render("notificationsUser", {
-    title: "การแจ้งเตือน",
-    name: req.session.userName,
-    layout: 'layouts/navuser',
-    activePage: 'notifications'
-  });
-});
-
 
 
 
@@ -362,5 +354,45 @@ router.post('/return/:borrowId', isUser, async (req, res) => {
     res.status(500).redirect('/users/borrowreturn');
   }
 });
+
+router.get('/notification', isUser, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const notifications = await Notification.find({ user_id: userId })
+      .sort({ createdAt: -1 });
+    res.render('notificationsUser', {
+      title: 'การแจ้งเตือน',
+      name: req.session.userName,
+      layout: 'layouts/navuser',
+      activePage: 'notification',
+      notifications: notifications
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Database error");
+  } 
+});
+
+// Mark single notification as read
+router.post('/notification/mark-read/:id', isUser, async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    const userId = req.session.userId;
+
+    const notification = await Notification.findOneAndUpdate(
+      { _id: notificationId, user_id: userId },
+      { isRead: true },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+
+});
+
 
 module.exports = router;
