@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
 </head>
-<body >
+
+<body>
 
     <a href="/admin/listitemuser" class="btn btn-secondary mb-3">กลับ</a>
-    <h1><%= title %></h1>
+    <h1>
+        <%= title %>
+    </h1>
 
     <form action="/admin/editEquipment" method="post" enctype="multipart/form-data">
         <!-- ID แอบซ่อน -->
@@ -22,18 +28,17 @@
 
         <!-- รูปภาพ -->
         <div class="mb-3">
-            <label for="image" class="form-label">อัปโหลดรูปภาพ</label> 
+            <label for="image" class="form-label">อัปโหลดรูปภาพ</label>
             <% if (equipment.image) { %>
                 <div class="mb-2">
-                    <img src="/uploads/<%= equipment.image %>" 
-                         alt="Equipment Image" 
-                         style="max-height: 150px; object-fit: contain; border: 1px solid #ddd; padding: 5px;">
+                    <img src="/uploads/<%= equipment.image %>" alt="Equipment Image"
+                        style="max-height: 150px; object-fit: contain; border: 1px solid #ddd; padding: 5px;">
                 </div>
                 <small class="text-muted">ไฟล์ปัจจุบัน: <%= equipment.image %></small>
-            <% } else { %>
-                <small class="text-muted">ยังไม่มีไฟล์ที่อัปโหลด</small>
-            <% } %>
-            <input type="file" class="form-control mt-1" name="image" id="image">
+                <% } else { %>
+                    <small class="text-muted">ยังไม่มีไฟล์ที่อัปโหลด</small>
+                    <% } %>
+                        <input type="file" class="form-control mt-1" name="image" id="image">
         </div>
 
         <!-- หมวดหมู่ -->
@@ -42,18 +47,19 @@
             <select name="category_id" id="category_id" class="form-select">
                 <option value="">เลือกหมวดหมู่</option>
                 <% categories.forEach(function(category) { %>
-                    <option value="<%= category._id %>" 
-                        <%= selectedCategoryId && selectedCategoryId.toString() === category._id.toString() ? 'selected' : '' %>>
+                    <option value="<%= category._id %>" <%=selectedCategoryId &&
+                        selectedCategoryId.toString()===category._id.toString() ? 'selected' : '' %>>
                         <%= category.name %>
                     </option>
-                <% }); %>
+                    <% }); %>
             </select>
         </div>
 
         <!-- รายละเอียด -->
         <div class="mb-3">
             <label for="description" class="form-label">รายละเอียดอุปกรณ์:</label>
-            <textarea id="description" name="description" class="form-control" rows="3"><%= equipment.description %></textarea>
+            <textarea id="description" name="description" class="form-control"
+                rows="3"><%= equipment.description %></textarea>
         </div>
 
         <!-- สถานที่เก็บ -->
@@ -66,9 +72,10 @@
         <div class="mb-3">
             <label for="status" class="form-label">สถานะ:</label>
             <select id="status" name="status" class="form-select" required>
-                <option value="available" <%= equipment.status === 'available' ? 'selected' : '' %>>พร้อมใช้งาน</option>
-                <option value="unavailable" <%= equipment.status === 'unavailable' ? 'selected' : '' %>>ไม่พร้อมใช้งาน</option>
-                <option value="repair" <%= equipment.status === 'repair' ? 'selected' : '' %>>อยู่ระหว่างซ่อม</option>
+                <option value="available" <%=equipment.status==='available' ? 'selected' : '' %>>พร้อมใช้งาน</option>
+                <option value="unavailable" <%=equipment.status==='unavailable' ? 'selected' : '' %>>ไม่พร้อมใช้งาน
+                </option>
+                <option value="repair" <%=equipment.status==='repair' ? 'selected' : '' %>>อยู่ระหว่างซ่อม</option>
             </select>
         </div>
 
@@ -77,4 +84,5 @@
     </form>
 
 </body>
+
 </html>

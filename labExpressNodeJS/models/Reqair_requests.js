@@ -12,6 +12,7 @@ const RepairRequestSchema = new mongoose.Schema(
       ref: "Equipment",
       required: true,
     },
+    location: { type: String }, // เพิ่มตรงนี้
     issue_description: { type: String, maxlength: 100 },
     admin_comment: { type: String },
     completion_date: { type: Date },
@@ -26,4 +27,4 @@ const RepairRequestSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("RepairRequest",RepairRequestSchema,"repair_requests"); 
+module.exports = mongoose.model("RepairRequest", RepairRequestSchema, "repair_requests");
