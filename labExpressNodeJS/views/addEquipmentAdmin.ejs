@@ -7,6 +7,73 @@
   <title>
     <%= title %>
   </title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .image-preview-container {
+      margin-top: 15px;
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+     .image-preview {
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: none;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .image-preview.active {
+      display: block;
+    }
+
+    .preview-placeholder {
+      width: 100%;
+      height: 200px;
+      background-color: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      font-size: 14px;
+    }
+
+    .preview-placeholder.hidden {
+      display: none;
+    }
+
+    .image-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .image-preview-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .image-preview-wrapper:hover .image-overlay {
+      opacity: 1;
+    }
+  </style>
 </head>
 
 <body>
@@ -41,6 +108,17 @@
               <div class="col-12">
                 <label for="imageUpload" class="form-label">รูปภาพอุปกรณ์</label>
                 <input type="file" class="form-control" id="imageUpload" name="image" accept="image/*" />
+                
+                <div class="preview-placeholder" id="previewPlaceholder">
+                  <span>✚ เลือกรูปภาพเพื่อดูตัวอย่าง</span>
+                </div>
+                
+                <div class="image-preview-container">
+                  <div class="image-preview-wrapper">
+                    <img id="imagePreview" class="image-preview" alt="Image Preview" />
+                    <div class="image-overlay" id="imageOverlay">คลิกเพื่อลบ</div>
+                  </div>
+                </div>
               </div>
 
               <div class="col-md-6">
@@ -70,6 +148,36 @@
       </div>
     </div>
   </div>
+
+  <script>
+    const imageUpload = document.getElementById('imageUpload');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewPlaceholder = document.getElementById('previewPlaceholder');
+    const imageOverlay = document.getElementById('imageOverlay');
+
+    imageUpload.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+
+      if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          imagePreview.src = event.target.result;
+          imagePreview.classList.add('active');
+          previewPlaceholder.classList.add('hidden');
+        };
+
+        reader.readAsDataURL(file);
+      }
+    });
+
+    imagePreview.addEventListener('click', function () {
+      imageUpload.value = '';
+      imagePreview.src = '';
+      imagePreview.classList.remove('active');
+      previewPlaceholder.classList.remove('hidden');
+    });
+  </script>
 
 </body>
 
