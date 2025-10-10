@@ -635,12 +635,13 @@ router.post("/borrow/update/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
+
 router.post("/borrow/reject/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const rejectReason = req.body.rejectReason || "ไม่มีเหตุผลระบุ";
 
-    // ✅ ต้อง populate ก่อน update เพื่อดึงข้อมูล user และ equipment
+    // ดึง borrow record พร้อม populate user และ equipment
     const borrowRecord = await Borrow.findById(id)
       .populate("user_id")
       .populate("equipment_id");
@@ -649,16 +650,23 @@ router.post("/borrow/reject/:id", async (req, res) => {
       return res.status(404).send("ไม่พบข้อมูลการยืม");
     }
 
-    // ✅ อัพเดทสถานะเป็น rejected พร้อมบันทึกเหตุผล
-    await Borrow.findByIdAndUpdate(id, {
-      status: "rejected"
-    });
+    // อัปเดตสถานะ borrow เป็น rejected
+    borrowRecord.status = "rejected";
+    borrowRecord.note = rejectReason;
+    await borrowRecord.save();
 
-    // ✅ สร้าง Notification
+    // ✅ อัปเดตสถานะอุปกรณ์กลับเป็น available
+    if (borrowRecord.equipment_id) {
+      await Equipment.findByIdAndUpdate(borrowRecord.equipment_id._id, {
+        status: "available"
+      });
+    }
+
+    // สร้าง Notification
     const notification = new Notification({
       user_id: borrowRecord.user_id._id,
       equipment_id: borrowRecord.equipment_id._id,
-      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ `,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ`,
       reason: rejectReason,
       type: 'reject',
       admin_id: req.session.userId,
@@ -672,6 +680,7 @@ router.post("/borrow/reject/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
+
 
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
 function formatThaiDate(date) {
