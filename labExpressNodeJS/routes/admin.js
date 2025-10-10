@@ -665,6 +665,86 @@ router.get("/borrow_Details/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
   }
 });
+
+// router.get("/editcategory/:id", async (req, res) => {
+//   const id = req.params.id;
+//   const category = await Category.findById(id);
+//   res.render("editCategory_admin", {
+//     title: "แก้ไขหมวดหมู่",
+//     category,
+//     layout: "layouts/navadmin",
+//     activePage: 'editcategory' 
+//   });
+// });
+
+router.put("/updatecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณากรอกชื่อประเภทอุปกรณ์"
+      });
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      id,
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "อัปเดตประเภทอุปกรณ์เรียบร้อย",
+      category: updatedCategory
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอัปเดต",
+      error: error.message
+    });
+  }
+});
+router.delete("/deletecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedCategory = await Category.findByIdAndUpdate(
+      id,
+      { deleted_at: new Date() },
+      { new: true }
+    );
+
+    if (!deletedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "ลบประเภทอุปกรณ์เรียบร้อย"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบ",
+      error: error.message
+    });
+  }
+});
+
 router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;

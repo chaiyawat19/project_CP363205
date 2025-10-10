@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <title>
     <%= title %>
   </title>
@@ -70,10 +72,13 @@
                           <%= category.name %>
                         </td>
                         <td class="text-center">
-                          <a href="/admin/editcategory/<%= category._id %>" class="btn btn-sm btn-warning me-2">
+                          <button onclick="edit('<%= category._id %>', '<%= category.name %>')"
+                            class="btn btn-sm btn-warning me-2">
                             <i class="fas fa-edit"></i> แก้ไข
-                          </a>
-                          <a href="/admin/deletecategory/<%= category._id %>" class="btn btn-sm btn-danger">
+                          </button>
+                          <a href="javascript:void(0)"
+                            onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')"
+                            class="btn btn-sm btn-danger">
                             <i class="fas fa-trash-alt"></i> ลบ
                           </a>
                         </td>
@@ -92,6 +97,113 @@
       </div>
     </div>
   </div>
+  <script>
+    async function edit(categoryId, categoryName) {
+      const { value: newName } = await Swal.fire({
+        title: "แก้ไขประเภทอุปกรณ์",
+        input: "text",
+        inputLabel: "ชื่อประเภทอุปกรณ์",
+        inputValue: categoryName,
+        showCancelButton: true,
+        cancelButtonText: "ยกเลิก",
+        confirmButtonText: "บันทึก",
+        inputValidator: (value) => {
+          if (!value) {
+            return "กรุณากรอกชื่อประเภทอุปกรณ์!";
+          }
+          if (value.trim() === categoryName) {
+            return "ชื่อไม่มีการเปลี่ยนแปลง";
+          }
+        }
+      });
+
+      if (newName) {
+        try {
+          const response = await fetch(`/admin/updatecategory/${categoryId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: newName })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "สำเร็จ",
+              text: "แก้ไขประเภทอุปกรณ์เรียบร้อย",
+              timer: 1500,
+              willClose: () => {
+                location.reload();
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "ผิดพลาด",
+              text: data.message || "ไม่สามารถแก้ไขประเภทอุปกรณ์ได้"
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "ข้อผิดพลาด",
+            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
+          });
+        }
+      }
+    }
+    async function deleteCategory(categoryId, categoryName) {
+      const { isConfirmed } = await Swal.fire({
+        title: "ยืนยันการลบ",
+        text: `คุณต้องการลบประเภทอุปกรณ์ "${categoryName}" หรือไม่?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545", 
+        cancelButtonColor: "#6c757d", 
+        cancelButtonText: "ยกเลิก"
+      });
+
+      if (isConfirmed) {
+        try {
+          const response = await fetch(`/admin/deletecategory/${categoryId}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "สำเร็จ",
+              text: "ลบประเภทอุปกรณ์เรียบร้อย",
+              timer: 1500,
+              willClose: () => {
+                location.reload();
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "ผิดพลาด",
+              text: data.message || "ไม่สามารถลบประเภทอุปกรณ์ได้"
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "ข้อผิดพลาด",
+            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
+          });
+        }
+      }
+    }
+  </script>
 
 </body>
 
