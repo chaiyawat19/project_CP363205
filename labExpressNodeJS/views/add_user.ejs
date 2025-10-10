@@ -4,47 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
         .container {
             max-width: 600px;
             margin: 50px auto;
-            padding: 20px;
+            padding: 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
         }
         input, select {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
             box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #37b594;
+            outline: none;
+        }
+        small {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: block;
         }
         .btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
             margin-right: 10px;
             text-decoration: none;
             display: inline-block;
         }
         .btn-primary {
-            background-color: #007bff;
+            background-color: #37b594;
             color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2f9b7e;
         }
         .btn-secondary {
             background-color: #6c757d;
             color: white;
         }
-        .error {
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        span.required {
             color: red;
-            margin-top: 10px;
         }
     </style>
 </head>
@@ -52,30 +87,30 @@
     <div class="container">
         <h1><%= title %></h1>
         
-        <form action="/admin/manage_user/add" method="POST" onsubmit="return validateForm()">
+        <form id="addUserForm" action="/admin/manage_user/add" method="POST">
             <div class="form-group">
-                <label for="fname">ชื่อ: <span style="color: red;">*</span></label>
+                <label for="fname">ชื่อ: <span class="required">*</span></label>
                 <input type="text" id="fname" name="fname" required>
             </div>
             
             <div class="form-group">
-                <label for="lname">นามสกุล: <span style="color: red;">*</span></label>
+                <label for="lname">นามสกุล: <span class="required">*</span></label>
                 <input type="text" id="lname" name="lname" required>
             </div>
             
             <div class="form-group">
-                <label for="email">อีเมล: <span style="color: red;">*</span></label>
+                <label for="email">อีเมล: <span class="required">*</span></label>
                 <input type="email" id="email" name="email" required>
             </div>
             
             <div class="form-group">
-                <label for="password">รหัสผ่าน: <span style="color: red;">*</span></label>
-                <input type="password" id="password" name="password" required minlength="6">
-                <small>ต้องมีอย่างน้อย 6 ตัวอักษร</small>
+                <label for="password">รหัสผ่าน: <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required minlength="4">
+                <small>ต้องมีอย่างน้อย 4 ตัวอักษร</small>
             </div>
             
             <div class="form-group">
-                <label for="userRole">บทบาท: <span style="color: red;">*</span></label>
+                <label for="userRole">บทบาท: <span class="required">*</span></label>
                 <select id="userRole" name="userRole" required>
                     <option value="">-- เลือกบทบาท --</option>
                     <option value="user">User</option>
@@ -94,7 +129,9 @@
     </div>
 
     <script>
-        function validateForm() {
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
             const fname = document.getElementById('fname').value.trim();
             const lname = document.getElementById('lname').value.trim();
             const email = document.getElementById('email').value.trim();
@@ -102,17 +139,30 @@
             const userRole = document.getElementById('userRole').value;
 
             if (!fname || !lname || !email || !password || !userRole) {
-                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
                 return false;
             }
 
-            if (password.length < 6) {
-                alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+            if (password.length < 4) {
+                Swal.fire('ข้อผิดพลาด', 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร', 'error');
                 return false;
             }
 
-            return true;
-        }
+            Swal.fire({
+                title: 'ยืนยันการบันทึก?',
+                text: "คุณต้องการเพิ่มผู้ใช้นี้หรือไม่",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#37b594',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit();
+                }
+            });
+        });
     </script>
 </body>
 </html>

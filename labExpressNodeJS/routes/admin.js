@@ -730,4 +730,29 @@ router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
   }
 });
 
+
+
+// ตรวจสอบรหัสผ่านของ Super Admin
+router.post("/verify-superadmin", async (req, res) => {
+  try {
+    const { password } = req.body;
+    console.log("Password from client:", password); // เช็คว่ามีค่ามาจริงหรือไม่
+
+    const superAdmin = await User.findOne({ email: "testadmin@gmail.com" });
+    if (!superAdmin) return res.json({ success: false, message: "ไม่พบ Super Admin" });
+
+    const isMatch = await bcrypt.compare(password, superAdmin.password);
+    console.log("isMatch:", isMatch); // ต้องเป็น true ถ้ารหัสถูกต้อง
+
+    if (!isMatch) return res.json({ success: false, message: "รหัสผ่านไม่ถูกต้อง" });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "เกิดข้อผิดพลาดในระบบ" });
+  }
+});
+
+
+
 module.exports = router;
