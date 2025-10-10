@@ -69,12 +69,11 @@ router.post("/register", async (req, res, next) => {
       email,
       password: hashedPassword,
       userProfile: `https://avatar.iran.liara.run/username?username=${fname}+${lname}`,
-      userRole: "user",
+      userRole: "user"
     });
 
     await newUser.save();
-
-    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", success: "สมัครสมาชิกเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้" });
+    return res.render("register", { title: "เข้าสู่ระบบ", layout: "layouts/auth", success: "สมัครสมาชิกเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้" });
 
   } catch (error) {
     console.error(error);
