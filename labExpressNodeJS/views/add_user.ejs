@@ -84,7 +84,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" >
         <h1><%= title %></h1>
         
         <form id="addUserForm" action="/admin/manage_user/add" method="POST">
@@ -108,13 +108,21 @@
                 <input type="password" id="password" name="password" required minlength="4">
                 <small>ต้องมีอย่างน้อย 4 ตัวอักษร</small>
             </div>
+
+            <!-- เพิ่ม userRole dropdown -->
+            <div class="form-group">
+                <label for="userRole">บทบาท: <span class="required">*</span></label>
+                <select id="userRole" name="userRole" required>
+                    <option value="user" selected>user</option>
+                    <option value="admin">admin</option>
+                </select>
+            </div>
             
-           <div class="form-group">
+            <div class="form-group">
                 <label for="department">แผนก:</label>
                 <select id="department" name="department">
                     <% if (departments && departments.length > 0) { %>
                         <% 
-                        // กำหนดค่าเริ่มต้น
                         const defaultDept = 'Customer Service'; 
                         %>
                         <% departments.forEach(dept => { %>
@@ -142,7 +150,7 @@
             const lname = document.getElementById('lname').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const userRole = document.getElementById('userRole').value;
+            const userRole = document.getElementById('userRole').value; // ตอนนี้มี element แล้ว
 
             if (!fname || !lname || !email || !password || !userRole) {
                 Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
