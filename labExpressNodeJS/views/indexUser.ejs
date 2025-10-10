@@ -62,13 +62,14 @@
       </div>
 
 <hr class="my-4">
-<h3 class="fw-bold text-primary mb-3">แจ้งซ่อมอุปกรณ์ที่กำลังยืม</h3>
+
 
 <% if (borrowedItems.length > 0) { %>
-  <div class="card shadow-sm p-4">
+  <div class="card shadow-sm p-4 mb-4">
+    <h3 class="fw-bold text-primary mb-3">แจ้งซ่อมอุปกรณ์ที่กำลังยืม</h3>
     <div class="table-responsive">
-      <table class="table table-bordered align-middle">
-        <thead class="table-warning">
+      <table class="table table-hover align-middle">
+        <thead class="table-blue">
           <tr>
             <th scope="col">ลำดับ</th>
             <th scope="col">ชื่ออุปกรณ์</th>
@@ -93,7 +94,7 @@
             %>
             <tr>
               <td><%= index + 1 %></td>
-              <td><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></td>
+              <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></strong></td>
               <td><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
               <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
               <td>

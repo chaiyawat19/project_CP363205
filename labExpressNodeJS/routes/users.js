@@ -165,12 +165,11 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).send("User not found");
+    user.fname = fname;
+    user.lname = lname;
+    user.email = email;
+    user.department = department;
 
-        // อัปเดตข้อมูล Text Fields
-        user.fname = fname;
-        user.lname = lname;
-        user.email = email;
-        user.department = department;
 
         // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
         if (req.file) {

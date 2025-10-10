@@ -42,6 +42,7 @@ const upload = multer({
 
 
 
+
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/login'); 
@@ -283,6 +284,7 @@ router.post(
       // ดึงค่าจาก body
       const { name, category_id, description, location } = req.body;
       const adminId = req.session.userId; // ได้จาก middleware isAdmin
+      const adminProfile = req.session.userProfile || null; // ✅ ป้องกัน undefined
 
       // ไฟล์รูป (ถ้ามี)
       const image = req.file ? req.file.filename : null;
@@ -313,6 +315,7 @@ router.post(
         message,
         reason,
         admin_id: adminId,
+        type: "add"
       }));
 
       // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
@@ -558,7 +561,10 @@ router.post('/confirmreturn/:id', async (req, res) => {
       return res.status(400).send('ไม่มีรหัสรายการยืม');
     }
  
-    const borrow = await Borrow.findById(borrowId);
+    const borrow = await Borrow.findById(borrowId)
+  .populate('equipment_id')
+  .populate('user_id');
+
     if (!borrow) {
       console.error("❌ Borrow record not found");
       return res.status(404).send('ไม่พบข้อมูลการยืม');
@@ -568,6 +574,7 @@ router.post('/confirmreturn/:id', async (req, res) => {
       console.error("❌ Missing equipment_id in borrow");
       return res.status(400).send('ไม่พบอุปกรณ์ที่เกี่ยวข้อง');
     }
+
 
     borrow.status = 'returned';
     borrow.note = note || '';
@@ -581,6 +588,19 @@ router.post('/confirmreturn/:id', async (req, res) => {
     await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
 
     console.log(`อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
+    const noti = new Notification({
+      user_id: borrow.user_id,
+      equipment_id: borrow.equipment_id,
+      message: `การคืนอุปกรณ์ "${borrow.equipment_id.name}" ของคุณได้รับการยืนยันแล้ว`,
+      reason: condition,
+      type: 'return',
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile || null
+    });
+
+    await noti.save();
+
+    console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
   } catch (err) {
     console.error('❌ Error confirming return:', err);
@@ -632,10 +652,34 @@ router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    await Borrow.findByIdAndUpdate(id, {
-      status: "borrowed", 
-      return_date: req.body.Date, 
-      note: req.body.note,   
+      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");
+    if (!borrowRecord) {
+      return res.status(404).send("ไม่พบข้อมูลการยืม");
+    }
+
+    // ✅ อัปเดตสถานะการยืม
+    borrowRecord.status = "borrowed";
+    borrowRecord.return_date = req.body.Date;
+    borrowRecord.note = req.body.note;
+    await borrowRecord.save();
+
+   // ✅ สร้าง Notification
+    const notification = new Notification({
+      user_id: borrowRecord.user_id._id,
+      equipment_id: borrowRecord.equipment_id._id,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`,
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile
+    });
+    await notification.save();
+
+    // ✅ ส่งอีเมลแจ้งผู้ใช้ (await เพื่อรอให้เสร็จ)
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`
     });
 
     res.redirect("/admin/Borrowequipment"); 
@@ -644,19 +688,60 @@ router.post("/borrow/update/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
-router.get("/borrow/reject/:id", async (req, res) => {
+
+router.post("/borrow/reject/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    const rejectReason = req.body.rejectReason || "ไม่มีเหตุผลระบุ";
 
-    await Borrow.findByIdAndUpdate(id, {
-      status: "rejected", 
+    // ดึง borrow record พร้อม populate user และ equipment
+    const borrowRecord = await Borrow.findById(id)
+      .populate("user_id")
+      .populate("equipment_id");
+
+    if (!borrowRecord) {
+      return res.status(404).send("ไม่พบข้อมูลการยืม");
+    }
+
+    // อัปเดตสถานะ borrow เป็น rejected
+    borrowRecord.status = "rejected";
+    borrowRecord.note = rejectReason;
+    await borrowRecord.save();
+
+    // ✅ อัปเดตสถานะอุปกรณ์กลับเป็น available
+    if (borrowRecord.equipment_id) {
+      await Equipment.findByIdAndUpdate(borrowRecord.equipment_id._id, {
+        status: "available"
+      });
+    }
+
+    // สร้าง Notification
+    const notification = new Notification({
+      user_id: borrowRecord.user_id._id,
+      equipment_id: borrowRecord.equipment_id._id,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ`,
+      reason: rejectReason,
+      type: 'reject',
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile
     });
-    res.redirect("/admin/Borrowequipment"); 
+    await notification.save();
+
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณไม่ได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณไม่ได้รับการอนุมัติ\nเหตุผล: ${rejectReason}`
+    });
+
+    res.redirect("/admin/Borrowequipment");
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
+
 
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
 function formatThaiDate(date) {
@@ -867,7 +952,9 @@ router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => 
       const id = req.params.id; //ดึงค่า id จาก URL (เช่น “652f1b87d3...”)
       
 
+
       const { admin_comment, status, completion_date } = req.body;
+
 
       // Validate status ถ้ามีค่าเข้ามา
       let newStatus = undefined;
