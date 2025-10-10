@@ -155,7 +155,7 @@ router.get('/', isAdmin, async (req, res) => {
 
 var RepairRequest = require("../models/Reqair_requests");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+
 
 router.get("/", isAdmin, (req, res) => {
   res.render("indexAdmin", {
@@ -298,32 +298,32 @@ router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
   }
 });
 
-router.get('/editEquipment/:id', isAdmin, async (req, res) => {
-  try {
-    const equipmentId = req.params.id;
-    const equipment = await listEquipment.findById(equipmentId).populate('category_id');
-    const categories = await Category.find({ deleted_at: null });
-    if (!equipment) {
-      return res.status(404).send('ไม่พบอุปกรณ์');
-    }
-    res.render('editEquipmentAdmin', {
-      title: equipment.name,
-      layout: 'layouts/navadmin',
-      activePage: 'listitemuser',
-    });
+// router.get('/editEquipment/:id', isAdmin, async (req, res) => {
+//   try {
+//     const equipmentId = req.params.id;
+//     const equipment = await listEquipment.findById(equipmentId).populate('category_id');
+//     const categories = await Category.find({ deleted_at: null });
+//     if (!equipment) {
+//       return res.status(404).send('ไม่พบอุปกรณ์');
+//     }
+//     res.render('editEquipmentAdmin', {
+//       title: equipment.name,
+//       layout: 'layouts/navadmin',
+//       activePage: 'listitemuser',
+//     });
 
-    res.render("equipmentDetailAdmin", {
-      title: "รายละเอียดอุปกรณ์",
-      layout: "layouts/navadmin",
-      activePage: "listitemuser",
-      equipment,
-      categories,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
-  }
-});
+//     res.render("equipmentDetailAdmin", {
+//       title: "รายละเอียดอุปกรณ์",
+//       layout: "layouts/navadmin",
+//       activePage: "listitemuser",
+//       equipment,
+//       categories,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+//   }
+// });
 
 router.get("/editEquipment/:id", isAdmin, async (req, res) => {
   try {
