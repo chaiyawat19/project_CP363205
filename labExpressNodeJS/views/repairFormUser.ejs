@@ -6,22 +6,85 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        html,
         body {
-            height: 100%;
-            margin: 0;
-            background-color: #f9fafb;
             font-family: 'Sarabun', sans-serif;
+            background-color: #f9fafb;
         }
 
-        .wrapper {
+        /* Sidebar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo h2 {
+            color: #003F8F;
+            margin: 0;
+        }
+
+        .logo small {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .menu ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .menu a {
+            display: block;
+            text-decoration: none;
+            color: black;
+            padding: 10px 20px;
+            transition: 0.3s;
+        }
+
+        .menu a.active-link, .menu a:hover {
+            background: #C6CFFF;
+            color: #3758F9;
+            font-weight: bold;
+        }
+
+        .user-info {
             display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            height: 100%;
-            padding-top: 50px;
+            align-items: center;
+            padding: 10px 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .user-info .detail {
+            margin-left: 10px;
+        }
+
+        .user-info .detail p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* Content */
+        .content-wrapper {
+            margin-left: 220px;
+            padding: 30px;
         }
 
         .card {
@@ -31,6 +94,7 @@
             border-radius: 15px;
             box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
             padding: 40px 30px;
+            margin: auto;
         }
 
         .repair-title {
@@ -64,16 +128,14 @@
             color: #333;
         }
 
-        .form-control,
-        .form-select {
+        .form-control, .form-select {
             border-radius: 5px;
             padding: 10px 15px;
             font-size: 16px;
             border: 1px solid #ccc;
         }
 
-        .form-control:focus,
-        .form-select:focus {
+        .form-control:focus, .form-select:focus {
             border-color: #577bff;
             outline: none;
             box-shadow: 0 0 5px rgba(87, 123, 255, 0.5);
@@ -100,25 +162,50 @@
 </head>
 
 <body>
-    <div class="wrapper">
+
+    <!-- Sidebar / Navbar -->
+    <nav>
+        <div class="logo">
+            <h2>AssetFlow</h2>
+            <small>ระบบยืม-คืนอุปกรณ์</small>
+        </div>
+        <div class="menu">
+            <ul>
+                <li><a href="/users" class="<%= activePage === 'dashboard' ? 'active-link' : '' %>">แดชบอร์ด</a></li>
+                <li><a href="/users/listitemuser" class="<%= activePage === 'listitemuser' ? 'active-link' : '' %>">รายการอุปกรณ์</a></li>
+                <li><a href="/users/borrowreturn" class="<%= activePage === 'borrowreturn' ? 'active-link' : '' %>">รายการยืมและคืนอุปกรณ์</a></li>
+                <li><hr></li>
+                <li><a href="/users/setting">การตั้งค่า</a></li>
+                <li><a href="/logout">ออกจากระบบ</a></li>
+            </ul>
+        </div>
+        <div class="user-info">
+            <img src="<%= user.userProfile %>" alt="User">
+            <div class="detail">
+                <p><%= user.fname %> <%= user.lname %></p>
+                <p><%= user.email %></p>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="content-wrapper">
         <div class="card">
-            <a href="/users" class="back-btn-top">กลับ</a>
+            <a href="<%= baseUrl %>" class="back-btn-top"><i class="bi bi-arrow-left"></i> กลับ</a>
             <h1 class="repair-title">แจ้งซ่อม</h1>
 
             <% if (errorMessage) { %>
-                <div class="alert alert-danger">
-                    <%= errorMessage %>
-                </div>
+                <div class="alert alert-danger"><%= errorMessage %></div>
             <% } %>
 
-            <form action="/users/repair" method="POST" id="repairForm">
+            <form action="<%= baseUrl %>/repair" method="POST" id="repairForm">
                 <!-- เลือกอุปกรณ์ -->
                 <div class="mb-4">
                     <label for="equipmentId" class="form-label">เลือกอุปกรณ์ที่ต้องการแจ้งซ่อม</label>
                     <select name="equipmentId" id="equipmentId" class="form-select" required>
                         <option value="" disabled selected>-- กรุณาเลือกอุปกรณ์ --</option>
-                        <% if (equipments && equipments.length > 0) { %>
-                            <% equipments.forEach(eq => { %>
+                        <% if (equipments && equipments.length>0) { %>
+                            <% equipments.forEach(eq=> { %>
                                 <option value="<%= eq._id %>"><%= eq.name %></option>
                             <% }) %>
                         <% } else { %>
@@ -127,17 +214,17 @@
                     </select>
                 </div>
 
-                <!-- รายละเอียดเพิ่มเติม -->
-                <div class="mb-4">
-                    <label for="type" class="form-label">รายละเอียดเพิ่มเติม (ถ้ามี)</label>
-                    <textarea class="form-control" name="type" id="type" rows="3" placeholder="อธิบายปัญหาที่พบ"></textarea>
-                </div>
-
                 <!-- สถานที่เก็บอุปกรณ์ -->
                 <div class="mb-4">
                     <label class="form-label">สถานที่เก็บอุปกรณ์</label>
                     <input type="text" id="equipmentLocation" class="form-control" readonly>
                     <input type="hidden" name="location" id="equipmentLocationHidden">
+                </div>
+
+                <!-- รายละเอียดเพิ่มเติม -->
+                <div class="mb-4">
+                    <label for="type" class="form-label">รายละเอียดเพิ่มเติม (ถ้ามี)</label>
+                    <textarea class="form-control" name="type" id="type" rows="3" placeholder="อธิบายปัญหาที่พบ"></textarea>
                 </div>
 
                 <button type="submit" class="submit-btn-style">แจ้งซ่อม</button>
@@ -159,7 +246,8 @@
                 hiddenLocation.value = '';
                 return;
             }
-            fetch(`/users/equipment/${equipmentId}`)
+
+            fetch(`${form.action.replace('/repair','')}/equipment/${equipmentId}`)
                 .then(res => res.json())
                 .then(data => {
                     locationInput.value = data.location || '';
@@ -180,6 +268,7 @@
             }
         });
     </script>
+
 </body>
 
 </html>
