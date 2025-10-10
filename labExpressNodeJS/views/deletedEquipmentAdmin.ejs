@@ -1,67 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
 </head>
-<body>
-    <h1><%= title %></h1>
-    <a href="/admin/listitemuser">กลับไปยังรายการอุปกรณ์ปกติ</a>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ชื่ออุปกรณ์</th>
-                <th>ประเภท</th>
-                <th>รายละเอียด</th>
-                <th>สถานะ</th>
-                <th>รูปภาพ</th>
-                <th>สถานที่เก็บ</th>
-                <th>วันเวลาที่ลบ</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (deletedEquipmentList.length === 0) { %>
-                <tr>
-                    <td colspan="8">ไม่มีอุปกรณ์ที่ถูกลบ</td>
-                </tr>
-            <% } %>
-            <% deletedEquipmentList.forEach(equipment => { %>
-                <tr>
-                    <td><%= equipment.name %></td>
-                    <td><%= equipment.category_id ? equipment.category_id.name : '-' %></td>
-                    <td><%= equipment.description %></td>
-                    <td> 
-                        <% if (equipment.status === "available") { %>
-                            <span class="badge bg-success">พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "unavailable") { %>
-                            <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "repair") { %>
-                            <span class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
-                        <% } else { %>
-                            <span class="badge bg-secondary">ไม่ทราบสถานะ</span>
-                        <% } %>
-                    </td>
-                    <td>
-                        <% if (equipment.image) { %>
-                            <img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100">
-                        <% } else { %>
-                            -
-                        <% } %>
-                    </td>
-                    <td><%= equipment.location %></td>
-                    <td><%= equipment.deleted_at.toLocaleDateString('th-TH') %></td>
-                    <td>
-                        <!-- ตัวอย่างปุ่มกู้คืน -->
-                        <form action="/admin/restoreEquipment/<%= equipment._id %>" method="post" style="display:inline;" onsubmit="return confirm('คุณต้องการกู้คืน <%= equipment.name %>?')">
-                            <button type="submit">กู้คืน</button>
-                        </form>
-                    </td>
-                </tr>
-            <% }) %>
-        </tbody>
-    </table>
+<body>
+
+    <div class="container my-5">
+        <div class="col-12 mb-3">
+            <a href="/admin/listitemuser" class="btn btn-dark">กลับ</a>
+        </div>
+        <div class="row">
+            <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-trash-restore me-2 text-danger"></i>
+                    <%= title %>
+                </h2>
+            </div>
+
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">อุปกรณ์ที่ถูกลบทั้งหมด (<%= deletedEquipmentList.length %> รายการ)</h5>
+                    </div>
+                    <div class="card-body p-0">
+
+                        <% if (deletedEquipmentList.length===0) { %>
+                            <div class="alert alert-info m-3 mb-4" role="alert">
+                                <i class="fas fa-check-circle me-2"></i> ไม่มีอุปกรณ์ที่ถูกลบในขณะนี้
+                            </div>
+                            <% } else { %>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col">อุปกรณ์</th>
+                                                <th scope="col">ประเภท</th>
+                                                <th scope="col">สถานะล่าสุด</th>
+                                                <th scope="col">สถานที่เก็บ</th>
+                                                <th scope="col">วันที่ลบ</th>
+                                                <th scope="col" class="text-center">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% deletedEquipmentList.forEach(equipment=> { %>
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <% if (equipment.image) { %>
+                                                                <img src="/uploads/<%= equipment.image %>"
+                                                                    alt="รูปอุปกรณ์" class="rounded me-3"
+                                                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                                                <% } %>
+                                                                    <div>
+                                                                        <strong>
+                                                                            <%= equipment.name %>
+                                                                        </strong>
+                                                                        <p class="text-muted small mb-0">
+                                                                            <%= equipment.description.substring(0, 40) +
+                                                                                (equipment.description.length> 40 ?
+                                                                                '...' : '') %>
+                                                                        </p>
+                                                                    </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <%= equipment.category_id ? equipment.category_id.name : '-' %>
+                                                    </td>
+                                                    <td>
+                                                        <% if (equipment.status==="available" ) { %>
+                                                            <span class="badge bg-success">พร้อมใช้งาน</span>
+                                                            <% } else if (equipment.status==="unavailable" ) { %>
+                                                                <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
+                                                                <% } else if (equipment.status==="repair" ) { %>
+                                                                    <span
+                                                                        class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
+                                                                    <% } else { %>
+                                                                        <span
+                                                                            class="badge bg-secondary">ไม่ทราบสถานะ</span>
+                                                                        <% } %>
+                                                    </td>
+                                                    <td>
+                                                        <%= equipment.location %>
+                                                    </td>
+                                                    <td>
+                                                        <%= new Date(equipment.deleted_at).toLocaleDateString('th-TH')
+                                                            %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <form action="/admin/restoreEquipment/<%= equipment._id %>"
+                                                            method="post"
+                                                            onsubmit="return confirm('คุณต้องการกู้คืน <%= equipment.name %>?')"
+                                                            class="d-inline">
+                                                            <button type="submit" class="btn btn-sm btn-success">
+                                                                <i class="fas fa-sync-alt me-1"></i> กู้คืน
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
+
 </html>
