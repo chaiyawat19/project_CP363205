@@ -9,6 +9,7 @@ const Department = require('../models/Department');;
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs')
+const RepairRequest = require("../models/Reqair_requests");
 
 // ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
 
@@ -50,12 +51,43 @@ router.use(isUser, async (req, res, next) => {
 });
 
 
+const getRepairStatusBadge = (status) => {
+  switch (status) {
+    case 'pending':
+      return '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
+    case 'in_progress':
+      return '<span class="badge bg-info text-white">กำลังซ่อม</span>';
+    case 'completed':
+      return '<span class="badge bg-success">ซ่อมเสร็จแล้ว</span>';
+    case 'rejected':
+      return '<span class="badge bg-danger">ปฏิเสธ</span>';
+    default:
+      return `<span class="badge bg-secondary">${status}</span>`;
+  }
+};
 
 router.get('/', isUser, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
-    const borrows = await Borrow.find({ user_id: req.session.userId }).populate('equipment_id').populate('user_id').sort({ created_at: -1 });
+    const borrows = await Borrow.find({ user_id: req.session.userId })
+      .populate('equipment_id')
+      .populate('user_id')
+      .sort({ created_at: -1 });
+    
+    // ดึงข้อมูล repair requests ของ user คนนี้
+    const repairRequests = await RepairRequest.find({ user_id: req.session.userId })
+      .populate('equipment_id')
+      .sort({ created_at: -1 });
+    
+    // สร้าง Map เพื่อเช็กว่าอุปกรณ์ไหนมีการแจ้งซ่อมแล้วบ้าง (และยังไม่เสร็จ)
+    const equipmentRepairStatus = {};
+    repairRequests.forEach(repair => {
+      if (repair.equipment_id && repair.status !== 'completed' && repair.status !== 'rejected') {
+        equipmentRepairStatus[repair.equipment_id._id.toString()] = repair.status;
+      }
+    });
+    
     res.render('indexUser', {
       title: 'หน้าหลัก User',
       name: `${user.fname} ${user.lname}`,
@@ -63,7 +95,10 @@ router.get('/', isUser, async (req, res) => {
       activePage: 'dashboard',
       user: user,
       equipments: equipments,
-      borrows: borrows
+      borrows: borrows,
+      repairRequests: repairRequests,
+      equipmentRepairStatus: equipmentRepairStatus,
+      getRepairStatusBadge: getRepairStatusBadge
     });
   } catch (error) {
     console.error('Error fetching user info:', error);
@@ -74,11 +109,13 @@ router.get('/', isUser, async (req, res) => {
       activePage: 'dashboard',
       user: null,
       equipments: [],
-      borrows: []
+      borrows: [],
+      repairRequests: [],
+      equipmentRepairStatus: {},
+      getRepairStatusBadge: getRepairStatusBadge 
     });
   }
-})
-
+});
 
 const bcrypt = require('bcryptjs');
 
@@ -218,17 +255,6 @@ router.post('/setting/password', isUser, ensureUserId, async (req, res) => {
     console.error(err);
     res.redirect('/users/setting?err=pass_fail');
   }
-});
-
-
-
-router.get('/', isUser, (req, res) => {
-  res.render('indexUser', {
-    title: 'หน้าหลัก User',
-    name: req.session.userName,
-    layout: 'layouts/navuser',
-    activePage: 'dashboard' // อันนี้เอาไว้ทำ active จะได้รู้ว่าเราเปิดหน้าไหนอยู่
-  });
 });
 
 router.get('/logout', (req, res) => {
@@ -420,5 +446,33 @@ router.post('/return/:borrowId', isUser, async (req, res) => {
     res.status(500).redirect('/users/borrowreturn');
   }
 });
+
+router.post('/repair/:equipmentId', isUser, async (req, res) => {
+  try {
+    const { equipmentId } = req.params;
+    const { issue_description } = req.body;
+    const userId = req.session.userId;
+
+    if (!issue_description || !equipmentId) {
+      return res.status(400).send('กรุณากรอกรายละเอียดให้ครบถ้วน');
+    }
+
+    const newRepair = new RepairRequest({
+      user_id: userId,
+      equipment_id: equipmentId,
+      issue_description: issue_description,
+      status: 'pending', // สถานะเริ่มต้น
+      created_at: new Date(),
+    });
+
+    await newRepair.save();
+
+    res.redirect('/users?msg=repair_submitted');
+  } catch (err) {
+    console.error('Error creating repair request:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการบันทึกข้อมูลแจ้งซ่อม');
+  }
+});
+
 
 module.exports = router;

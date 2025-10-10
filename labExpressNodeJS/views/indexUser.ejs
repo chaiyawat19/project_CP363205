@@ -1,89 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <style>
-        .bg-blue {
-            background-color: #0d6efd !important;
-        }
-        .bg-light-blue {
-            background-color: #4a9eff !important;
-        }
-        .bg-sky-blue {
-            background-color: #00bcd4 !important;
-        }
-        .table-blue {
-            --bs-table-bg: #cfe2ff;
-            --bs-table-striped-bg: #b6d4fe;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
 </head>
 <body>
-    <div class="container-fluid py-4">
-        <% if (user) { %>
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h1 class="display-5 fw-bold text-blue">ยินดีต้อนรับ, คุณ <%= user.fname %> <%= user.lname %></h1>
-                    <hr class="my-3">
-                </div>
-            </div>
-            
+  <div class="container-fluid py-4">
+    <% if (user) { %>
+      <div class="row mb-4">
+        <div class="col-12">
+          <h1 class="display-5 fw-bold text-blue">
+            ยินดีต้อนรับ, คุณ <%= user.fname %> <%= user.lname %>
+          </h1>
+          <hr class="my-3">
+        </div>
+      </div>
 
-<div class="card-body">
-  <% 
-  // กรองข้อมูลเฉพาะที่ status เป็น 'borrowed' และ user_id ตรงกับคนล็อกอิน
-  const borrowedItems = borrows.filter(b => 
-    b.status === 'borrowed' && 
-    String(b.user_id?._id || b.user_id) === String(user._id)
-  ); 
-%>
+      <% 
+        // กรองเฉพาะรายการที่ user กำลังยืมอยู่
+        const borrowedItems = borrows.filter(b => 
+          b.status === 'borrowed' && 
+          String(b.user_id?._id || b.user_id) === String(user._id)
+        ); 
+      %>
+
+      <div class="card shadow-sm p-4 mb-4">
+        <% if (borrowedItems.length > 0) { %>
+          <h3 class="fw-bold text-primary mb-3">อุปกรณ์ที่คุณกำลังยืม</h3>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-blue">
+                <tr>
+                  <th scope="col">ลำดับ</th>
+                  <th scope="col">ชื่ออุปกรณ์</th>
+                  <th scope="col">วันที่ยืม</th>
+                  <th scope="col">วันที่ต้องคืน</th>
+                  <th scope="col">หมายเหตุ</th>
+                  <th scope="col">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% borrowedItems.forEach((borrow, index) => { %>
+                  <tr>
+                    <td><%= index + 1 %></td>
+                    <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></strong></td>
+                    <td><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
+                    <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
+                    <td><%= borrow.note || '-' %></td>
+                    <td><span class="badge bg-success text-white">กำลังยืม</span></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="alert alert-primary text-center" role="alert">
+            <i class="bi bi-info-circle me-2"></i>คุณยังไม่ได้ยืมอุปกรณ์ใด ๆ
+          </div>
+        <% } %>
+      </div>
+
+<hr class="my-4">
+<h3 class="fw-bold text-primary mb-3">แจ้งซ่อมอุปกรณ์ที่กำลังยืม</h3>
 
 <% if (borrowedItems.length > 0) { %>
-    <div class="card shadow-sm p-4">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead>
-        <tr>
-          <th scope="col">ลำดับ</th>
-          <th scope="col">ชื่ออุปกรณ์</th>
-          <th scope="col">วันที่ยืม</th>
-          <th scope="col">วันที่ต้องคืน</th>
-          <th scope="col">หมายเหตุ</th>
-          <th scope="col">สถานะ</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% borrowedItems.forEach((borrow, index) => { %>
+  <div class="card shadow-sm p-4">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-warning">
           <tr>
-            <td><%= index + 1 %></td>
-            <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></strong></td>
-            <td><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
-            <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
-            <td><%= borrow.note || '-' %></td>
-            <td>
-              <span class="badge bg-success text-white">กำลังยืม</span>
-            </td>
+            <th scope="col">ลำดับ</th>
+            <th scope="col">ชื่ออุปกรณ์</th>
+            <th scope="col">วันที่ยืม</th>
+            <th scope="col">วันที่ต้องคืน</th>
+            <th scope="col">หมายเหตุ</th>
+            <th scope="col">การดำเนินการ</th>
           </tr>
-        <% }) %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% borrowedItems.forEach((borrow, index) => { %>
+            <% 
+              const equipmentId = borrow.equipment_id._id.toString();
+              const hasRepair = equipmentRepairStatus[equipmentId];
+              
+              // ค้นหา repair request ล่าสุดของอุปกรณ์นี้ (รวมทั้ง rejected)
+              const latestRepair = repairRequests.find(r => 
+                r.equipment_id && 
+                r.equipment_id._id.toString() === equipmentId &&
+                (r.status === 'pending' || r.status === 'in_progress' || r.status === 'rejected')
+              );
+            %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></td>
+              <td><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
+              <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
+              <td>
+                <% if (latestRepair && latestRepair.admin_comment) { %>
+                  <% if (latestRepair.status === 'rejected') { %>
+                    <span class="text-danger fw-bold">⚠️ <%= latestRepair.admin_comment %></span>
+                  <% } else { %>
+                    <%= latestRepair.admin_comment %>
+                  <% } %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <% if (hasRepair && latestRepair && latestRepair.status !== 'rejected') { %>
+                  <%- getRepairStatusBadge(latestRepair.status) %>
+                <% } else if (latestRepair && latestRepair.status === 'rejected') { %>
+                  <%- getRepairStatusBadge(latestRepair.status) %>
+                  <button 
+                    class="btn btn-warning btn-sm text-white ms-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#repairModal"
+                    data-equipment-id="<%= borrow.equipment_id._id %>"
+                    data-equipment-name="<%= borrow.equipment_id.name %>"
+                  >
+                    <i class="bi bi-tools me-1"></i> แจ้งซ่อมอีกครั้ง
+                  </button>
+                <% } else { %>
+                  <button 
+                    class="btn btn-warning btn-sm text-white"
+                    data-bs-toggle="modal"
+                    data-bs-target="#repairModal"
+                    data-equipment-id="<%= borrow.equipment_id._id %>"
+                    data-equipment-name="<%= borrow.equipment_id.name %>"
+                  >
+                    <i class="bi bi-tools me-1"></i> แจ้งซ่อม
+                  </button>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <div class="modal fade" id="repairModal" tabindex="-1" aria-labelledby="repairModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="repairForm" method="POST">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title" id="repairModalLabel">แจ้งซ่อมอุปกรณ์</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">ชื่ออุปกรณ์</label>
+              <input type="text" class="form-control" id="equipmentName" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">รายละเอียดปัญหา</label>
+              <textarea class="form-control" name="issue_description" rows="4" required placeholder="กรอกรายละเอียดปัญหาที่พบ..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-warning text-white">ส่งแจ้งซ่อม</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const repairModal = document.getElementById('repairModal');
+    repairModal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const equipmentId = button.getAttribute('data-equipment-id');
+      const equipmentName = button.getAttribute('data-equipment-name');
+
+      document.getElementById('equipmentName').value = equipmentName;
+
+      const form = document.getElementById('repairForm');
+      form.action = `/users/repair/${equipmentId}`;
+    });
+  </script>
+
 <% } else { %>
-  <div class="alert alert-primary text-center" role="alert">
-    <i class="bi bi-info-circle me-2"></i>คุณยังไม่ได้ยืมอุปกรณ์ใด ๆ
+  <div class="alert alert-secondary text-center" role="alert">
+    <i class="bi bi-info-circle me-2"></i>ไม่มีอุปกรณ์ที่สามารถแจ้งซ่อมได้
   </div>
 <% } %>
-</div>
-</div>
 
-            
-        <% } else { %>
-            <div class="alert alert-danger text-center" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>ไม่พบข้อมูลผู้ใช้
-            </div>
-        <% } %>
-    </div>
+    <% } else { %>
+      <div class="alert alert-danger text-center" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>ไม่พบข้อมูลผู้ใช้
+      </div>
+    <% } %>
+  </div>
 </body>
 </html>
