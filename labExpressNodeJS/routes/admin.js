@@ -3,6 +3,7 @@ var router = express.Router();
 var Category = require("../models/Category");
 const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
+const Notification = require("../models/Notification");
 const upload = require("../middleware/upload");
 const User = require('../models/User');
 const Borrow = require('../models/Borrow');
@@ -213,6 +214,7 @@ router.get("/addEquipment", isAdmin, async (req, res) => {
   }
 });
 
+
 router.post(
   "/addEquipment",
   isAdmin,
@@ -221,29 +223,54 @@ router.post(
     try {
       // ดึงค่าจาก body
       const { name, category_id, description, location } = req.body;
+      const adminId = req.session.userId; // ได้จาก middleware isAdmin
 
       // ไฟล์รูป (ถ้ามี)
       const image = req.file ? req.file.filename : null;
 
-      // สร้าง object ใหม่
+      // ✅ สร้างอุปกรณ์ใหม่
       const newEquipment = new listEquipment({
         name,
         category_id,
         description,
-        status: "available", // กำหนดค่า default
+        status: "available", // ค่า default
         image,
         location,
       });
 
       await newEquipment.save();
 
-      return res.redirect("/admin/listitemuser");
+      // ✅ เตรียมข้อความแจ้งเตือน
+      const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
+      const reason = "เพิ่มอุปกรณ์ใหม่ในระบบ";
+      // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
+      // ✅ ดึง user ทั้งหมด
+      const users = await User.find({}, "_id");
+
+      // ✅ สร้าง array ของ notification สำหรับแต่ละ user
+      const notifications = users.map((u) => ({
+        user_id: u._id,
+        equipment_id: newEquipment._id, // ใช้ id ของอุปกรณ์ที่เพิ่งสร้าง
+        message,
+        reason,
+        admin_id: adminId,
+      }));
+
+      // ✅ บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
+      await Notification.insertMany(notifications);
+
+      // ✅ ส่ง response กลับ
+      res.status(201).json({
+        message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
+        equipment: newEquipment,
+      });
     } catch (error) {
       console.error(error);
-      return res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" });
     }
   }
 );
+
 
 router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
   try {
