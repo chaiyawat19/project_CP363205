@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายการยืนยันการคืนอุปกรณ์</title>
+</head>
+<body>
+  <h1>รายการยืนยันคืนอุปกรณ์</h1>
+  <small>เช็คสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</small>
+  <hr style="color: #3758F9;">
+   <div class="card p-4">
+    <div class="card-body">
+      <form method="GET" action="/admin/returnEquipment">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto">
+            <label for="status" class="col-form-label">สถานะ:</label>
+          </div>
+          <div class="col-auto">
+            <select id="status" name="status" class="form-select" onchange="this.form.submit()">
+              <option value="" <%= !query.status ? 'selected' : '' %>>ทั้งหมด</option>
+              <% status.forEach(s => { %>
+                <option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+      </form>
+    <table class="table  table-hover text-center ">
+        <tr>
+          <th>ลำดับ</th>
+          <th>รายชื่อ</th>
+          <th>อุปกรณ์</th>
+          <th>หมายเหตุ</th>
+          <th>สถานะ</th>
+          <th>วันเวลาที่คืน</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% borrows.forEach((borrow, index) => { %>
+          <tr>
+            <td><%= index + 1 %></td>
+            <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
+            <td><%= borrow.equipment_id.name %></td>
+            <td><%= borrow.note || '-' %></td>
+            <td>
+              <% if (borrow.status === 'waitingForReturn') { %>
+                <span class="badge bg-warning text-dark">รอคืนอุปกรณ์</span>
+              <% } else if (borrow.status === 'returned') { %>
+                <span class="badge bg-success">คืนอุปกรณ์แล้ว</span>
+              <% } %>
+            </td>
+            <td><%= borrow.actual_return_date ? borrow.actual_return_date.toLocaleString('th-TH') : '-' %></td>
+            <td>
+              <% if (borrow.status === 'waitingForReturn') { %>
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmModal"
+                        data-id="<%= borrow._id %>"
+                        data-user="<%= borrow.user_id.fname + ' ' + borrow.user_id.lname %>"
+                        data-equipment="<%= borrow.equipment_id.name %>">
+                  ยืนยันการคืน
+                </button>
+              <% } else { %>
+                <span class="text-muted">-</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="confirmForm" method="POST">
+          <div class="modal-header">
+            <h5 class="modal-title">ยืนยันการคืนอุปกรณ์</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted mb-3">เลือกสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</p>
+            <div class="mb-3">
+              <label class="form-label">หมายเหตุ</label>
+              <input type="text" name="note" class="form-control" placeholder="คืนอุปกรณ์ภายในเวลาที่กำหนด">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">สภาพอุปกรณ์</label>
+              <select name="condition" class="form-select" required>
+                <option value="ปกติ">ปกติ</option>
+                <option value="เสียหาย">เสียหาย</option>
+                <option value="สูญหาย">สูญหาย</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">ส่ง</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    const confirmModal = document.getElementById('confirmModal');
+    confirmModal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-id');
+      document.getElementById('confirmForm').action = `/admin/confirmreturn/${id}`;
+    });
+  </script>
+</body>
+</html>

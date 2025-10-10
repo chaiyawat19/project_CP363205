@@ -13,6 +13,8 @@ const indexRouter = require('./routes/index');
 const adminRouter = require('./routes/admin');
 const userRouter = require('./routes/users');
 
+
+
 const app = express();
 
 const PORT = 3001;
@@ -26,7 +28,8 @@ app.set('view engine', 'ejs');
 // middleware
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true })); // แก้ไขตรงนี้ตอนทำ จัดการผู้ใช้
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
@@ -45,12 +48,12 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error(err));
 
 // routes
+
 app.use('/', indexRouter);
 app.use('/admin', adminRouter);
 app.use('/users', userRouter);
 app.use('/listitemuser',userRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 
 
 app.use(function(req, res, next) {

@@ -84,39 +84,63 @@ router.post("/register", async (req, res, next) => {
 });
 
 router.post("/login", async (req, res, next) => {
-  const { email, password } = req.body;
-  try {
-    if (!email || !password) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "กรุณากรอกอีเมลและรหัสผ่าน" });
-    }
+    const { email, password } = req.body;
+    const generalError = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; 
     
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+    try {
+        // 1. ตรวจสอบข้อมูลว่างเปล่า (Clear)
+        if (!email || !password) {
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน" // ชัดเจนขึ้น
+            });
+        }
+        
+        // 2. ค้นหา User
+        const user = await User.findOne({ email });
+        if (!user) {
+            // ไม่พบ User: แจ้ง error แบบทั่วไป
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: generalError 
+            });
+        }
+
+        // 3. เปรียบเทียบรหัสผ่าน
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            // รหัสผ่านไม่ตรง: แจ้ง error แบบทั่วไป
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: generalError 
+            });
+        }
+
+        // 4. สร้าง Session และ Redirect
+        req.session.userId = user._id;
+        req.session.userRole = user.userRole;
+        req.session.userName = user.fname;
+        req.session.userEmail = user.email;
+        
+        if (user.userRole === 'admin') {
+            return res.redirect('/admin');
+        } else {
+            return res.redirect('/users');
+        }
+
+    } catch (error) {
+        // 5. จัดการข้อผิดพลาดของระบบ (เช่น DB connection, bcrypt error)
+        console.error("Login System Error:", error);
+        return res.render("login", { 
+            title: "เข้าสู่ระบบ", 
+            layout: "layouts/auth", 
+            error: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" 
+        });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
-    }
-
-    req.session.userId = user._id;
-    req.session.userRole = user.userRole;
-    req.session.userName = user.fname;
-
-    
-    // redirect ตาม role
-    if (user.userRole === 'admin') {
-      return res.redirect('/admin');   // หน้า view ของ admin
-    } else {
-      return res.redirect('/users');   // หน้า view ของ user
-    }
-
-  } catch (error) {
-    console.error(error);
-    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "เกิดข้อผิดพลาดของระบบ" });
-  }
-});
+})
 
 // route สำหรับ logout
 router.post("/logout", (req, res, next) => {

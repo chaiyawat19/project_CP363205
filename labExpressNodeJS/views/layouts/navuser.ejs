@@ -5,34 +5,110 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="/css/bootstrap.min.css" />
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
         body {
-            overflow-x: hidden;
+            box-sizing: border-box;
+            background: #F3F4F6;
+            font-family: "Kanit", sans-serif;
         }
 
-        /* ทำให้ sidebar สูงเต็มหน้าจอ */
         .bs-side-navbar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             width: 200px;
-            /* กำหนดความกว้างของ sidebar */
-            flex-direction: column;
-            align-items: start;
-            padding-left: 1rem;
-            background-color: rgb(46, 104, 239);
-            padding-top: 1rem;
+        }
+        .logo h2 {
+            color: #003F8F;
+            margin: 0;
         }
 
-        /* กำหนดให้เนื้อหาขยับขวา */
+        .logo {
+            margin: 10px 0;
+            padding: 20px;
+
+        }
+
+        .logo small {
+            font-size: 10px;
+        }
+
+        .menu ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        .menu li {
+            list-style: none;
+        }
+
+        .menu a {
+            display: flex;
+            text-decoration: none;
+            color: black;
+            padding: 10px 20px;
+        }
+
+        .menu a:hover {
+            background: #C6CFFF;
+            background: linear-gradient(90deg, rgba(198, 207, 255, 1) 97%, rgba(55, 88, 249, 1) 97%);
+            color: #3758F9;
+        }
+
+        .menu a.active-link {
+            background: #C6CFFF;
+            background: linear-gradient(90deg, rgba(198, 207, 255, 1) 97%, rgba(55, 88, 249, 1) 97%);
+            color: #3758F9;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+
+            flex-direction: column;
+            height: 100vh;
+            background-color: white;
+            box-shadow: 10px 5px 20px #ccc;
+            width: 20%;
+            position: sticky;
+            top: 0;
+        }
         .content-wrapper {
             margin-left: 200px;
-            /* ต้องตรงกับความกว้าง sidebar */
             padding: 2rem;
         }
+        .user {
+            display: flex;
+            padding: 10px;
+        }
+        .uer-profile {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+            border: 1px solid;
+        }
 
-        hr {
-            color: white;
+        .uer-profile img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .detail {
+            margin: 0 10px
+        }
+
+        p.email {
+            font-size: 15px;
+        }
+
+        p.name {
+            font-size: 15px;
+        }
+
+        .detail p {
+            margin: 0;
         }
 
         .active-link {
@@ -44,45 +120,53 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg bs-side-navbar">
-        <a class="navbar-brand text-white" href="/users">AssetFlow</a>
-
-        <ul class="navbar-nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'dashboard' ? 'active-link' : '' %>"
+    <div class="container-fluid d-flex p-0">
+    <nav>
+      <div class="box1">
+        <div class="logo">
+          <h2>AssetFlow</h2>
+          <small>บริการระบบยืมและคืนอุปกรณ์ภายในบริษัท</small>
+        </div>
+        <div class="menu">
+          <ul>
+            <li>
+              <a class="<%= activePage === 'dashboard' ? 'active-link' : '' %>"
                     href="/users">แดชบอร์ด</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'listitemuser' ? 'active-link' : '' %>"
+            <li>
+               <a class="<%= activePage === 'listitemuser' ? 'active-link' : '' %>"
                     href="/users/listitemuser">รายการอุปกรณ์</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'borrowreturn' ? 'active-link' : '' %>"
-                    href="#">รายการยืมและคืนอุปกรณ์</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'history' ? 'active-link' : '' %>"
-                    href="#">ประวัติการยืม</a>
+              <a class="<%= activePage === 'borrowreturn' ? 'active-link' : '' %>"
+                    href="/users/borrowreturn">รายการยืมและคืนอุปกรณ์</a>
             </li>
             <hr>
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'notifications' ? 'active-link' : '' %>"
-                    href="/users/notifications">การแจ้งเตือน</a>
+            <li>
+              <a class="" href="/users/setting">การตั้งค่า</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link text-white <%= activePage === 'setting' ? 'active-link' : '' %>"
-                    href="#">การตั้งค่า</a>
+              <a class="" href="/logout">ออกจากระบบ</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="/logout">ออกจากระบบ</a>
-            </li>
-        </ul>
-
+          </ul>
+        </div>
+      </div>
+      <div class="box2">
+        <div class="user">
+          <div class="uer-profile">
+            <img
+              src="<%= user.userProfile%>"
+              alt="">
+          </div>
+          <div class="detail">
+            <p class="name"> <%= user.fname %> <%= user.lname %></p>
+            <p class="email"><%= user.email %></p>
+          </div>
+        </div>
+      </div>
     </nav>
-
-    <div class="content-wrapper">
-        <%- body %>
+    <div class="content-wrapper container p-4 m-0">
+      <%- body %>
     </div>
+  </div>
     <script src="/js/bootstrap.bundle.min.js"></script>
 </body>
 

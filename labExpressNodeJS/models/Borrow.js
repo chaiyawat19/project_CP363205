@@ -3,12 +3,12 @@ const mongoose = require("mongoose");
 const borrowSchema = new mongoose.Schema({
   user_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Users', // FK ไปที่ collection User
+      ref: 'User', // FK ไปที่ collection User
       required: true
     },
     equipment_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Equipments', // FK ไปที่ collection Equipment
+      ref: 'Equipment', // FK ไปที่ collection Equipment
       required: true
     },
     return_date: {
@@ -25,8 +25,8 @@ const borrowSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['rejected','borrowed', 'returned', 'late', 'lost'],
-      default: 'waiting' // สถานะเริ่มต้นเป็น 'waiting' (รอการอนุมัติ
+      enum: ['waiting', 'rejected', 'borrowed', 'returned', 'late', 'lost', 'waitingForReturn'],
+      default: 'waiting' 
     }
   }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

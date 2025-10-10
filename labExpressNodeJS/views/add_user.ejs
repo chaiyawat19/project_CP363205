@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 12px;
+            background-color: white;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #37b594;
+            outline: none;
+        }
+        small {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-right: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #37b594;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2f9b7e;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        span.required {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1><%= title %></h1>
+        
+        <form id="addUserForm" action="/admin/manage_user/add" method="POST">
+            <div class="form-group">
+                <label for="fname">ชื่อ: <span class="required">*</span></label>
+                <input type="text" id="fname" name="fname" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="lname">นามสกุล: <span class="required">*</span></label>
+                <input type="text" id="lname" name="lname" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">อีเมล: <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">รหัสผ่าน: <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required minlength="4">
+                <small>ต้องมีอย่างน้อย 4 ตัวอักษร</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="userRole">บทบาท: <span class="required">*</span></label>
+                <select id="userRole" name="userRole" required>
+                    <option value="">-- เลือกบทบาท --</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="department">แผนก:</label>
+                <input type="text" id="department" name="department" placeholder="ไม่จำเป็นต้องกรอก">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">บันทึก</button>
+            <a href="/admin/manage_user" class="btn btn-secondary">ยกเลิก</a>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fname = document.getElementById('fname').value.trim();
+            const lname = document.getElementById('lname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const userRole = document.getElementById('userRole').value;
+
+            if (!fname || !lname || !email || !password || !userRole) {
+                Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                return false;
+            }
+
+            if (password.length < 4) {
+                Swal.fire('ข้อผิดพลาด', 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร', 'error');
+                return false;
+            }
+
+            Swal.fire({
+                title: 'ยืนยันการบันทึก?',
+                text: "คุณต้องการเพิ่มผู้ใช้นี้หรือไม่",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#37b594',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
