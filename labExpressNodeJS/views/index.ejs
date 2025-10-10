@@ -141,6 +141,12 @@
             transform: translate(-100px,-123px);
           
         }
+
+        .counter-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #111111;
+        }
     </style>
 </head>
 
@@ -175,7 +181,7 @@
                     <div class="card p-2">
                         <div class="card-bod">
                             <h5 class="card-title">ผู้ใช้งานเว็บไซต์</h5>
-                            <p class="card-text">100k</p>
+                            <p class="card-text counter-number" data-target="100000">0</p>
                         </div>
                     </div>
                 </div>
@@ -183,7 +189,7 @@
                     <div class="card p-2">
                         <div class="card-bod">
                             <h5 class="card-title">จำนวนอุปกรณ์ในเว็บ</h5>
-                            <p class="card-text">100k</p>
+                            <p class="card-text counter-number" data-target="100000">0</p>
                         </div>
                     </div>
                 </div>
@@ -191,7 +197,7 @@
                     <div class="card p-2">
                         <div class="card-bod">
                             <h5 class="card-title">จำนวนการยืมทั้งหมด</h5>
-                            <p class="card-text">100k</p>
+                            <p class="card-text counter-number" data-target="100000">0</p>
                         </div>
                     </div>
                 </div>
@@ -262,6 +268,31 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init();
+        function animateCounter() {
+            const counters = document.querySelectorAll('.counter-number');
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                let current = 0;
+                const increment = target / 100;
+                const speed = 30;
+                
+                const updateCounter = () => {
+                    current += increment;
+                    if (current < target) {
+                        counter.textContent = Math.floor(current).toLocaleString('th-TH');
+                        setTimeout(updateCounter, speed);
+                    } else {
+                        counter.textContent = target.toLocaleString('th-TH');
+                    }
+                };
+                
+                updateCounter();
+            });
+        }
+        window.addEventListener('load', () => {
+            setTimeout(animateCounter, 500);
+        });
     </script>
 </body>
 
