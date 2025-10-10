@@ -1,15 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
-<<<<<<< HEAD
 const { isAdmin,  } = require ('../middleware/auth');
-=======
-var RepairRequest = require("../models/Reqair_requests");
-var User = require("../models/User");
-const Borrow = require('../models/Borrow'); 
-const Department = require('../models/Department'); 
-const { isAdmin } = require("../middleware/auth");
->>>>>>> a9001332d64f37c5d1ac1730fedcbc626f33ade6
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
 const Department = require('../models/Department');
@@ -1041,13 +1033,8 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-<<<<<<< HEAD
-      password: hashedPassword, // <-- ใช้รหัสผ่านที่เข้ารหัสแล้ว
-      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
-=======
       password: hashedPassword,
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
->>>>>>> a9001332d64f37c5d1ac1730fedcbc626f33ade6
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
       department: department && department.trim() !== '' ? department.trim() : null, // เก็บเป็น null ถ้าไม่เลือก
     });
@@ -1119,14 +1106,9 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-<<<<<<< HEAD
       userRole,
-      department: department ? department.trim() : '',
+      department: department && department.trim() !== '' ? department.trim() : null,
       userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
-=======
-      userRole: userRole,
-      department: department && department.trim() !== '' ? department.trim() : null
->>>>>>> a9001332d64f37c5d1ac1730fedcbc626f33ade6
     };
 
     await User.findByIdAndUpdate(req.params.id, updateData);
