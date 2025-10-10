@@ -1,26 +1,20 @@
-
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">ประวัติการยืมอุปกรณ์ของฉัน</h2>
     </div>
 
     <form action="/users/borrowreturn" method="get" class="mb-3 d-flex" style="gap: 10px;">
-  <input 
-    type="text" 
-    name="search" 
-    class="form-control" 
-    placeholder="🔍 ค้นหาชื่ออุปกรณ์" 
-    value="<%= search || '' %>"
-  />
-  <button type="submit" class="btn btn-primary">ค้นหา</button>
-  <% if (search) { %>
-    <a href="/users/borrowreturn" class="btn btn-secondary">รีเซ็ต</a>
-  <% } %>
-</form>
+        <input type="text" name="search" class="form-control" placeholder="🔍 ค้นหาชื่ออุปกรณ์"
+            value="<%= search || '' %>" />
+        <button type="submit" class="btn btn-primary">ค้นหา</button>
+        <% if (search) { %>
+            <a href="/users/borrowreturn" class="btn btn-secondary">รีเซ็ต</a>
+            <% } %>
+    </form>
 
     <div class="card shadow-sm p-4">
-        
-        <% if (borrows && borrows.length > 0) { %>
+
+        <% if (borrows && borrows.length> 0) { %>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -34,51 +28,59 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <% borrows.forEach((borrow, index) => { %>
+                        <% borrows.forEach((borrow, index)=> { %>
                             <tr>
-                                <td><%= index + 1 %></td>
+                                <td>
+                                    <%= index + 1 %>
+                                </td>
                                 <td>
                                     <strong>
                                         <%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>
                                     </strong>
                                 </td>
-                                <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
+                                <td>
+                                    <%= new Date(borrow.return_date).toLocaleDateString('th-TH') %>
+                                </td>
                                 <td>
                                     <%- getStatusBadge(borrow.status) %>
                                 </td>
-                                <td><%= borrow.note %></td>
                                 <td>
-                                    <% if (borrow.status === 'borrowed') { %>
+                                    <%= borrow.note %>
+                                </td>
+                                <td>
+                                    <% if (borrow.status==='borrowed' ) { %>
                                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
                                             data-bs-target="#confirmReturnModal" data-bs-id="<%= borrow._id %>">
                                             คืนอุปกรณ์
                                         </button>
-                                    <% } else if (borrow.status === 'pending' || borrow.status === 'waiting' || borrow.status === 'waitingForReturn') { %>
-                                        <button class="btn btn-sm btn-info disabled">รออนุมัติ</button>
-                                    <% } else { %>
-                                        <button type="button" class="btn btn-sm btn-secondary"
-                                            data-bs-toggle="modal" data-bs-target="#detailModal"
-                                            data-bs-id="<%= borrow._id %>"
-                                            data-bs-borrow-date="<%= new Date(borrow.created_at).toLocaleDateString('th-TH') %>"
-                                            data-bs-return-date="<%= new Date(borrow.return_date).toLocaleDateString('th-TH') %>"
-                                            data-bs-actual-return-date="<%= borrow.actual_return_date ? new Date(borrow.actual_return_date).toLocaleDateString('th-TH') : '-' %>"
-                                            data-bs-note="<%= borrow.note %>"
-                                            data-bs-status-html='<%= getStatusBadge(borrow.status) %>'
-                                            data-bs-equipment-name="<%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>">
-                                            ดูรายละเอียด
-                                        </button>
-                                    <% } %>
+                                        <% } else if (borrow.status==='pending' || borrow.status==='waiting' ||
+                                            borrow.status==='waitingForReturn' ) { %>
+                                            <button class="btn btn-sm btn-info disabled">รออนุมัติ</button>
+                                            <% } else { %>
+                                                <button class="btn btn-light w-100" data-bs-toggle="modal"
+                                                    data-bs-target="#detailModal"
+                                                    data-bs-equipment-name="<%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>"
+                                                    data-bs-status-html="<%= borrow.status === 'available' ? '<span class=\'badge bg-success\'>พร้อมใช้งาน</span>' : '<span class=\'badge bg-danger\'>ไม่พร้อมใช้งาน</span>' %>"
+                                                    data-bs-borrow-date="<%= borrow.created_at ? new Date(borrow.created_at).toLocaleDateString('th-TH') : '-' %>"
+                                                    data-bs-return-date="<%= borrow.return_date ? new Date(borrow.return_date).toLocaleDateString('th-TH') : '-' %>"
+                                                    data-bs-actual-return-date="<%= borrow.actual_return_date ? new Date(borrow.actual_return_date).toLocaleDateString('th-TH') : '-' %>"
+                                                    data-bs-note="<%= borrow.note || '-' %>"
+                                                    data-bs-image="<%= borrow.equipment_id && borrow.equipment_id.image ? borrow.equipment_id.image : '' %>">
+                                                    รายละเอียด
+                                                </button>
+
+                                                <% } %>
                                 </td>
                             </tr>
-                        <% }); %>
+                            <% }); %>
                     </tbody>
                 </table>
             </div>
-        <% } else { %>
-            <div class="alert alert-info mb-0" role="alert">
-                คุณยังไม่มีประวัติการยืมอุปกรณ์
-            </div>
-        <% } %>
+            <% } else { %>
+                <div class="alert alert-info mb-0" role="alert">
+                    คุณยังไม่มีประวัติการยืมอุปกรณ์
+                </div>
+                <% } %>
 
     </div>
 </div>
@@ -90,7 +92,11 @@
                 <h5 class="modal-title" id="detailModalLabel">รายละเอียดรายการยืม</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body text-center">
+                <img id="modalEquipmentImage" src="https://via.placeholder.com/300x200?text=No+Image"
+                    alt="Equipment Image" class="img-fluid rounded mb-3 shadow-sm"
+                    style="max-height: 200px; object-fit: contain;">
+
                 <p><strong>อุปกรณ์:</strong> <span id="modalEquipmentName"></span></p>
                 <p><strong>สถานะ:</strong> <span id="modalStatus"></span></p>
                 <hr>
@@ -131,48 +137,45 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // --- 1. โค้ดสำหรับ Confirm Return Modal (เปลี่ยนไปใช้ AJAX) ---
-    const confirmReturnModalElement = document.getElementById('confirmReturnModal');
-    const returnForm = document.getElementById('returnForm');
-    const returnModalInstance = new bootstrap.Modal(confirmReturnModalElement); // สร้าง Instance Modal
+        // --- 1. โค้ดสำหรับ Confirm Return Modal (ใช้ AJAX) ---
+        const confirmReturnModalElement = document.getElementById('confirmReturnModal');
+        const returnForm = document.getElementById('returnForm');
+        const returnModalInstance = confirmReturnModalElement ? new bootstrap.Modal(confirmReturnModalElement) : null;
 
-    if (returnForm) {
-        // ดักจับเหตุการณ์ Submit ของฟอร์ม
-        returnForm.addEventListener('submit', async function (event) {
-            event.preventDefault(); // 🛑 ป้องกันการ Submit แบบปกติ (ป้องกันการรีโหลดหน้า) 🛑
-            
-            const borrowId = event.target.action.split('/').pop(); // ดึง ID จาก Action URL
-            
-            try {
-                // ส่งคำร้องขอคืนอุปกรณ์แบบ Asynchronous (AJAX)
-                const response = await fetch(`/users/return/${borrowId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                });
+        if (returnForm && confirmReturnModalElement) {
+            // ดักจับเหตุการณ์ Submit ของฟอร์ม
+            returnForm.addEventListener('submit', async function (event) {
+                event.preventDefault(); // 🛑 ป้องกันการรีโหลดหน้า
 
-                if (response.ok) {
-                    returnModalInstance.hide(); 
-                    window.location.reload(); 
+                const borrowId = event.target.action.split('/').pop(); // ดึง ID จาก Action URL
 
-                } else {
-                    const errorData = await response.json();
-                    alert('เกิดข้อผิดพลาดในการส่งคำร้อง: ' + (errorData.message || 'กรุณาลองใหม่อีกครั้ง'));
+                try {
+                    // ส่งคำร้องคืนอุปกรณ์แบบ Asynchronous (AJAX)
+                    const response = await fetch(`/users/return/${borrowId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+
+                    if (response.ok) {
+                        returnModalInstance.hide();
+                        window.location.reload();
+                    } else {
+                        const errorData = await response.json();
+                        alert('เกิดข้อผิดพลาดในการส่งคำร้อง: ' + (errorData.message || 'กรุณาลองใหม่อีกครั้ง'));
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
                 }
-            } catch (error) {
-                console.error('Fetch error:', error);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
-            }
-        });
+            });
 
-        // ตั้งค่า Action URL เมื่อ Modal เปิด
-        confirmReturnModalElement.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const borrowId = button.getAttribute('data-bs-id');
-            returnForm.action = '/users/return/' + borrowId;
-        });
-    }
+            // ตั้งค่า Action URL เมื่อ Modal เปิด
+            confirmReturnModalElement.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const borrowId = button.getAttribute('data-bs-id');
+                returnForm.action = '/users/return/' + borrowId;
+            });
+        }
 
         // --- 2. โค้ดสำหรับ Detail Modal ---
         const detailModal = document.getElementById('detailModal');
@@ -180,23 +183,28 @@
             detailModal.addEventListener('show.bs.modal', function (event) {
                 const button = event.relatedTarget;
 
-                // ดึงข้อมูลทั้งหมดจาก Data Attributes
+                // ✅ ดึงข้อมูลจาก data-bs-* attribute
                 const equipmentName = button.getAttribute('data-bs-equipment-name');
                 const borrowDate = button.getAttribute('data-bs-borrow-date');
                 const returnDate = button.getAttribute('data-bs-return-date');
                 const actualReturnDate = button.getAttribute('data-bs-actual-return-date');
                 const note = button.getAttribute('data-bs-note');
-                const statusHtml = button.getAttribute('data-bs-status-html'); // นี่คือ HTML string
+                const statusHtml = button.getAttribute('data-bs-status-html');
+                const image = button.getAttribute('data-bs-image'); // ✅ รูปภาพ
 
-                // ใส่ข้อมูลลงใน Modal
+                // ✅ อัปเดตข้อมูลใน modal
                 document.getElementById('modalEquipmentName').textContent = equipmentName;
                 document.getElementById('modalBorrowDate').textContent = borrowDate;
                 document.getElementById('modalReturnDate').textContent = returnDate;
                 document.getElementById('modalActualReturnDate').textContent = actualReturnDate;
                 document.getElementById('modalNote').textContent = note;
-
-                // ใช้ innerHTML สำหรับสถานะที่มี HTML tags (badge)
                 document.getElementById('modalStatus').innerHTML = statusHtml;
+
+                // ✅ อัปเดตรูปภาพ (ถ้าไม่มีให้ใช้ placeholder)
+                const modalImage = document.getElementById('modalEquipmentImage');
+                if (modalImage) {
+                    modalImage.src = image || 'https://via.placeholder.com/300x200?text=No+Image';
+                }
             });
         }
     });

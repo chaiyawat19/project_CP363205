@@ -268,7 +268,7 @@ router.get('/borrowreturn', isUser, async (req, res) => {
         // ถ้ามีคำค้นหา ให้เพิ่มเงื่อนไขค้นหาใน populate
         if (search) {
             const borrows = await Borrow.find(query)
-                .populate('equipment_id')
+                .populate('equipment_id', 'name image status')
                 .sort({ created_at: -1 });
 
             const filteredBorrows = borrows.filter(b =>
