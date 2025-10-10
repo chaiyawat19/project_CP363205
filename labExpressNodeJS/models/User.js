@@ -24,7 +24,8 @@ const userSchema = new mongoose.Schema({
   department: { 
     type:  mongoose.Schema.Types.ObjectId,
     ref: 'Department', 
-    default: null }
+    default: null
+  }
 }, { timestamps: true });
 
 
