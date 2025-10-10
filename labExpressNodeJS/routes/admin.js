@@ -3,6 +3,7 @@ var router = express.Router();
 var Category = require("../models/Category");
 var RepairRequest = require("../models/Reqair_requests");
 var User = require("../models/User");
+const Department = require('../models/Department'); // ปรับ path ตามโครงสร้างโปรเจค
 const { isAdmin } = require("../middleware/auth");
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
@@ -598,10 +599,14 @@ router.get("/manage_user", isAdmin, async (req, res) => {
 // หน้าเพิ่มผู้ใช้ใหม่
 router.get("/manage_user/add", isAdmin, async (req, res) => {
   try {
+    // ดึงข้อมูลแผนกทั้งหมดจาก collection departments
+    const departments = await Department.find({}).sort({ name: 1 }); // เรียงตามชื่อ A-Z
+    
     res.render("add_user", {
       title: "เพิ่มผู้ใช้ใหม่",
       layout: "layouts/navadmin",
       activePage: "manage_user",
+      departments: departments // ส่งข้อมูลแผนกไปที่ view
     });
   } catch (err) {
     console.error(err);
@@ -609,7 +614,6 @@ router.get("/manage_user/add", isAdmin, async (req, res) => {
   }
 });
 
-// เพิ่มผู้ใช้ใหม่ (มีการเข้ารหัส)
 router.post("/manage_user/add", isAdmin, async (req, res) => {
   try {
     const { fname, lname, email, password, userRole, department } = req.body;
@@ -640,10 +644,10 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-      password: hashedPassword, // <-- ใช้รหัสผ่านที่เข้ารหัสแล้ว
+      password: hashedPassword,
       userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
-      department: department ? department.trim() : '',
+      department: department && department.trim() !== '' ? department.trim() : null, // ✅ เก็บเป็น null ถ้าไม่เลือก
     });
 
     console.log("กำลังบันทึกข้อมูล...");
@@ -662,17 +666,24 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
 });
 
 // หน้าแก้ไขผู้ใช้
+// หน้าแก้ไขผู้ใช้
 router.get("/manage_user/edit/:id", isAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
+    
     if (!user) {
       return res.status(404).send("ไม่พบผู้ใช้");
     }
+
+    // ดึงข้อมูลแผนกทั้งหมด
+    const departments = await Department.find({}).sort({ name: 1 });
+
     res.render("edit_user", {
       title: "แก้ไขข้อมูลผู้ใช้",
       layout: "layouts/navadmin",
       activePage: "manage_user",
       user: user,
+      departments: departments // ส่งข้อมูลแผนกไปด้วย
     });
   } catch (err) {
     console.error(err);
@@ -681,36 +692,49 @@ router.get("/manage_user/edit/:id", isAdmin, async (req, res) => {
 });
 
 // อัปเดตข้อมูลผู้ใช้
+// อัปเดตข้อมูลผู้ใช้
 router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
   try {
-    const { fname, lname, email, password, userRole, department } = req.body;
-    const userId = req.params.id;
+    const { fname, lname, email, userRole, department } = req.body;
 
+    console.log("=== เริ่มอัปเดตผู้ใช้ ===");
+    console.log("ข้อมูลที่ได้รับ:", { fname, lname, email, userRole, department });
+
+    // ตรวจสอบข้อมูลครบหรือไม่
+    if (!fname || !lname || !email || !userRole) {
+      return res.status(400).send("กรุณากรอกข้อมูลให้ครบถ้วน");
+    }
+
+    // ตรวจสอบ email ซ้ำ (ยกเว้น user ที่กำลังแก้ไข)
+    const existingUser = await User.findOne({ 
+      email: email.trim().toLowerCase(),
+      _id: { $ne: req.params.id } // ไม่รวม user ที่กำลังแก้ไข
+    });
+    
+    if (existingUser) {
+      return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
+    }
+
+    // อัปเดตข้อมูล
     const updateData = {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-      userRole,
-      department: department ? department.trim() : '',
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
+      userRole: userRole,
+      department: department && department.trim() !== '' ? department.trim() : null
     };
 
-    // ถ้ามีการกรอกรหัสผ่านใหม่ ให้เข้ารหัสก่อนบันทึก
-    if (password && password.trim() !== '') {
-      console.log("กำลังเข้ารหัสรหัสผ่านใหม่...");
-      updateData.password = await bcrypt.hash(password, 10);
-      console.log("เข้ารหัสรหัสผ่านใหม่สำเร็จ");
-    }
-
-    await User.findByIdAndUpdate(userId, updateData);
-    console.log("อัปเดตผู้ใช้สำเร็จ!");
+    await User.findByIdAndUpdate(req.params.id, updateData);
+    
+    console.log("อัปเดตสำเร็จ!");
     res.redirect("/admin/manage_user");
+    
   } catch (err) {
-    console.error("Error:", err);
+    console.error("=== เกิดข้อผิดพลาด ===");
+    console.error("Error:", err.message);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
-
 // ลบผู้ใช้
 router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
   try {
