@@ -126,15 +126,14 @@
               <a class="<%= activePage === 'borrowEquipment' ? 'active-link' : '' %>" href="/admin/Borrowequipment">รายการคำขอยืมอุปกรณ์</a>
             </li>
             <li>
-
               <a class="<%= activePage === 'returnEquipment' ? 'active-link' : '' %>"
                 href="/admin/returnequipment">ยืนยันการคืนอุปกรณ์</a>
             </li>
-            <!-- <li>
-              <a class="" href="#">ยันยืนการคืนอุปกรณ์</a>
-            </li> -->
             <li>
               <a class="" href="/admin/reqair_requestsadmin">รายการแจ้งซ่อม</a>
+            </li>
+            <li class="">
+                <a class="<%= activePage === 'manage_user' ? 'active-link' : '' %>" href="/admin/manage_user">จัดการผู้ใช้</a>
             </li>
             <hr>
             <li>
@@ -150,7 +149,7 @@
         <div class="user">
           <div class="uer-profile">
             <img
-              src="https://st.depositphotos.com/2101611/3925/v/950/depositphotos_39258143-stock-illustration-businessman-avatar-profile-picture.jpg"
+              src="<%= user.userProfile%>"
               alt="">
           </div>
           <div class="detail">
