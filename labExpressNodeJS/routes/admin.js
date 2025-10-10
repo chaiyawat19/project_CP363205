@@ -287,7 +287,7 @@ router.post(
       // ไฟล์รูป (ถ้ามี)
       const image = req.file ? req.file.filename : null;
 
-      // ✅ สร้างอุปกรณ์ใหม่
+      // สร้างอุปกรณ์ใหม่
       const newEquipment = new listEquipment({
         name,
         category_id,
@@ -299,14 +299,14 @@ router.post(
 
       await newEquipment.save();
 
-      // ✅ เตรียมข้อความแจ้งเตือน
+      // เตรียมข้อความแจ้งเตือน
       const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
       const reason = "";
       // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
-      // ✅ ดึง user ทั้งหมด
+      // ดึง user ทั้งหมด
       const users = await User.find({}, "_id");
 
-      // ✅ สร้าง array ของ notification สำหรับแต่ละ user
+      // สร้าง array ของ notification สำหรับแต่ละ user
       const notifications = users.map((u) => ({
         user_id: u._id,
         equipment_id: newEquipment._id, // ใช้ id ของอุปกรณ์ที่เพิ่งสร้าง
@@ -315,11 +315,11 @@ router.post(
         admin_id: adminId,
       }));
 
-      // ✅ บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
+      // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
       await Notification.insertMany(notifications);
       res.redirect("/admin/listitemuser");
 
-      // ✅ ส่ง response กลับ
+      // ส่ง response กลับ
       res.status(201).json({
         message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
         equipment: newEquipment,
@@ -547,7 +547,7 @@ router.get('/returnequipment', async (req, res) => {
 });
 
 
-// ✅ ยืนยันการคืนอุปกรณ์
+// ยืนยันการคืนอุปกรณ์
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
@@ -580,7 +580,7 @@ router.post('/confirmreturn/:id', async (req, res) => {
 
     await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
 
-    console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
+    console.log(`อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
   } catch (err) {
     console.error('❌ Error confirming return:', err);
@@ -1123,6 +1123,7 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
   }
 });
 
+
 // ลบผู้ใช้และข้อมูลการยืมทั้งหมดที่เกี่ยวข้อง
 router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
   try {
@@ -1138,15 +1139,11 @@ router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
     if (!user) {
       return res.status(404).send("ไม่พบผู้ใช้ที่ต้องการลบ");
     }
+    console.log(`ลบผู้ใช้: ${user.fname} ${user.lname}`);
 
-    console.log(`\n========================================`);
-    console.log(`🗑️  ลบผู้ใช้: ${user.fname} ${user.lname}`);
-    console.log(`Email: ${user.email}`);
-    console.log(`========================================`);
-
-    // ✅ แก้ไข: ใช้ user_id แทน userId (ตาม Model)
+    // แก้ไข: ใช้ user_id แทน userId (ตาม Model)
     const borrowsToDelete = await Borrow.find({ user_id: userId });
-    console.log(`📋 พบข้อมูลการยืม: ${borrowsToDelete.length} รายการ`);
+    console.log(`พบข้อมูลการยืม: ${borrowsToDelete.length} รายการ`);
     
     if (borrowsToDelete.length > 0) {
       console.log(`\nรายการที่จะลบ:`);
@@ -1155,25 +1152,20 @@ router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
       });
     }
 
-    // ✅ ลบข้อมูลการยืมทั้งหมด (ใช้ user_id)
+    // ลบข้อมูลการยืมทั้งหมด (ใช้ user_id)
     const deletedBorrows = await Borrow.deleteMany({ 
       user_id: userId 
     });
-    console.log(`\n✅ ลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
+    console.log(`\nลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
 
-    // ✅ ลบผู้ใช้
+    // ลบผู้ใช้
     await User.findByIdAndDelete(userId);
-    console.log(`✅ ลบผู้ใช้สำเร็จ`);
-    console.log(`========================================\n`);
+    console.log(`ลบผู้ใช้สำเร็จ`);
     
     res.redirect("/admin/manage_user");
     
   } catch (err) {
-    console.error("\n========================================");
-    console.error("❌ เกิดข้อผิดพลาด");
-    console.error("Error Name    :", err.name);
     console.error("Error Message :", err.message);
-    console.error("========================================\n");
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
