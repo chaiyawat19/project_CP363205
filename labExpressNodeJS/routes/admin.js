@@ -623,7 +623,7 @@ router.post("/borrow/update/:id", async (req, res) => {
     // ✅ ส่งอีเมลแจ้งผู้ใช้ (await เพื่อรอให้เสร็จ)
     const resend = req.app.locals.resend;
     await resend.emails.send({
-      from: "imsebt19@gmail.com", // ใช้อีเมลผู้ดูแลระบบจริง
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
       to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
       subject: "คำขอยืมอุปกรณ์ของคุณได้รับการอนุมัติ",
       text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`
@@ -673,6 +673,14 @@ router.post("/borrow/reject/:id", async (req, res) => {
       admin_profile: req.session.userProfile
     });
     await notification.save();
+
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณไม่ได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณไม่ได้รับการอนุมัติ\nเหตุผล: ${rejectReason}`
+    });
 
     res.redirect("/admin/Borrowequipment");
   } catch (err) {
