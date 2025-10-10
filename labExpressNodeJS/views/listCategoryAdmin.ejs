@@ -1,43 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title %></title>
-  </head>
-  <body>
-    <a href="/admin/listitemuser">กลับ</a>
-    <h1><%= title %></h1>
-   
 
-    <form action="/admin/addCategory" method="post">
-        <label for="name">ชื่อประเภทอุปกรณ์:</label>
-        <input type="text" id="name" name="name" required>
-        <button type="submit">เพิ่มประเภท</button>
-    </form>
-    
-        <table border="1" class="table">
-            <thead>
-                <th>รหัส</th>
-                <th>ชื่อประเภทอุปกรณ์</th>
-                <th colspan="2">จัดการ</th>
-            </thead>
-            <tbody>
-                <% categories.forEach(category => { %>
-                     
-                <tr>
-                    <td><%= category.id %></td>
-                    <td><%= category.name %></td>
-                    <td><a href="/admin/editcategory/<%= category._id %>">แก้ไข</a></td>
-                    <td><a href="/admin/editcategory/<%= category._id %>">ลบ</a></td>
-                </tr>    
-                <% }) %>
-            </tbody>
-        </table>
-    <div>
-      
-      
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    <%= title %>
+  </title>
+</head>
+
+<body>
+
+  <div class="container my-5">
+    <div class="row">
+      <div class="col-12 mb-4">
+        <a href="/admin/listitemuser" class="btn btn-dark d-inline-flex align-items-center justify-content-center">
+          กลับ
+        </a>
+      </div>
+
+      <div class="col-12">
+        <h2 class="mb-4">
+          <i class="fas fa-tags me-2"></i>
+          <%= title %>
+        </h2>
+
+        <div class="card shadow mb-5">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">เพิ่มประเภทอุปกรณ์ใหม่</h5>
+          </div>
+          <div class="card-body">
+            <form action="/admin/addCategory" method="post" class="row g-3 align-items-end">
+              <div class="col-md-8 col-lg-9">
+                <label for="categoryName" class="form-label visually-hidden">ชื่อประเภทอุปกรณ์:</label>
+                <input type="text" id="categoryName" name="name" class="form-control"
+                  placeholder="เช่น อุปกรณ์ IT, เครื่องเสียง, กล้องถ่ายรูป" required>
+              </div>
+              <div class="col-md-4 col-lg-3">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-plus me-2"></i> เพิ่มประเภท
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">รายการประเภทอุปกรณ์ทั้งหมด (<%= categories.length %> รายการ)</h5>
+          </div>
+          <div class="card-body p-0">
+            <% if (categories && categories.length> 0) { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col" style="width: 10%;">#</th>
+                      <th scope="col" style="width: 50%;">ชื่อประเภทอุปกรณ์</th>
+                      <th scope="col" style="width: 40%;" class="text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% categories.forEach((category, index)=> { %>
+                      <tr>
+                        <td>
+                          <%= index + 1 %>
+                        </td>
+                        <td>
+                          <%= category.name %>
+                        </td>
+                        <td class="text-center">
+                          <a href="/admin/editcategory/<%= category._id %>" class="btn btn-sm btn-warning me-2">
+                            <i class="fas fa-edit"></i> แก้ไข
+                          </a>
+                          <a href="/admin/deletecategory/<%= category._id %>" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash-alt"></i> ลบ
+                          </a>
+                        </td>
+                      </tr>
+                      <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="alert alert-info m-3" role="alert">
+                  ยังไม่มีการเพิ่มประเภทอุปกรณ์
+                </div>
+                <% } %>
+          </div>
+        </div>
+      </div>
     </div>
-   
-  </body>
+  </div>
+
+</body>
+
 </html>
