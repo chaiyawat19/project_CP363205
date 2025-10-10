@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= equipment.name %> - รายละเอียดอุปกรณ์</title>
+  <style>
+    body {
+      background-color: #f6f7fb;
+    }
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px 25px;
+    }
+    img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .category-badge {
+      background-color: #eaf1ff;
+      color: #0d6efd;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      margin-right: 5px;
+    }
+    .btn-custom {
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+    .btn-edit {
+      background-color: #3b5bff;
+      color: #fff;
+      border: none;
+    }
+    .btn-edit:hover {
+      background-color: #2847e0;
+    }
+    .btn-delete {
+      background-color: #f1f1f1;
+      color: #333;
+      border: none;
+    }
+    .btn-delete:hover {
+      background-color: #e0e0e0;
+    }
+    .btn-back {
+      background-color: #0d0d0d;
+      color: white;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      padding: 6px 14px;
+      text-decoration: none;
+    }
+    .btn-back:hover {
+      background-color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <a href="/admin/listitemuser" class="btn-back mb-3 d-inline-block">กลับ</a>
+
+    <h3 class="fw-bold mt-2"><%= equipment.name %></h3>
+
+    <% if (equipment.image) { %>
+      <img src="/uploads/<%= equipment.image %>" alt="<%= equipment.name %>">
+    <% } else { %>
+      <div class="text-muted mb-3">ไม่มีรูปภาพ</div>
+    <% } %>
+
+    <div class="mb-3">
+      <% if (category) { %>
+        <span class="category-badge">อุปกรณ์</span>
+        <span class="category-badge"><%= category.name %></span>
+      <% } %>
+    </div>
+
+    <div class="mb-3">
+      <h6 class="fw-bold">รายละเอียด</h6>
+      <p><%= equipment.description || 'ไม่มีรายละเอียดเพิ่มเติม' %></p>
+    </div>
+
+    <div class="mb-2">
+      <strong>สถานที่เก็บ:</strong> <%= equipment.location || 'ไม่ระบุ' %>
+    </div>
+
+    <div class="mb-3">
+      <strong>สถานะ:</strong>
+      <% if (equipment.status === 'available') { %>
+        <span class="badge bg-success">พร้อมใช้งาน</span>
+      <% } else if (equipment.status === 'unavailable') { %>
+        <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
+      <% } else if (equipment.status === 'repair') { %>
+        <span class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
+      <% } %>
+    </div>
+    <small class="text-muted d-block mb-3">*อุปกรณ์นี้ยืมได้ไม่เกิน 3 วัน</small> 
+  </div>
+</body>
+</html>

@@ -103,7 +103,7 @@
                 <p class="note">*ไม่ต้องกรอกหากไม่ต้องการเปลี่ยนรหัสผ่าน</p>
             </div>
             
-            <div class="form-group">
+           <div class="form-group">
                 <label for="userRole">บทบาท:</label>
                 <select id="userRole" name="userRole" required>
                     <option value="user" <%= user.userRole === 'user' ? 'selected' : '' %>>User</option>
@@ -111,9 +111,18 @@
                 </select>
             </div>
             
-            <div class="form-group">
+           <div class="form-group">
                 <label for="department">แผนก:</label>
-                <input type="text" id="department" name="department" value="<%= user.department %>">
+                <select id="department" name="department">
+                    <% if (departments && departments.length > 0) { %>
+                        <% departments.forEach(dept => { %>
+                            <option value="<%= dept.name %>" 
+                                <%= (user.department && user.department === dept.name) ? 'selected' : '' %>>
+                                <%= dept.name %>
+                            </option>
+                        <% }) %>
+                    <% } %>
+                </select>
             </div>
             
             <button type="submit" class="btn btn-primary">บันทึก</button>
