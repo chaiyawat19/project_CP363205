@@ -5,8 +5,9 @@ const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
 const upload = require("../middleware/upload");
+
+const Borrow = require("../models/Borrow")
 const User = require('../models/User');
-const Borrow = require('../models/Borrow');
 var bcrypt = require("bcryptjs");
 
 const ensureUserId = (req, res, next) => {
@@ -31,7 +32,6 @@ router.use(isAdmin, async (req, res, next) => {
   }
   next();
 });
-
 
 // 1. GET /setting (เมื่อเข้าถึงผ่าน /users/setting) - แสดงหน้าการตั้งค่า
 router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
@@ -432,6 +432,7 @@ router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {
+
     if (err) {
       console.error(err);
       return res.redirect("/");
@@ -478,6 +479,52 @@ router.post("/addCategory", isAdmin, async (req, res) => {
   }
 });
 
+
+// หน้าแสดงรายการยืนยันการคืนอุปกรณ์
+router.get('/returnequipment', async (req, res) => {
+  try {
+    const borrows = await Borrow.find({status: { $in: ['waitingForReturn', 'returned'] }})
+      .populate('user_id')
+      .populate('equipment_id')
+      .sort({ created_at: -1 });
+
+    res.render('returnEquipmentAdmin', {
+      title: 'รายการยืนยันการคืนอุปกรณ์',
+      layout: 'layouts/navadmin',
+      activePage: 'returnEquipment',
+      borrows,
+      query: req.query,
+      statuses: ['waitingForReturn', 'returned'], 
+      statusLabels: { 
+        waitingForReturn: 'รอคืนอุปกรณ์', 
+        returned: 'คืนอุปกรณ์แล้ว'}
+    });
+  } catch (err) {
+    console.error('❌ Error fetching borrow list:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+  }
+});
+
+router.post('/confirmreturn/:id', async (req, res) => {
+  try {
+    const borrowId = req.params.id;
+    const { note } = req.body;
+    
+    await Borrow.findByIdAndUpdate(borrowId, {
+      status: 'returned',
+      note,
+      actual_return_date: new Date()
+    });
+
+    res.redirect('/admin/returnequipment');
+  } catch (err) {
+    console.error('❌ Error confirming return:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
+  }
+});
+
+
+//บอล
 router.get('/Borrowequipment', isAdmin, async (req, res) => {
   const borrows = await Borrow.find({})
     .populate('equipment_id')
@@ -490,6 +537,59 @@ router.get('/Borrowequipment', isAdmin, async (req, res) => {
     borrows: borrows
   });
 
+});
+
+router.get("/borrow_Details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const borrow = await Borrow.findById(id)
+      .populate('user_id')
+      .populate('equipment_id')
+      .lean();
+
+    if (!borrow) return res.status(404).send("ไม่พบข้อมูลการยืม");
+
+    res.render("borrowEquipmentDetails", {
+      title: "รายละเอียดการยืมอุปกรณ์",
+      formatThaiDate,
+      layout: "layouts/navadmin",
+      activePage: "borrowEquipment",
+      borrow: borrow 
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
+  }
+});
+router.post("/borrow/update/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "borrowed", 
+      return_date: req.body.Date, 
+      note: req.body.note,   
+    });
+
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+  }
+});
+router.get("/borrow/reject/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "rejected", 
+    });
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+  }
 });
 
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย

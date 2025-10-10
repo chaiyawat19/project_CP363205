@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+</head>
+   <style>
+        .bg-blue {
+            background-color: #0d6efd !important;
+        }
+        .bg-light-blue {
+            background-color: #4a9eff !important;
+        }
+        .bg-sky-blue {
+            background-color: #00bcd4 !important;
+        }
+        .table-blue {
+            --bs-table-bg: #cfe2ff;
+            --bs-table-striped-bg: #b6d4fe;
+        }
+    </style>
+<body>
+   <div class="container-fluid py-4">
+        <% if (user) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="display-5 fw-bold text-blue">สวัสดี <%= user.fname %> <%= user.lname %></h1>
+                    <hr class="my-3">
+                </div>
+            </div>
+
+
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="card shadow-sm border-info">
+                        <div class="card-header bg-light-blue text-white">
+                            <h3 class="mb-0"><i class="bi bi-check-circle me-2"></i>ประวัติการยืม</h3>
+                        </div>
+                        <div class="card-body">
+                            <% 
+                                const returnedItems = borrows.filter(b => b.status === 'returned');
+                            %>
+                            
+                            <% if (returnedItems.length > 0) { %>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle">
+                                        <thead class="bg-light-blue text-white">
+                                            <tr>
+                                                <th scope="col" class="text-center">ลำดับ</th>
+                                                <th scope="col">ชื่ออุปกรณ์</th>
+                                                <th scope="col" class="text-center">วันที่ยืม</th>
+                                                <th scope="col" class="text-center">วันที่ต้องคืน</th>
+                                                <th scope="col" class="text-center">วันที่คืนจริง</th>
+                                                <th scope="col">หมายเหตุ</th>
+                                                <th scope="col" class="text-center">สถานะ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% returnedItems.forEach((borrow, index) => { %>
+                                                <tr>
+                                                    <td class="text-center"><%= index + 1 %></td>
+                                                    <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></strong></td>
+                                                    <td class="text-center"><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
+                                                    <td class="text-center"><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
+                                                    <td class="text-center">
+                                                        <%= borrow.actual_return_date ? new Date(borrow.actual_return_date).toLocaleDateString('th-TH') : '-' %>
+                                                    </td>
+                                                    <td><%= borrow.note || '-' %></td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-info text-white">คืนแล้ว</span>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } else { %>
+                                <div class="alert alert-primary text-center" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>ยังไม่มีประวัติการคืนอุปกรณ์
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="alert alert-danger text-center" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>ไม่พบข้อมูลผู้ใช้
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

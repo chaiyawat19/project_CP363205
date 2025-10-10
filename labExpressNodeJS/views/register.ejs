@@ -1,45 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
     body {
-        background-color: rgb(46, 104, 239);
+      font-family: "Kanit", sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
     }
-</style>
 
+    .register-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 420px;
+      padding: 40px 30px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    .register-card h3 {
+      text-align: center;
+      font-weight: 600;
+      color: #0d6efd;
+      margin-bottom: 25px;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .btn-primary {
+      background-color: #0d6efd;
+      border: none;
+      font-weight: 500;
+      transition: 0.3s;
+      border-radius: 10px;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background-color: #084298;
+      transform: translateY(-1px);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 10px;
+      font-size: 0.85rem;
+      color: #eee;
+      text-align: center;
+      width: 100%;
+    }
+  </style>
+</head>
 <body>
-    <h1>
-        <%= title %>
-    </h1>
+  <div class="register-card">
+    <h3><%= title %></h3>
+
     <form action="/register" method="POST">
-        <div class="mb-3">
-            <label for="fname" class="form-label">ชื่อ</label>
-            <input type="text" class="form-control" id="fname" name="fname" placeholder="กรุณากรอกชื่อจริง" required />
-        </div>
-        <div class="mb-3">
-            <label for="lname" class="form-label">นามสกุล</label>
-            <input type="text" class="form-control" id="lname" name="lname" placeholder="กรุณากรอกนามสกุล" required />
-        </div>
-        <div class="mb-3">
-            <label for="email" class="form-label">อีเมล</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="กรุณากรอกอีเมล" required />
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">รหัสผ่าน</label>
-            <input type="password" class="form-control" id="password" name="password" required />
-        </div>
-        <div class="mb-3">
-            <label for="confirmPassword" class="form-label">ยืนยันรหัสผ่าน</label>
-            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required />
-        </div>
+      <div class="mb-3">
+        <label for="fname" class="form-label">ชื่อ</label>
+        <input type="text" class="form-control" id="fname" name="fname" placeholder="กรุณากรอกชื่อจริง" required />
+      </div>
 
-        <button type="submit" class="btn btn-primary">สมัครสมาชิก</button>
+      <div class="mb-3">
+        <label for="lname" class="form-label">นามสกุล</label>
+        <input type="text" class="form-control" id="lname" name="lname" placeholder="กรุณากรอกนามสกุล" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">อีเมล</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="example@company.com" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">รหัสผ่าน</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label">ยืนยันรหัสผ่าน</label>
+        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary py-2">สมัครสมาชิก</button>
     </form>
-</body>
+  </div>
 
+  <footer>© 2025 Asset Flow.</footer>
+</body>
 </html>
+
