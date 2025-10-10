@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+  <style>
+    table th{
+      padding: 10px;
+      width: 5%;
+    }
+
+    table{
+      text-align: center;
+    }
+
+    .btn-sm{
+      cursor: context-menu;
+    }
+  </style>
 </head>
 <body>
   <div class="container-fluid py-4">
@@ -109,12 +123,16 @@
                 <% } %>
               </td>
               <td>
-                <% if (hasRepair && latestRepair && latestRepair.status !== 'rejected') { %>
+                    <% 
+                    const isPendingOrInProgress = latestRepair && 
+                    (latestRepair.status === 'pending' || latestRepair.status === 'in_progress'); 
+                const isRejected = latestRepair && latestRepair.status === 'rejected';
+                %>
+                    <% if (isPendingOrInProgress) { %>
                   <%- getRepairStatusBadge(latestRepair.status) %>
-                <% } else if (latestRepair && latestRepair.status === 'rejected') { %>
-                  <%- getRepairStatusBadge(latestRepair.status) %>
+                    <% } else if (isRejected) { %>
                   <button 
-                    class="btn btn-warning btn-sm text-white ms-2"
+                    class="btn btn-warning btn-sm text-black ms-2"
                     data-bs-toggle="modal"
                     data-bs-target="#repairModal"
                     data-equipment-id="<%= borrow.equipment_id._id %>"
@@ -124,7 +142,7 @@
                   </button>
                 <% } else { %>
                   <button 
-                    class="btn btn-warning btn-sm text-white"
+                    class="btn btn-warning btn-sm text-black"
                     data-bs-toggle="modal"
                     data-bs-target="#repairModal"
                     data-equipment-id="<%= borrow.equipment_id._id %>"

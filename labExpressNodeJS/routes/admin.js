@@ -321,12 +321,6 @@ router.post(
       // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
       await Notification.insertMany(notifications);
       res.redirect("/admin/listitemuser");
-
-      // ส่ง response กลับ
-      res.status(201).json({
-        message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
-        equipment: newEquipment,
-      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" });
