@@ -162,56 +162,6 @@ router.get('/', isAdmin, async (req, res) => {
     });
 }});
 
-// router.get("/", isAdmin, (req, res) => {
-//   res.render("indexAdmin", {
-//     title: "หน้าหลัก Admin",
-//     name: req.session.userName,
-//     layout: "layouts/navadmin",
-//     activePage: "dashboard",
-//   });
-// });
-
-// router.get("/", isAdmin, async (req, res) => {
-//   try {
-//     const user = await User.findById(req.session.userId);
-//     if (!user) {
-//       return res.status(404).render("indexUser", {
-//         title: "ไม่พบข้อมูลผู้ใช้",
-//         user: null,
-//       });
-//     }
-
-//     // ✅ ดึงข้อมูลสถิติ
-//     const totalEquip = await Equipment.countDocuments();
-//     const borrowed = await Borrow.countDocuments({ status: "borrowed" });
-//     const waitingReturn = await Borrow.countDocuments({ status: "waitingForReturn" });
-//     const returned = await Borrow.countDocuments({ status: "returned" });
-
-//     // ✅ ดึงรายการยืมล่าสุด
-//     const recentBorrows = await Borrow.find({
-//       status: { $in: ["borrowed", "waitingForReturn"] },
-//     })
-//       .populate("user_id")
-//       .populate("equipment_id")
-//       .sort({ created_at: -1 })
-//       .limit(10);
-
-//     // ✅ ส่งตัวแปร stats ไปด้วย
-//     res.render("indexAdmin", {
-//       title: "แดชบอร์ดผู้ดูแลระบบ",
-//       layout: "layouts/navadmin",
-//       activePage: "dashboard",
-//       user,
-//       stats: { totalEquip, borrowed, waitingReturn, returned },
-//       recentBorrows,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error loading admin dashboard:", err);
-//     res.status(500).send("เกิดข้อผิดพลาดในการโหลดแดชบอร์ด");
-//   }
-// });
-
-
 router.get("/", isAdmin, (req, res) => {
   res.render("indexAdmin", {
     title: "หน้าหลัก Admin",
@@ -352,33 +302,6 @@ router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
     res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
   }
 });
-
-// router.get('/editEquipment/:id', isAdmin, async (req, res) => {
-//   try {
-//     const equipmentId = req.params.id;
-//     const equipment = await listEquipment.findById(equipmentId).populate('category_id');
-//     const categories = await Category.find({ deleted_at: null });
-//     if (!equipment) {
-//       return res.status(404).send('ไม่พบอุปกรณ์');
-//     }
-//     res.render('editEquipmentAdmin', {
-//       title: equipment.name,
-//       layout: 'layouts/navadmin',
-//       activePage: 'listitemuser',
-//     });
-
-//     res.render("equipmentDetailAdmin", {
-//       title: "รายละเอียดอุปกรณ์",
-//       layout: "layouts/navadmin",
-//       activePage: "listitemuser",
-//       equipment,
-//       categories,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
-//   }
-// });
 
 router.get("/editEquipment/:id", isAdmin, async (req, res) => {
   try {
