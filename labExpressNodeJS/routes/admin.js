@@ -447,6 +447,7 @@ router.get("/deletedEquipment", isAdmin, async (req, res) => {
   }
 });
 
+
 router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
   try {
     const equipment = await listEquipment.findById(req.params.id);
@@ -744,6 +745,42 @@ router.delete("/deletecategory/:id", async (req, res) => {
     });
   }
 });
+
+router.get("/clearall", isAdmin, async (req, res) => {
+  try {
+    // ค้นหาเฉพาะอุปกรณ์ที่มี deleted_at ไม่เป็น null
+    const deletedEquipmentList = await Equipment.find({ deleted_at: { $ne: null } });
+
+    return res.render("deletedEquipmentAdmin", {
+      title: "รายการอุปกรณ์ที่ถูกลบ",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      deletedEquipmentList,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
+  }
+});
+router.post("/deleteallapermanently", isAdmin, async (req, res) => {
+  try {
+    // ลบอุปกรณ์ที่มี deleted_at ไม่เป็น null ออกจากฐานข้อมูล
+    const result = await Equipment.deleteMany({ deleted_at: { $ne: null } });
+
+    return res.json({
+      success: true,
+      message: "ลบอุปกรณ์ทั้งหมดออกจากฐานข้อมูลแล้ว",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบอุปกรณ์ทั้งหมด",
+    });
+  }
+});
+
 
 router.post("/borrow/update/:id", async (req, res) => {
   try {
