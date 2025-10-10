@@ -124,10 +124,12 @@
     <div class="btn-group mb-3">
       <a href="/admin/listitemuser" class="btn-back">กลับ</a>
       <div>
-        <a href="/admin/editEquipment/<%= equipment._id %>" class="btn-edit me-2">แก้ไข</a>
-        <form action="/admin/deleteEquipment/<%= equipment._id %>" method="POST" style="display:inline;">
-          <button type="submit" class="btn-delete" onclick="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบอุปกรณ์นี้?')">ลบ</button>
-        </form>
+        <a href="/admin/editEquipment/<%= equipment._id %>" class="btn btn-primary ">แก้ไข</a>
+        <a href="/admin/deleteEquipment/<%= equipment._id %>" 
+            class="btn btn-danger" 
+            onclick="return confirm('คุณแน่ใจว่าต้องการลบ <%= equipment.name %> หรือไม่?');">
+            ลบ
+        </a>
       </div>
     </div>
 

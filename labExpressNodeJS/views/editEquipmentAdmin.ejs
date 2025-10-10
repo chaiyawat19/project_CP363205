@@ -71,10 +71,17 @@
             </select>
         </div>
 
-        <!-- ปุ่มบันทึก + ลบ -->
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+
+       
             
+        <!-- ปุ่มบันทึก -->
+        <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+        <a href="/admin/deleteEquipment/<%= equipment._id %>" 
+            class="btn btn-danger" 
+            onclick="return confirm('คุณแน่ใจว่าต้องการลบ <%= equipment.name %> หรือไม่?');">
+            ลบ
+        </a>
+    </form>
 
         </div>
     </form>
