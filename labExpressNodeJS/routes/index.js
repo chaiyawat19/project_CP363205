@@ -70,7 +70,6 @@ router.post("/register", async (req, res, next) => {
       password: hashedPassword,
       userProfile: `https://avatar.iran.liara.run/username?username=${fname}+${lname}`,
       userRole: "user",
-      department: ""
     });
 
     await newUser.save();
