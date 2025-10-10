@@ -4,7 +4,6 @@ var Category = require("../models/Category");
 const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
-const upload = require("../middleware/upload");
 const Department = require('../models/Department');
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
@@ -12,6 +11,34 @@ var RepairRequest = require("../models/Reqair_requests");
 const mongoose = require("mongoose");
 var bcrypt = require("bcryptjs");
 const Equipment = require('../models/listEquipment');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs')
+
+// ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // ใช้ path.join เพื่อสร้าง Path ที่ถูกต้อง: [Root Project]/uploads
+        const uploadPath = path.join(__dirname, '..', 'uploads');
+        
+        // 📢 สำคัญ: ตรวจสอบและสร้างโฟลเดอร์ uploads (ถ้ายังไม่มี)
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        // กำหนด Destination ไปที่ Path ที่สร้างขึ้น
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        // ตั้งชื่อไฟล์: user ID - profile - timestamp . นามสกุลเดิม
+        cb(null, req.session.userId + '-profile-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+});
 
 
 
@@ -38,6 +65,8 @@ router.use(isAdmin, async (req, res, next) => {
   next();
 });
 
+
+
 // 1. GET /setting (เมื่อเข้าถึงผ่าน /users/setting) - แสดงหน้าการตั้งค่า
 router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId; 
@@ -52,6 +81,7 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
         if (!user) {
             return res.status(404).send("User data not found in database.");
         }
+        
 
         // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
         res.render('settingsAdmin', { 
@@ -70,8 +100,7 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
 });
 
 
-// 2. POST /setting (สำหรับแก้ไขข้อมูลส่วนตัว)
-router.post('/setting', isAdmin, ensureUserId, async (req, res) => {
+router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
     const userId = req.session.userId;
     const { fname, lname, email, department } = req.body;
     
@@ -82,17 +111,41 @@ router.post('/setting', isAdmin, ensureUserId, async (req, res) => {
         user.fname = fname;
         user.lname = lname;
         user.email = email;
-        user.department = department;
+        user.department = department; // อัปเดตแผนก (เป็น ID)
+
+        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        if (req.file) {
+            // A. เตรียมลบไฟล์เก่า
+            const oldPath = user.userProfile;
+            if (oldPath && oldPath.startsWith('/uploads/')) {
+                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
+                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // ใช้ fs.unlink ในการลบ
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
+                    } else {
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                    }
+                });
+            }
+
+            // B. บันทึก Path รูปใหม่
+            user.userProfile = '/uploads/' + req.file.filename; 
+            console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
+        } else {
+            // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
+            user.userProfile = `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+        }
         
+        // ... (โค้ดบันทึกและ redirect เดิม)
         await user.save();
-        
-        // อัปเดต userName ใน Session
         req.session.userName = `${fname} ${lname}`;
-        
         res.redirect('/admin/setting?msg=updated');
         
     } catch (err) {
-        console.error(err);
+        console.error("Error in /admin/setting POST:", err);
         res.redirect('/admin/setting?err=updatefail');
     }
 });
