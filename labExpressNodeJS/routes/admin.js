@@ -101,33 +101,41 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
 });
 
 
+// Route Handler สำหรับ router.post('/setting')
 router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
     const userId = req.session.userId;
     const { fname, lname, email, department } = req.body;
-    
+
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).send("User not found");
+
+         console.log("OLD DB PATH:", user.userProfile); 
         
+        // 1. อัปเดตข้อมูลทั่วไป
         user.fname = fname;
         user.lname = lname;
         user.email = email;
-        user.department = department; // อัปเดตแผนก (เป็น ID)
+        user.department = department;
 
-        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        // 2. 📢 แก้ไข Logic การอัปโหลดรูปโปรไฟล์ (ตัวหลักที่แก้ปัญหาให้คุณ)
         if (req.file) {
-            // A. เตรียมลบไฟล์เก่า
+            // A. ถ้ามีไฟล์ใหม่ถูกอัปโหลด: เตรียมลบไฟล์เก่า
             const oldPath = user.userProfile;
+            
+            // ตรวจสอบว่า Path เก่าเป็นรูปภาพที่อัปโหลดไว้ (ไม่ใช่ URL Avatar)
             if (oldPath && oldPath.startsWith('/uploads/')) {
-                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
-                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // 🛠️ แก้ไข Path การลบไฟล์เก่า: ใช้ Path ที่ถูกต้องสำหรับ [Root Project]/uploads/
+                // oldPath.substring(1) จะตัด '/' ตัวแรกออก (ได้ 'uploads/ชื่อไฟล์.jpg')
+                const fullPath = path.join(__dirname, '..', oldPath.substring(1)); 
                 
                 // ใช้ fs.unlink ในการลบ
                 fs.unlink(fullPath, (err) => {
                     if (err) {
                         console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
                     } else {
-                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${fullPath}`);
                     }
                 });
             }
@@ -135,16 +143,16 @@ router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage')
             // B. บันทึก Path รูปใหม่
             user.userProfile = '/uploads/' + req.file.filename; 
             console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
-        } else {
-            // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
-            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
-        }
+        } 
+        // ❌ สำคัญ: ส่วน else {...} ที่สั่งให้สร้าง URL Avatar ใหม่ ได้ถูกลบออกไปแล้ว
+        // ทำให้ถ้าไม่ได้อัปโหลดรูปใหม่ ข้อมูล userProfile เดิมจะถูกคงไว้
         
-        // ... (โค้ดบันทึกและ redirect เดิม)
+        console.log("PATH TO BE SAVED:", user.userProfile); 
         await user.save();
+
         req.session.userName = `${fname} ${lname}`;
         res.redirect('/admin/setting?msg=updated');
-        
+
     } catch (err) {
         console.error("Error in /admin/setting POST:", err);
         res.redirect('/admin/setting?err=updatefail');
