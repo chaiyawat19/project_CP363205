@@ -4,10 +4,14 @@ var Category = require("../models/Category");
 const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
-
+var RepairRequest = require("../models/Reqair_requests");
+const mongoose = require("mongoose");
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
 var bcrypt = require("bcryptjs");
+const Equipment = require('../models/listEquipment');
+
+
 
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
@@ -35,7 +39,6 @@ router.use(isAdmin, async (req, res, next) => {
 // 1. GET /setting (เมื่อเข้าถึงผ่าน /users/setting) - แสดงหน้าการตั้งค่า
 router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId; 
-
 
     try {
         const user = await User.findById(userId).select('-password'); 
@@ -137,7 +140,6 @@ router.get('/', isAdmin, async (req, res) => {
         user: null
       });
     }
-
     res.render('indexAdmin', {
       title: 'หน้าหลัก Admin',
       layout: 'layouts/navadmin',
@@ -150,19 +152,57 @@ router.get('/', isAdmin, async (req, res) => {
       title: 'เกิดข้อผิดพลาดของระบบ',
       user: null,
     });
-  }});
+}});
 
-var RepairRequest = require("../models/Reqair_requests");
-const mongoose = require("mongoose");
+// router.get("/", isAdmin, (req, res) => {
+//   res.render("indexAdmin", {
+//     title: "หน้าหลัก Admin",
+//     name: req.session.userName,
+//     layout: "layouts/navadmin",
+//     activePage: "dashboard",
+//   });
+// });
 
-router.get("/", isAdmin, (req, res) => {
-  res.render("indexAdmin", {
-    title: "หน้าหลัก Admin",
-    name: req.session.userName,
-    layout: "layouts/navadmin",
-    activePage: "dashboard",
-  });
-});
+// router.get("/", isAdmin, async (req, res) => {
+//   try {
+//     const user = await User.findById(req.session.userId);
+//     if (!user) {
+//       return res.status(404).render("indexUser", {
+//         title: "ไม่พบข้อมูลผู้ใช้",
+//         user: null,
+//       });
+//     }
+
+//     // ✅ ดึงข้อมูลสถิติ
+//     const totalEquip = await Equipment.countDocuments();
+//     const borrowed = await Borrow.countDocuments({ status: "borrowed" });
+//     const waitingReturn = await Borrow.countDocuments({ status: "waitingForReturn" });
+//     const returned = await Borrow.countDocuments({ status: "returned" });
+
+//     // ✅ ดึงรายการยืมล่าสุด
+//     const recentBorrows = await Borrow.find({
+//       status: { $in: ["borrowed", "waitingForReturn"] },
+//     })
+//       .populate("user_id")
+//       .populate("equipment_id")
+//       .sort({ created_at: -1 })
+//       .limit(10);
+
+//     // ✅ ส่งตัวแปร stats ไปด้วย
+//     res.render("indexAdmin", {
+//       title: "แดชบอร์ดผู้ดูแลระบบ",
+//       layout: "layouts/navadmin",
+//       activePage: "dashboard",
+//       user,
+//       stats: { totalEquip, borrowed, waitingReturn, returned },
+//       recentBorrows,
+//     });
+//   } catch (err) {
+//     console.error("❌ Error loading admin dashboard:", err);
+//     res.status(500).send("เกิดข้อผิดพลาดในการโหลดแดชบอร์ด");
+//   }
+// });
+
 
 router.get("/listitemuser", isAdmin, async (req, res) => {
   try {
@@ -452,11 +492,18 @@ router.post("/addCategory", isAdmin, async (req, res) => {
   }
 });
 
-
-// หน้าแสดงรายการยืนยันการคืนอุปกรณ์
 router.get('/returnequipment', async (req, res) => {
   try {
-    const borrows = await Borrow.find({status: { $in: ['waitingForReturn', 'returned'] }})
+    const { status } = req.query; 
+    let filter = {};
+
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $in: ['waitingForReturn', 'returned'] };
+    }
+
+    const borrows = await Borrow.find(filter)
       .populate('user_id')
       .populate('equipment_id')
       .sort({ created_at: -1 });
@@ -466,11 +513,12 @@ router.get('/returnequipment', async (req, res) => {
       layout: 'layouts/navadmin',
       activePage: 'returnEquipment',
       borrows,
-      query: req.query,
-      statuses: ['waitingForReturn', 'returned'], 
-      statusLabels: { 
-        waitingForReturn: 'รอคืนอุปกรณ์', 
-        returned: 'คืนอุปกรณ์แล้ว'}
+      query: req.query, 
+      status: ['waitingForReturn', 'returned'],
+      statusLabels: {
+        waitingForReturn: 'รอคืนอุปกรณ์',
+        returned: 'คืนอุปกรณ์แล้ว'
+      }
     });
   } catch (err) {
     console.error('❌ Error fetching borrow list:', err);
@@ -478,23 +526,48 @@ router.get('/returnequipment', async (req, res) => {
   }
 });
 
+
+// ✅ ยืนยันการคืนอุปกรณ์
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
-    const { note } = req.body;
-    
-    await Borrow.findByIdAndUpdate(borrowId, {
-      status: 'returned',
-      note,
-      actual_return_date: new Date()
-    });
+    const { note, condition } = req.body;
 
+    if (!borrowId) {
+      console.error("❌ Missing borrowId");
+      return res.status(400).send('ไม่มีรหัสรายการยืม');
+    }
+ 
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow) {
+      console.error("❌ Borrow record not found");
+      return res.status(404).send('ไม่พบข้อมูลการยืม');
+    }
+
+    if (!borrow.equipment_id) {
+      console.error("❌ Missing equipment_id in borrow");
+      return res.status(400).send('ไม่พบอุปกรณ์ที่เกี่ยวข้อง');
+    }
+
+    borrow.status = 'returned';
+    borrow.note = note || '';
+    borrow.actual_return_date = new Date();
+    await borrow.save();
+
+    let newStatus = 'available';
+    if (condition === 'เสียหาย') newStatus = 'broken';
+    if (condition === 'สูญหาย') newStatus = 'unavailable';
+
+    await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
+
+    console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
   } catch (err) {
     console.error('❌ Error confirming return:', err);
     res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
   }
 });
+
 
 
 //บอล
