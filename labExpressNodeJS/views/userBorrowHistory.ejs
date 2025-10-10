@@ -57,17 +57,18 @@
                                             borrow.status==='waitingForReturn' ) { %>
                                             <button class="btn btn-sm btn-info disabled">รออนุมัติ</button>
                                             <% } else { %>
-                                                <button class="btn btn-light w-100" data-bs-toggle="modal"
+                                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal"
                                                     data-bs-target="#detailModal"
                                                     data-bs-equipment-name="<%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบอุปกรณ์' %>"
-                                                    data-bs-status-html="<%= borrow.status === 'available' ? '<span class=\'badge bg-success\'>พร้อมใช้งาน</span>' : '<span class=\'badge bg-danger\'>ไม่พร้อมใช้งาน</span>' %>"
+                                                    data-bs-status-html="<%= getStatusBadge(borrow.status) %>"
                                                     data-bs-borrow-date="<%= borrow.created_at ? new Date(borrow.created_at).toLocaleDateString('th-TH') : '-' %>"
                                                     data-bs-return-date="<%= borrow.return_date ? new Date(borrow.return_date).toLocaleDateString('th-TH') : '-' %>"
                                                     data-bs-actual-return-date="<%= borrow.actual_return_date ? new Date(borrow.actual_return_date).toLocaleDateString('th-TH') : '-' %>"
                                                     data-bs-note="<%= borrow.note || '-' %>"
                                                     data-bs-image="<%= borrow.equipment_id && borrow.equipment_id.image ? borrow.equipment_id.image : '' %>">
-                                                    รายละเอียด
+                                                    ดูรายละเอียด
                                                 </button>
+
 
                                                 <% } %>
                                 </td>
@@ -183,16 +184,14 @@
             detailModal.addEventListener('show.bs.modal', function (event) {
                 const button = event.relatedTarget;
 
-                // ✅ ดึงข้อมูลจาก data-bs-* attribute
                 const equipmentName = button.getAttribute('data-bs-equipment-name');
                 const borrowDate = button.getAttribute('data-bs-borrow-date');
                 const returnDate = button.getAttribute('data-bs-return-date');
                 const actualReturnDate = button.getAttribute('data-bs-actual-return-date');
                 const note = button.getAttribute('data-bs-note');
                 const statusHtml = button.getAttribute('data-bs-status-html');
-                const image = button.getAttribute('data-bs-image'); // ✅ รูปภาพ
+                const image = button.getAttribute('data-bs-image'); // ชื่อไฟล์รูป
 
-                // ✅ อัปเดตข้อมูลใน modal
                 document.getElementById('modalEquipmentName').textContent = equipmentName;
                 document.getElementById('modalBorrowDate').textContent = borrowDate;
                 document.getElementById('modalReturnDate').textContent = returnDate;
@@ -200,10 +199,9 @@
                 document.getElementById('modalNote').textContent = note;
                 document.getElementById('modalStatus').innerHTML = statusHtml;
 
-                // ✅ อัปเดตรูปภาพ (ถ้าไม่มีให้ใช้ placeholder)
                 const modalImage = document.getElementById('modalEquipmentImage');
                 if (modalImage) {
-                    modalImage.src = image || 'https://via.placeholder.com/300x200?text=No+Image';
+                    modalImage.src = image ? `/uploads/${image}` : 'https://via.placeholder.com/300x200?text=No+Image';
                 }
             });
         }
