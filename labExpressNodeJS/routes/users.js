@@ -5,6 +5,7 @@ const Equipment = require('../models/listEquipment');
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Borrow = require('../models/Borrow');
+const Department = require('../models/Department');;
 
 // middleware ดึงข้อมูล user จาก session ก่อน render
 router.use(isUser, async (req, res, next) => {
@@ -66,7 +67,10 @@ router.get('/setting', isUser, ensureUserId, async (req, res) => {
     const userId = req.session.userId; 
 
     try {
-        const user = await User.findById(userId).select('-password'); 
+        const user = await User.findById(userId)
+        .select('-password')
+        .populate('department'); 
+        const departments = await Department.find({ deleted_at: null }).select('name');  
         if (!user) {
             return res.status(404).send("User data not found in database.");
         }
@@ -76,6 +80,7 @@ router.get('/setting', isUser, ensureUserId, async (req, res) => {
             title: 'การตั้งค่าผู้ใช้', 
             name: req.session.userName,
             user: user,
+            departments: departments,
             layout: 'layouts/navuser',
             activePage: 'setting',
             req: req

@@ -5,7 +5,8 @@ const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const upload = require("../middleware/upload");
 const User = require('../models/User');
-const Borrow = require('../models/Borrow');
+const Borrow = require('../models/Borrow')
+const Department = require('../models/Department');;
 var bcrypt = require("bcryptjs");
 
 const ensureUserId = (req, res, next) => {
@@ -38,16 +39,22 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
 
 
     try {
-        const user = await User.findById(userId).select('-password'); 
+        const user = await User.findById(userId)
+        .select('-password')
+        .populate('department'); 
+
+        const departments = await Department.find({ deleted_at: null }).select('name'); 
+        
         if (!user) {
             return res.status(404).send("User data not found in database.");
         }
-        
+
         // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
         res.render('settingsAdmin', { 
             title: 'การตั้งค่าผู้ดูแลระบบ', 
             name: req.session.userName,
             user: user,
+            departments: departments,
             layout: 'layouts/navadmin',
             activePage: 'setting',
             req: req
@@ -777,3 +784,5 @@ router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => 
 );
 
 module.exports = router;
+
+
