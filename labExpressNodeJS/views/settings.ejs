@@ -49,8 +49,17 @@
                 <button type="submit" form="personalForm" class="btn-primary">บันทึก</button>
             </div>
             
-            <form id="personalForm" action="/users/setting" method="POST">
-                
+            <form id="personalForm" action="/users/setting" method="POST" enctype="multipart/form-data">
+                 <div class="input-group profile-group">
+                    <label>รูปโปรไฟล์ปัจจุบัน:</label>
+                    <img src="<%= user.userProfile %>" style="width: 100px; height: 100px; border-radius: 50%; display: block; margin-bottom: 10px;">
+                </div>
+
+                <div class="input-group">
+                    <label for="profileImage">อัปโหลดรูปโปรไฟล์ใหม่:</label>
+                    <input type="file" id="profileImage" name="userProfileImage" accept="image/*">
+                    <p class="note">*ไฟล์ที่รองรับ: .jpg, .jpeg, .png หรือไม่ต้องเลือกไฟล์หากไม่ต้องการเปลี่ยนรูป</p>
+                </div>
                 <div class="row">
                     <div class="input-group">
                         <label for="fname">ชื่อต้น</label>

@@ -6,6 +6,32 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 const Borrow = require('../models/Borrow');
 const Department = require('../models/Department');;
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs')
+
+// ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // 📢 ใช้ path.join(__dirname, '..', 'uploads') เพื่อชี้ไปที่ [Root Project]/uploads
+        const uploadPath = path.join(__dirname, '..', 'uploads');
+        
+        // ตรวจสอบและสร้างโฟลเดอร์ uploads (ถ้ายังไม่มี)
+        if (!fs.existsSync(uploadPath)) {
+            // fs.mkdirSync(uploadPath, { recursive: true }); // ถ้าไม่ต้องการเพิ่มโค้ดเยอะ ไม่ต้องใส่ก็ได้ แต่แนะนำให้ใส่
+        }
+        
+        cb(null, uploadPath); // กำหนด Destination ไปที่ Path จริง
+    },
+    filename: (req, file, cb) => {
+        cb(null, req.session.userId + '-profile-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 2 * 1024 * 1024 },
+});
 
 // middleware ดึงข้อมูล user จาก session ก่อน render
 router.use(isUser, async (req, res, next) => {
@@ -22,6 +48,7 @@ router.use(isUser, async (req, res, next) => {
   }
   next();
 });
+
 
 
 router.get('/', isUser, async (req, res) => {
@@ -75,6 +102,7 @@ router.get('/setting', isUser, ensureUserId, async (req, res) => {
             return res.status(404).send("User data not found in database.");
         }
         
+        
         // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
         res.render('settings', { 
             title: 'การตั้งค่าผู้ใช้', 
@@ -93,30 +121,61 @@ router.get('/setting', isUser, ensureUserId, async (req, res) => {
 
 
 // 2. POST /setting (สำหรับแก้ไขข้อมูลส่วนตัว)
-router.post('/setting', isUser, ensureUserId, async (req, res) => {
-  const userId = req.session.userId;
-  const { fname, lname, email, department } = req.body;
+router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
+    const userId = req.session.userId;
+    const { fname, lname, email, department } = req.body;
 
-  try {
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).send("User not found");
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).send("User not found");
 
-    user.fname = fname;
-    user.lname = lname;
-    user.email = email;
-    user.department = department;
+        // อัปเดตข้อมูล Text Fields
+        user.fname = fname;
+        user.lname = lname;
+        user.email = email;
+        user.department = department;
 
-    await user.save();
+        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        if (req.file) {
+            
+            // A. เตรียมลบไฟล์เก่า
+            const oldPath = user.userProfile;
+            if (oldPath && oldPath.startsWith('/uploads/')) {
+                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
+                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // ใช้ fs.unlink ในการลบ (Non-blocking I/O)
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        // ไม่ต้องส่ง error ให้ user เห็น แค่ log ไว้
+                        console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
+                    } else {
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                    }
+                });
+            }
 
-    // อัปเดต userName ใน Session
-    req.session.userName = `${fname} ${lname}`;
+            // B. บันทึก Path รูปใหม่
+            user.userProfile = '/uploads/' + req.file.filename; 
+            console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
+        } else {
+            // ถ้าไม่ได้อัปโหลดรูปใหม่ (req.file เป็น null/undefined)
+            // แต่มีการเปลี่ยนชื่อ ให้สร้าง URL Avatar ใหม่
+            user.userProfile = `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+        }
 
-    res.redirect('/users/setting?msg=updated');
+        await user.save();
 
-  } catch (err) {
-    console.error(err);
-    res.redirect('/users/setting?err=updatefail');
-  }
+        // อัปเดต userName ใน Session
+        req.session.userName = `${fname} ${lname}`;
+
+        res.redirect('/users/setting?msg=updated');
+
+    } catch (err) {
+        // หากเกิด Error จาก Multer (เช่น ไฟล์ใหญ่เกิน) จะมาตกที่นี่
+        console.error("Error in /users/setting POST:", err);
+        res.redirect('/users/setting?err=updatefail');
+    }
 });
 
 

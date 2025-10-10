@@ -32,6 +32,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // แก้ไขตรงนี้ตอนทำ จัดการผู้ใช้
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js'));
 
