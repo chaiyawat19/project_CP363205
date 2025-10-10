@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background-color: #f9fafb;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .wrapper {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            height: 100%;
+            padding-top: 50px;
+        }
+
+        .card {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            padding: 40px 30px;
+        }
+
+        .repair-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1e2a78;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn-top {
+            display: inline-block;
+            margin-bottom: 20px;
+            background-color: #343a40;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+        .back-btn-top:hover {
+            background-color: #23272b;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #577bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(87, 123, 255, 0.5);
+        }
+
+        .submit-btn-style {
+            width: 100%;
+            padding: 15px 0;
+            background-color: #577bff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+        }
+
+        .submit-btn-style:hover {
+            background-color: #4068ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="card">
+            <a href="/users" class="back-btn-top">กลับ</a>
+            <h1 class="repair-title">แจ้งซ่อม</h1>
+
+            <% if (errorMessage) { %>
+                <div class="alert alert-danger">
+                    <%= errorMessage %>
+                </div>
+            <% } %>
+
+            <form action="/users/repair" method="POST" id="repairForm">
+                <!-- เลือกอุปกรณ์ -->
+                <div class="mb-4">
+                    <label for="equipmentId" class="form-label">เลือกอุปกรณ์ที่ต้องการแจ้งซ่อม</label>
+                    <select name="equipmentId" id="equipmentId" class="form-select" required>
+                        <option value="" disabled selected>-- กรุณาเลือกอุปกรณ์ --</option>
+                        <% if (equipments && equipments.length > 0) { %>
+                            <% equipments.forEach(eq => { %>
+                                <option value="<%= eq._id %>"><%= eq.name %></option>
+                            <% }) %>
+                        <% } else { %>
+                            <option value="">ไม่มีอุปกรณ์ที่กำลังยืมอยู่</option>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- รายละเอียดเพิ่มเติม -->
+                <div class="mb-4">
+                    <label for="type" class="form-label">รายละเอียดเพิ่มเติม (ถ้ามี)</label>
+                    <textarea class="form-control" name="type" id="type" rows="3" placeholder="อธิบายปัญหาที่พบ"></textarea>
+                </div>
+
+                <!-- สถานที่เก็บอุปกรณ์ -->
+                <div class="mb-4">
+                    <label class="form-label">สถานที่เก็บอุปกรณ์</label>
+                    <input type="text" id="equipmentLocation" class="form-control" readonly>
+                    <input type="hidden" name="location" id="equipmentLocationHidden">
+                </div>
+
+                <button type="submit" class="submit-btn-style">แจ้งซ่อม</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const select = document.getElementById('equipmentId');
+        const locationInput = document.getElementById('equipmentLocation');
+        const hiddenLocation = document.getElementById('equipmentLocationHidden');
+        const form = document.getElementById('repairForm');
+
+        // แสดงสถานที่เก็บอุปกรณ์อัตโนมัติ
+        select.addEventListener('change', () => {
+            const equipmentId = select.value;
+            if (!equipmentId) {
+                locationInput.value = '';
+                hiddenLocation.value = '';
+                return;
+            }
+            fetch(`/users/equipment/${equipmentId}`)
+                .then(res => res.json())
+                .then(data => {
+                    locationInput.value = data.location || '';
+                    hiddenLocation.value = data.location || '';
+                })
+                .catch(err => {
+                    console.error('Error fetching location:', err);
+                    locationInput.value = 'ไม่สามารถดึงข้อมูลได้';
+                    hiddenLocation.value = '';
+                });
+        });
+
+        // ป้องกัน submit ถ้าไม่มีอุปกรณ์
+        form.addEventListener('submit', (e) => {
+            if (!select.value) {
+                e.preventDefault();
+                alert('กรุณาเลือกอุปกรณ์ที่ต้องการแจ้งซ่อม');
+            }
+        });
+    </script>
+</body>
+
+</html>
