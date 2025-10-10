@@ -5,66 +5,147 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= title %></title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
     body {
+      box-sizing: border-box;
+      background: #F3F4F6;
       font-family: "Kanit", sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      min-height: 100vh;
+    }
+    .login{
+      background-color: white;
+      padding: 10px;
+      height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
-      color: #333;
+      flex-direction: column;
     }
-
-    .register-card {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      width: 100%;
-      max-width: 420px;
-      padding: 40px 30px;
-      animation: fadeInUp 0.8s ease;
+    .container-fluid{
+      padding: 0;
+      
     }
-
-    .register-card h3 {
-      text-align: center;
-      font-weight: 600;
-      color: #0d6efd;
-      margin-bottom: 25px;
+    form {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      width: 450px;
+      padding: 25px;
+      box-sizing: border-box;
+      
     }
-
-    .form-label {
-      font-weight: 500;
-      color: #333;
+    form input {
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 15px;
     }
-
-    .btn-primary {
-      background-color: #0d6efd;
+    form input[type="submit"] {
       border: none;
+      padding: 12px;
+      border-radius: 15px;
+      margin-top: 15px;
+      background-color: #003F8F;
+      color: white;
       font-weight: 500;
+      cursor: pointer;
       transition: 0.3s;
-      border-radius: 10px;
+    }
+    .box{
+      display: flex;
+      flex-direction: column;
+    }
+    .box input[type="text"] {
       width: 100%;
     }
-
-    .btn-primary:hover {
-      background-color: #084298;
-      transform: translateY(-1px);
+    form input[type="submit"]:hover {
+      background-color: #0053c0;
     }
-
-    footer {
-      position: fixed;
-      bottom: 10px;
-      font-size: 0.85rem;
-      color: #eee;
+    form input:focus {
+      border: 1px solid #003F8F;
+      outline: none;
+    }
+    form label {
+      margin: 10px 0 5px;
+    }
+    .login h1 {
       text-align: center;
+      color: #003F8F;
+      margin-bottom: 20px;
+    }
+    .img{
       width: 100%;
+      height: 100vh;
+      
+    }
+    .img img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .logo{
+      text-align: center;
+    }
+    .logo h1{
+      text-align: center;
+      color: #003F8F;
+      margin: 0;
+    }
+    .register{
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .register p{
+      margin: 0px 10px;
+    }
+    .fullname{
+      display: flex;
+    }
+    .or{
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
-  <div class="register-card">
+  <div class="container-fluid">
+    <div class="img">
+      <img src="https://cdn.discordapp.com/attachments/1416380695118352455/1426176418949238936/Sure_Please_provide_the_text_youd_like_me_to_paraphrase_and_Ill_assist_you_with_that_.jpg?ex=68ea45cb&is=68e8f44b&hm=ac98dd9b6185be6641940185d440e98ca2009a4cea5febbffacaf39274df0b74&" alt="">
+    </div>
+    <div class="login">
+      <form action="/register" method="POST">
+        <div class="logo">
+          <h1>สมัครสมาชิก</h1>
+          <small>บริการระบบยืมและคืนอุปกรณ์ภายในบริษัท</small>
+        </div>
+        <div class="fullname">
+          <div class="box">
+            <label for="fname" class="">ชื่อ</label>
+            <input type="text" class="" id="fname" name="fname" placeholder="กรุณากรอกชื่อจริง" required />
+          </div>
+          <div class="or"></div>
+          <div class="box">
+            <label for="lname" class="">นามสกุล</label>
+            <input type="text" class="" id="lname" name="lname" placeholder="กรุณากรอกนามสกุล" required />
+          </div>
+        </div>
+        
+        <label for="email" class="">อีเมล</label>
+        <input type="email" class="" id="email" name="email" placeholder="example@company.com" required />
+        <label for="password">รหัสผ่าน</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required />
+        <label for="confirmPassword" class="">ยืนยันรหัสผ่าน</label>
+        <input type="password" class="" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required />
+
+        <input type="submit" value="สมัครสมาชิก">
+        <div class="register">
+          <p>ยังมีบัญชี? </p><a href="/login"> เข้าสู่ระบบ</a>
+        </div>
+        
+      </form>
+    </div>
+  </div>
+  <!-- <div class="register-card">
     <h3><%= title %></h3>
 
     <form action="/register" method="POST">
@@ -95,9 +176,35 @@
 
       <button type="submit" class="btn btn-primary py-2">สมัครสมาชิก</button>
     </form>
-  </div>
+  </div> -->
 
-  <footer>© 2025 Asset Flow.</footer>
+  <!-- <footer>© 2025 Asset Flow.</footer> -->
+   <% if (typeof error !== 'undefined' && error) { %>
+  <script>
+    Swal.fire({
+      icon: 'error',
+      title: 'สมัครสมาชิกสำเร็จ!',
+      text: '<%= error %>',
+      confirmButtonColor: '#d33'
+    });
+  </script>
+  <% } %>
+
+  <% if (typeof success !== 'undefined' && success) { %>
+  <script>
+    Swal.fire({
+      icon: 'success',
+      title: 'สมัครสมาชิกสำเร็จ!',
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: '#003F8F',
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/login";
+      }
+    });
+  </script>
+  <% } %>
 </body>
 </html>
 

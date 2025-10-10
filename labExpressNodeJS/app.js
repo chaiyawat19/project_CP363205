@@ -12,6 +12,11 @@ const logger = require('morgan');
 const indexRouter = require('./routes/index');
 const adminRouter = require('./routes/admin');
 const userRouter = require('./routes/users');
+// require module
+const { Resend } = require('resend');
+
+// สร้าง instance ด้วย API Key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 
@@ -24,7 +29,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/index'); 
 app.set('view engine', 'ejs');
-
+app.locals.resend = resend;
 // middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -32,6 +37,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // แก้ไขตรงนี้ตอนทำ จัดการผู้ใช้
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js'));
 

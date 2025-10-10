@@ -19,6 +19,7 @@
     "http-errors": "~1.6.3",
     "mongoose": "^8.18.2",
     "morgan": "~1.9.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "resend": "^6.1.2"
   }
 }

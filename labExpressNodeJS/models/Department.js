@@ -16,7 +16,6 @@ const departmentSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-
 module.exports = mongoose.model('Department', departmentSchema);
 
 

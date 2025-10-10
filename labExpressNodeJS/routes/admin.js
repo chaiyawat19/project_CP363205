@@ -1,17 +1,47 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
-const { isAdmin } = require("../middleware/auth");
+
+const { isAdmin,  } = require ('../middleware/auth');
+
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
-const upload = require("../middleware/upload");
-const Department = require("../models/Department");
-var RepairRequest = require("../models/Reqair_requests");
-const mongoose = require("mongoose");
+const Department = require('../models/Department');
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
+var RepairRequest = require("../models/Reqair_requests");
+const mongoose = require("mongoose");
 var bcrypt = require("bcryptjs");
 const Equipment = require('../models/listEquipment');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs')
+
+// ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // ใช้ path.join เพื่อสร้าง Path ที่ถูกต้อง: [Root Project]/uploads
+        const uploadPath = path.join(__dirname, '..', 'uploads');
+        
+        // 📢 สำคัญ: ตรวจสอบและสร้างโฟลเดอร์ uploads (ถ้ายังไม่มี)
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        // กำหนด Destination ไปที่ Path ที่สร้างขึ้น
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        // ตั้งชื่อไฟล์: user ID - profile - timestamp . นามสกุลเดิม
+        cb(null, req.session.userId + '-profile-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+});
+
 
 
 const ensureUserId = (req, res, next) => {
@@ -37,6 +67,8 @@ router.use(isAdmin, async (req, res, next) => {
   next();
 });
 
+
+
 // 1. GET /setting (เมื่อเข้าถึงผ่าน /users/setting) - แสดงหน้าการตั้งค่า
 router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId; 
@@ -51,6 +83,7 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
         if (!user) {
             return res.status(404).send("User data not found in database.");
         }
+        
 
         // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
         res.render('settingsAdmin', { 
@@ -69,8 +102,7 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
 });
 
 
-// 2. POST /setting (สำหรับแก้ไขข้อมูลส่วนตัว)
-router.post('/setting', isAdmin, ensureUserId, async (req, res) => {
+router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
     const userId = req.session.userId;
     const { fname, lname, email, department } = req.body;
     
@@ -81,17 +113,41 @@ router.post('/setting', isAdmin, ensureUserId, async (req, res) => {
         user.fname = fname;
         user.lname = lname;
         user.email = email;
-        user.department = department;
+        user.department = department; // อัปเดตแผนก (เป็น ID)
+
+        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        if (req.file) {
+            // A. เตรียมลบไฟล์เก่า
+            const oldPath = user.userProfile;
+            if (oldPath && oldPath.startsWith('/uploads/')) {
+                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
+                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // ใช้ fs.unlink ในการลบ
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
+                    } else {
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                    }
+                });
+            }
+
+            // B. บันทึก Path รูปใหม่
+            user.userProfile = '/uploads/' + req.file.filename; 
+            console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
+        } else {
+            // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
+            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+        }
         
+        // ... (โค้ดบันทึกและ redirect เดิม)
         await user.save();
-        
-        // อัปเดต userName ใน Session
         req.session.userName = `${fname} ${lname}`;
-        
         res.redirect('/admin/setting?msg=updated');
         
     } catch (err) {
-        console.error(err);
+        console.error("Error in /admin/setting POST:", err);
         res.redirect('/admin/setting?err=updatefail');
     }
 });
@@ -229,11 +285,12 @@ router.post(
       // ดึงค่าจาก body
       const { name, category_id, description, location } = req.body;
       const adminId = req.session.userId; // ได้จาก middleware isAdmin
+      const adminProfile = req.session.userProfile || null; // ✅ ป้องกัน undefined
 
       // ไฟล์รูป (ถ้ามี)
       const image = req.file ? req.file.filename : null;
 
-      // ✅ สร้างอุปกรณ์ใหม่
+      // สร้างอุปกรณ์ใหม่
       const newEquipment = new listEquipment({
         name,
         category_id,
@@ -245,27 +302,28 @@ router.post(
 
       await newEquipment.save();
 
-      // ✅ เตรียมข้อความแจ้งเตือน
+      // เตรียมข้อความแจ้งเตือน
       const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
       const reason = "";
       // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
-      // ✅ ดึง user ทั้งหมด
+      // ดึง user ทั้งหมด
       const users = await User.find({}, "_id");
 
-      // ✅ สร้าง array ของ notification สำหรับแต่ละ user
+      // สร้าง array ของ notification สำหรับแต่ละ user
       const notifications = users.map((u) => ({
         user_id: u._id,
         equipment_id: newEquipment._id, // ใช้ id ของอุปกรณ์ที่เพิ่งสร้าง
         message,
         reason,
         admin_id: adminId,
+        type: "add"
       }));
 
-      // ✅ บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
+      // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
       await Notification.insertMany(notifications);
       res.redirect("/admin/listitemuser");
 
-      // ✅ ส่ง response กลับ
+      // ส่ง response กลับ
       res.status(201).json({
         message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
         equipment: newEquipment,
@@ -515,7 +573,7 @@ router.get('/returnequipment', async (req, res) => {
 });
 
 
-// ✅ ยืนยันการคืนอุปกรณ์
+// ยืนยันการคืนอุปกรณ์
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
@@ -526,7 +584,10 @@ router.post('/confirmreturn/:id', async (req, res) => {
       return res.status(400).send('ไม่มีรหัสรายการยืม');
     }
  
-    const borrow = await Borrow.findById(borrowId);
+    const borrow = await Borrow.findById(borrowId)
+  .populate('equipment_id')
+  .populate('user_id');
+
     if (!borrow) {
       console.error("❌ Borrow record not found");
       return res.status(404).send('ไม่พบข้อมูลการยืม');
@@ -536,6 +597,7 @@ router.post('/confirmreturn/:id', async (req, res) => {
       console.error("❌ Missing equipment_id in borrow");
       return res.status(400).send('ไม่พบอุปกรณ์ที่เกี่ยวข้อง');
     }
+
 
     borrow.status = 'returned';
     borrow.note = note || '';
@@ -547,6 +609,19 @@ router.post('/confirmreturn/:id', async (req, res) => {
     if (condition === 'สูญหาย') newStatus = 'unavailable';
 
     await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
+
+    console.log(`อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
+    const noti = new Notification({
+      user_id: borrow.user_id,
+      equipment_id: borrow.equipment_id,
+      message: `การคืนอุปกรณ์ "${borrow.equipment_id.name}" ของคุณได้รับการยืนยันแล้ว`,
+      reason: condition,
+      type: 'return',
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile || null
+    });
+
+    await noti.save();
 
     console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
@@ -600,10 +675,34 @@ router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    await Borrow.findByIdAndUpdate(id, {
-      status: "borrowed", 
-      return_date: req.body.Date, 
-      note: req.body.note,   
+      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");
+    if (!borrowRecord) {
+      return res.status(404).send("ไม่พบข้อมูลการยืม");
+    }
+
+    // ✅ อัปเดตสถานะการยืม
+    borrowRecord.status = "borrowed";
+    borrowRecord.return_date = req.body.Date;
+    borrowRecord.note = req.body.note;
+    await borrowRecord.save();
+
+   // ✅ สร้าง Notification
+    const notification = new Notification({
+      user_id: borrowRecord.user_id._id,
+      equipment_id: borrowRecord.equipment_id._id,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`,
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile
+    });
+    await notification.save();
+
+    // ✅ ส่งอีเมลแจ้งผู้ใช้ (await เพื่อรอให้เสร็จ)
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`
     });
 
     res.redirect("/admin/Borrowequipment"); 
@@ -612,19 +711,60 @@ router.post("/borrow/update/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
-router.get("/borrow/reject/:id", async (req, res) => {
+
+router.post("/borrow/reject/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    const rejectReason = req.body.rejectReason || "ไม่มีเหตุผลระบุ";
 
-    await Borrow.findByIdAndUpdate(id, {
-      status: "rejected", 
+    // ดึง borrow record พร้อม populate user และ equipment
+    const borrowRecord = await Borrow.findById(id)
+      .populate("user_id")
+      .populate("equipment_id");
+
+    if (!borrowRecord) {
+      return res.status(404).send("ไม่พบข้อมูลการยืม");
+    }
+
+    // อัปเดตสถานะ borrow เป็น rejected
+    borrowRecord.status = "rejected";
+    borrowRecord.note = rejectReason;
+    await borrowRecord.save();
+
+    // ✅ อัปเดตสถานะอุปกรณ์กลับเป็น available
+    if (borrowRecord.equipment_id) {
+      await Equipment.findByIdAndUpdate(borrowRecord.equipment_id._id, {
+        status: "available"
+      });
+    }
+
+    // สร้าง Notification
+    const notification = new Notification({
+      user_id: borrowRecord.user_id._id,
+      equipment_id: borrowRecord.equipment_id._id,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ`,
+      reason: rejectReason,
+      type: 'reject',
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile
     });
-    res.redirect("/admin/Borrowequipment"); 
+    await notification.save();
+
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณไม่ได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณไม่ได้รับการอนุมัติ\nเหตุผล: ${rejectReason}`
+    });
+
+    res.redirect("/admin/Borrowequipment");
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
+
 
 // ฟังก์ชันช่วยแปลงวันที่เป็นรูปแบบไทย
 function formatThaiDate(date) {
@@ -835,7 +975,9 @@ router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => 
       const id = req.params.id; //ดึงค่า id จาก URL (เช่น “652f1b87d3...”)
       
 
+
       const { admin_comment, status, completion_date } = req.body;
+
 
       // Validate status ถ้ามีค่าเข้ามา
       let newStatus = undefined;
@@ -1002,7 +1144,7 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
       password: hashedPassword,
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
       department: department && department.trim() !== '' ? department.trim() : null, // เก็บเป็น null ถ้าไม่เลือก
     });
@@ -1074,8 +1216,9 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-      userRole: userRole,
-      department: department && department.trim() !== '' ? department.trim() : null
+      userRole,
+      department: department && department.trim() !== '' ? department.trim() : null,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
     };
 
     await User.findByIdAndUpdate(req.params.id, updateData);
@@ -1090,6 +1233,7 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
   }
 });
 
+
 // ลบผู้ใช้และข้อมูลการยืมทั้งหมดที่เกี่ยวข้อง
 router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
   try {
@@ -1099,34 +1243,38 @@ router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
     if (req.session && req.session.userId === userId) {
       return res.status(400).send("ไม่สามารถลบบัญชีของตัวเองได้");
     }
+
     // ตรวจสอบว่ามีผู้ใช้อยู่จริงหรือไม่
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).send("ไม่พบผู้ใช้ที่ต้องการลบ");
     }
-    // ค้นหาและลบข้อมูลการยืมทั้งหมดที่มี userId นี้
-    const borrowsToDelete = await Borrow.find({ userId: userId });
+    console.log(`ลบผู้ใช้: ${user.fname} ${user.lname}`);
+
+    // แก้ไข: ใช้ user_id แทน userId (ตาม Model)
+    const borrowsToDelete = await Borrow.find({ user_id: userId });
     console.log(`พบข้อมูลการยืม: ${borrowsToDelete.length} รายการ`);
     
     if (borrowsToDelete.length > 0) {
       console.log(`\nรายการที่จะลบ:`);
       borrowsToDelete.forEach((borrow, index) => {
-        console.log(`  ${index + 1}. Borrow ID: ${borrow._id}`);
+        console.log(`  ${index + 1}. Borrow ID: ${borrow._id} | Equipment: ${borrow.equipment_id} | Status: ${borrow.status}`);
       });
     }
-    // ลบข้อมูลการยืมทั้งหมด
+
+    // ลบข้อมูลการยืมทั้งหมด (ใช้ user_id)
     const deletedBorrows = await Borrow.deleteMany({ 
-      userId: userId 
+      user_id: userId 
     });
-    console.log(`\n ลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
+    console.log(`\nลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
 
     // ลบผู้ใช้
     await User.findByIdAndDelete(userId);
-    console.log(` ลบผู้ใช้สำเร็จ`);
+    console.log(`ลบผู้ใช้สำเร็จ`);
+    
     res.redirect("/admin/manage_user");
     
   } catch (err) {
-    console.error("Error Name    :", err.name);
     console.error("Error Message :", err.message);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
