@@ -68,7 +68,7 @@ router.post("/register", async (req, res, next) => {
       lname,
       email,
       password: hashedPassword,
-      userProfile: `https://avatar.iran.liara.run/username?username=${fname}+${lname}`,
+      userProfile: `https://ui-avatars.com/api/?name=${fname}+${lname}`,
       userRole: "user"
     });
 

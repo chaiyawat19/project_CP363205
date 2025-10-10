@@ -136,7 +136,7 @@ router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage')
             console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
         } else {
             // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
-            user.userProfile = `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
         }
         
         // ... (โค้ดบันทึกและ redirect เดิม)
@@ -1031,7 +1031,7 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
       password: hashedPassword, // <-- ใช้รหัสผ่านที่เข้ารหัสแล้ว
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
       department: department ? department.trim() : '',
     });
@@ -1082,7 +1082,7 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
       email: email.trim().toLowerCase(),
       userRole,
       department: department ? department.trim() : '',
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
     };
 
     // ถ้ามีการกรอกรหัสผ่านใหม่ ให้เข้ารหัสก่อนบันทึก

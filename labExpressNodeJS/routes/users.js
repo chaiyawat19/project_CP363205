@@ -161,7 +161,7 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
         } else {
             // ถ้าไม่ได้อัปโหลดรูปใหม่ (req.file เป็น null/undefined)
             // แต่มีการเปลี่ยนชื่อ ให้สร้าง URL Avatar ใหม่
-            user.userProfile = `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
         }
 
         await user.save();
