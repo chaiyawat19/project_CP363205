@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <style>
     table th{
+
       padding: 10px;
       width: 5%;
     }
@@ -16,7 +17,10 @@
 
     .btn-sm{
       cursor: context-menu;
+      width: 5%;
+      padding: 10px;
     }
+
   </style>
 </head>
 <body>
@@ -43,7 +47,7 @@
         <% if (borrowedItems.length > 0) { %>
           <h3 class="fw-bold text-primary mb-3">อุปกรณ์ที่คุณกำลังยืม</h3>
           <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover ">
               <thead class="table-blue">
                 <tr>
                   <th scope="col">ลำดับ</th>
@@ -82,7 +86,7 @@
   <div class="card shadow-sm p-4 mb-4">
     <h3 class="fw-bold text-primary mb-3">แจ้งซ่อมอุปกรณ์ที่กำลังยืม</h3>
     <div class="table-responsive">
-      <table class="table table-hover align-middle">
+      <table class="table table-hover">
         <thead class="table-blue">
           <tr>
             <th scope="col">ลำดับ</th>
