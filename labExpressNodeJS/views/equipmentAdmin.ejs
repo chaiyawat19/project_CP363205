@@ -74,7 +74,6 @@
             </div>
         </div>
     </div>
-
     <div class="container">
         <div class="row" id="equipmentContainer">
             <% equipmentList.forEach(equipment=> { %>
@@ -89,7 +88,11 @@
                                     <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
                                 <% } else if (equipment.status==="repair" ) { %>
                                     <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
+<<<<<<< HEAD
                                 <% } else { %>
+=======
+                                <% } else if (equipment.status==="broken" ) { %>
+>>>>>>> 86b0b2fb8fe728b9595a0a6b4414f2ffc0bef697
                                     <p class="badge bg-secondary p-3">เสียหาย</p>
                                 <% } %>
                             </div>
