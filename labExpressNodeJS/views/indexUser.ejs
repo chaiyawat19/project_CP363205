@@ -1,12 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <style>
+        .bg-blue { background-color: #0d6efd !important; }
+        .bg-light-blue { background-color: #4a9eff !important; }
+        .bg-sky-blue { background-color: #00bcd4 !important; }
+        .bg-orange { background-color: #ff9800 !important; }
+        .table-blue {
+            --bs-table-bg: #cfe2ff;
+            --bs-table-striped-bg: #b6d4fe;
+        }
+    </style>
 </head>
+
 <body>
-    <h1> เข้ามาในหน้า User แล้ว</h1>
-    <h2><%= name %></h2>
+<div class="container-fluid py-4">
+    <% if (user) { %>
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-blue">สวัสดี คุณ <%= user.fname %> <%= user.lname %></h1>
+            <hr class="my-3">
+        </div>
+    </div>
+
+    <!-- รายการอุปกรณ์ที่ต้องคืน -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-light-blue text-white">
+                    <h3 class="mb-0"><i class="bi bi-check-circle me-2"></i>รายการที่ต้องคืน</h3>
+                </div>
+                <div class="card-body">
+                    <% const borrowedItems = borrows && borrows.length ? borrows.filter(b => b.status === 'borrowed') : []; %>
+                    <% if (borrowedItems.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle">
+                            <thead class="bg-sky-blue text-white">
+                                <tr>
+                                    <th class="text-center">ลำดับ</th>
+                                    <th>ชื่ออุปกรณ์</th>
+                                    <th class="text-center">วันที่ยืม</th>
+                                    <th class="text-center">วันที่ต้องคืน</th>
+                                    <th>หมายเหตุ</th>
+                                    <th class="text-center">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% borrowedItems.forEach((borrow, index) => { %>
+                                <tr>
+                                    <td class="text-center"><%= index + 1 %></td>
+                                    <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : '-' %></strong></td>
+                                    <td class="text-center"><%= borrow.created_at ? new Date(borrow.created_at).toLocaleDateString('th-TH') : '-' %></td>
+                                    <td class="text-center"><%= borrow.return_date ? new Date(borrow.return_date).toLocaleDateString('th-TH') : '-' %></td>
+                                    <td><%= borrow.note || '-' %></td>
+                                    <td class="text-center"><span class="badge bg-sky-blue text-white">กำลังยืม</span></td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } else { %>
+                    <div class="alert alert-primary text-center">
+                        <i class="bi bi-info-circle me-2"></i>ยังไม่มีอุปกรณ์ที่ยืม
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- รายการแจ้งซ่อม -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-orange text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="bi bi-tools me-2"></i>รายการแจ้งซ่อม</h3>
+                    <a href="/users/repair" class="btn btn-warning">
+                        <i class="bi bi-plus-circle me-1"></i> แจ้งซ่อมใหม่
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- ฟิลเตอร์ค้นหา -->
+                    <div class="row mb-3">
+                        <div class="col-md-4 mb-2">
+                            <input type="text" id="repairSearch" class="form-control" placeholder="ค้นหาอุปกรณ์...">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <select id="repairMonth" class="form-select">
+                                <option value="">ทั้งหมด (เดือน)</option>
+                                <% for (let m = 1; m <= 12; m++) { %>
+                                <option value="<%= m.toString() %>"><%= m %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <select id="repairStatus" class="form-select">
+                                <option value="">ทั้งหมด (สถานะ)</option>
+                                <option value="รอซ่อม">รอซ่อม</option>
+                                <option value="ซ่อมแล้ว">ซ่อมแล้ว</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <% const repairItems = repairs || []; %>
+                    <% if (repairItems.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle">
+                            <thead class="bg-warning text-white">
+                                <tr>
+                                    <th class="text-center">ลำดับ</th>
+                                    <th>ชื่ออุปกรณ์</th>
+                                    <th>รายละเอียด</th>
+                                    <th class="text-center">วันที่แจ้ง</th>
+                                    <th class="text-center">สถานะ</th>
+                                    <th class="text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="repairTableBody">
+                                <% repairItems.forEach((repair, index) => { %>
+                                <tr data-month="<%= repair.created_at ? (new Date(repair.created_at).getMonth() + 1).toString() : '' %>" 
+                                    data-status="<%= repair.status %>">
+                                    <td class="text-center"><%= index + 1 %></td>
+                                    <td><strong><%= repair.topic %></strong></td>
+                                    <td><%= repair.type || repair.issue_description || '-' %></td>
+                                    <td class="text-center"><%= repair.created_at ? new Date(repair.created_at).toLocaleDateString('th-TH') : '-' %></td>
+                                    <td class="text-center">
+                                        <% if (repair.status === 'รอซ่อม') { %>
+                                            <span class="badge bg-warning text-dark">รอซ่อม</span>
+                                        <% } else if (repair.status === 'ซ่อมแล้ว') { %>
+                                            <span class="badge bg-success text-white">ซ่อมแล้ว</span>
+                                        <% } else { %>
+                                            <span class="badge bg-secondary text-white"><%= repair.status %></span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="alert(`ชื่ออุปกรณ์: <%= repair.topic %>\nรายละเอียด: <%= repair.type || repair.issue_description || '-' %>\nสถานะ: <%= repair.status %>`);">
+                                            <i class="bi bi-eye"></i> ดูรายละเอียด
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } else { %>
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-info-circle me-2"></i>ยังไม่มีรายการแจ้งซ่อม
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <% } else { %>
+    <div class="alert alert-danger text-center">
+        <i class="bi bi-exclamation-triangle me-2"></i>ไม่พบข้อมูลผู้ใช้
+    </div>
+    <% } %>
+</div>
+
+<script>
+    const searchInput = document.getElementById('repairSearch');
+    const monthSelect = document.getElementById('repairMonth');
+    const statusSelect = document.getElementById('repairStatus');
+    const tableBody = document.getElementById('repairTableBody');
+    const rows = tableBody ? Array.from(tableBody.getElementsByTagName('tr')) : [];
+
+    function filterRepairs() {
+        const searchText = searchInput.value.toLowerCase();
+        const selectedMonth = monthSelect.value;
+        const selectedStatus = statusSelect.value;
+
+        rows.forEach(row => {
+            const name = row.cells[1].innerText.toLowerCase();
+            const rowMonth = row.dataset.month;
+            const rowStatus = row.dataset.status;
+
+            const matchText = name.includes(searchText);
+            const matchMonth = !selectedMonth || rowMonth === selectedMonth;
+            const matchStatus = !selectedStatus || rowStatus === selectedStatus;
+
+            row.style.display = (matchText && matchMonth && matchStatus) ? '' : 'none';
+        });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterRepairs);
+    if (monthSelect) monthSelect.addEventListener('change', filterRepairs);
+    if (statusSelect) statusSelect.addEventListener('change', filterRepairs);
+</script>
 </body>
 </html>
