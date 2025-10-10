@@ -320,7 +320,7 @@ const getStatusBadge = (status) => {
             return '<span class="badge bg-success">คืนแล้ว</span>';
         case 'rejected':
             return '<span class="badge bg-danger">ถูกปฏิเสธ</span>';
-        case 'waitingForReturn': // สถานะใหม่ที่คุณเพิ่ม
+        case 'waitingForReturn': 
             return '<span class="badge bg-info">รอการยืนยันการคืน</span>';
         default:
             return `<span class="badge bg-secondary">${status}</span>`;

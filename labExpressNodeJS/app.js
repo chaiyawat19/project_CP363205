@@ -55,9 +55,6 @@ app.use('/listitemuser',userRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
-
-
-
 app.use(function(req, res, next) {
   next(createError(404));
 });
