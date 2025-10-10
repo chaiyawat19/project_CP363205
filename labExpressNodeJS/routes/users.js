@@ -105,6 +105,7 @@ router.post('/setting', isUser, ensureUserId, async (req, res) => {
     user.lname = lname;
     user.email = email;
     user.department = department;
+ 
 
     await user.save();
 

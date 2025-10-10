@@ -15,6 +15,7 @@ const Equipment = require('../models/listEquipment');
 
 
 
+
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/login'); 
@@ -619,20 +620,53 @@ router.post("/borrow/update/:id", async (req, res) => {
     });
     await notification.save();
 
+    // ✅ ส่งอีเมลแจ้งผู้ใช้ (await เพื่อรอให้เสร็จ)
+    const resend = req.app.locals.resend;
+    await resend.emails.send({
+      from: "imsebt19@gmail.com", // ใช้อีเมลผู้ดูแลระบบจริง
+      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
+      subject: "คำขอยืมอุปกรณ์ของคุณได้รับการอนุมัติ",
+      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`
+    });
+
     res.redirect("/admin/Borrowequipment"); 
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
-router.get("/borrow/reject/:id", async (req, res) => {
+router.post("/borrow/reject/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    const rejectReason = req.body.rejectReason || "ไม่มีเหตุผลระบุ";
 
+    // ✅ ต้อง populate ก่อน update เพื่อดึงข้อมูล user และ equipment
+    const borrowRecord = await Borrow.findById(id)
+      .populate("user_id")
+      .populate("equipment_id");
+
+    if (!borrowRecord) {
+      return res.status(404).send("ไม่พบข้อมูลการยืม");
+    }
+
+    // ✅ อัพเดทสถานะเป็น rejected พร้อมบันทึกเหตุผล
     await Borrow.findByIdAndUpdate(id, {
-      status: "rejected", 
+      status: "rejected"
     });
-    res.redirect("/admin/Borrowequipment"); 
+
+    // ✅ สร้าง Notification
+    const notification = new Notification({
+      user_id: borrowRecord.user_id._id,
+      equipment_id: borrowRecord.equipment_id._id,
+      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ `,
+      reason: rejectReason,
+      type: 'reject',
+      admin_id: req.session.userId,
+      admin_profile: req.session.userProfile
+    });
+    await notification.save();
+
+    res.redirect("/admin/Borrowequipment");
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
