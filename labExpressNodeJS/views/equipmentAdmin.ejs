@@ -114,21 +114,14 @@
                                         : equipment.description %>
                                 </p>
                             </div>
-                            <div class="mt-auto">
-                                <div class="botton d-flex justify-content-around mb-2">
-                                    <a href="/admin/viewDetail/<%= equipment._id %>"
-                                        class="btn btn-outline-secondary w-50 me-2">
-                                        <i class="fas fa-search me-1"></i> ดูรายละเอียด
-                                    </a>
-                                    <a href="/admin/editEquipment/<%= equipment._id%>" class="btn btn-primary w-50">
-                                        <i class="fas fa-edit me-1"></i> แก้ไข
-                                    </a>
-                                </div>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar-alt me-1"></i> วันเวลาที่สร้าง: <%= new
-                                        Date(equipment.created_at).toLocaleDateString('th-TH') %>
-                                </small>
+                            <div class="button">
+                                <a href="/admin/seedetails/<%= equipment._id %>" class="btn btn-outline-secondary">ดูรายละเอียด</a>
+                                <a href="/admin/editEquipment/<%= equipment._id %>" class="btn btn-primary">แก้ไข</a>
                             </div>
+                            <small class="font">
+                                วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
+                            </small>
+
                         </div>
                     </div>
                 </div>

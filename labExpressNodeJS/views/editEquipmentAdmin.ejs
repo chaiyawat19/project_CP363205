@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
 </head>
-<body >
-
+<body>
     <a href="/admin/listitemuser" class="btn btn-secondary mb-3">กลับ</a>
     <h1><%= title %></h1>
 
@@ -72,6 +71,9 @@
             </select>
         </div>
 
+
+       
+            
         <!-- ปุ่มบันทึก -->
         <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
         <a href="/admin/deleteEquipment/<%= equipment._id %>" 
@@ -79,8 +81,9 @@
             onclick="return confirm('คุณแน่ใจว่าต้องการลบ <%= equipment.name %> หรือไม่?');">
             ลบ
         </a>
-
     </form>
 
+        </div>
+    </form>
 </body>
 </html>
