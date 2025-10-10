@@ -4,9 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <style>
+        .bg-blue {
+            background-color: #0d6efd !important;
+        }
+        .bg-light-blue {
+            background-color: #4a9eff !important;
+        }
+        .bg-sky-blue {
+            background-color: #00bcd4 !important;
+        }
+        .table-blue {
+            --bs-table-bg: #cfe2ff;
+            --bs-table-striped-bg: #b6d4fe;
+        }
+    </style>
 </head>
 <body>
-    <h1> เข้ามาในหน้า User แล้ว</h1>
-    <h2><%= name %></h2>
+    <div class="container-fluid py-4">
+        <% if (user) { %>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="display-5 fw-bold text-blue">ยินดีต้อนรับ, คุณ <%= user.fname %> <%= user.lname %></h1>
+                    <hr class="my-3">
+                </div>
+            </div>
+            
+
+<div class="card-body">
+  <% 
+  // กรองข้อมูลเฉพาะที่ status เป็น 'borrowed' และ user_id ตรงกับคนล็อกอิน
+  const borrowedItems = borrows.filter(b => 
+    b.status === 'borrowed' && 
+    String(b.user_id?._id || b.user_id) === String(user._id)
+  ); 
+%>
+
+<% if (borrowedItems.length > 0) { %>
+    <div class="card shadow-sm p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col">ลำดับ</th>
+          <th scope="col">ชื่ออุปกรณ์</th>
+          <th scope="col">วันที่ยืม</th>
+          <th scope="col">วันที่ต้องคืน</th>
+          <th scope="col">หมายเหตุ</th>
+          <th scope="col">สถานะ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% borrowedItems.forEach((borrow, index) => { %>
+          <tr>
+            <td><%= index + 1 %></td>
+            <td><strong><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่พบข้อมูล' %></strong></td>
+            <td><%= new Date(borrow.created_at).toLocaleDateString('th-TH') %></td>
+            <td><%= new Date(borrow.return_date).toLocaleDateString('th-TH') %></td>
+            <td><%= borrow.note || '-' %></td>
+            <td>
+              <span class="badge bg-success text-white">กำลังยืม</span>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } else { %>
+  <div class="alert alert-primary text-center" role="alert">
+    <i class="bi bi-info-circle me-2"></i>คุณยังไม่ได้ยืมอุปกรณ์ใด ๆ
+  </div>
+<% } %>
+</div>
+</div>
+
+            
+        <% } else { %>
+            <div class="alert alert-danger text-center" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>ไม่พบข้อมูลผู้ใช้
+            </div>
+        <% } %>
+    </div>
 </body>
 </html>

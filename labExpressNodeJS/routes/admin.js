@@ -1,15 +1,219 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
-var RepairRequest = require("../models/Reqair_requests");
-var User = require("../models/User");
-const Borrow = require('../models/Borrow'); 
-const Department = require('../models/Department'); 
-const { isAdmin } = require("../middleware/auth");
+const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
-const upload = require("../middleware/upload");
+const Notification = require("../models/Notification");
+const Department = require('../models/Department');
+const Borrow = require("../models/Borrow")
+const User = require('../models/User');
+var RepairRequest = require("../models/Reqair_requests");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+var bcrypt = require("bcryptjs");
+const Equipment = require('../models/listEquipment');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs')
+
+// ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // ใช้ path.join เพื่อสร้าง Path ที่ถูกต้อง: [Root Project]/uploads
+        const uploadPath = path.join(__dirname, '..', 'uploads');
+        
+        // 📢 สำคัญ: ตรวจสอบและสร้างโฟลเดอร์ uploads (ถ้ายังไม่มี)
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        // กำหนด Destination ไปที่ Path ที่สร้างขึ้น
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        // ตั้งชื่อไฟล์: user ID - profile - timestamp . นามสกุลเดิม
+        cb(null, req.session.userId + '-profile-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+});
+
+
+
+const ensureUserId = (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+        return res.redirect('/login'); 
+    }
+    next();
+};
+
+// middleware ดึงข้อมูล user จาก session ก่อน render
+router.use(isAdmin, async (req, res, next) => {
+  try {
+    if (req.session.userId) {
+      const user = await User.findById(req.session.userId);
+      res.locals.user = user;
+    } else {
+      res.locals.user = null;
+    }
+  } catch (err) {
+    console.error('Error loading user middleware:', err);
+    res.locals.user = null;
+  }
+  next();
+});
+
+
+
+// 1. GET /setting (เมื่อเข้าถึงผ่าน /users/setting) - แสดงหน้าการตั้งค่า
+router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
+    const userId = req.session.userId; 
+
+    try {
+        const user = await User.findById(userId)
+        .select('-password')
+        .populate('department'); 
+
+        const departments = await Department.find({ deleted_at: null }).select('name'); 
+        
+        if (!user) {
+            return res.status(404).send("User data not found in database.");
+        }
+        
+
+        // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
+        res.render('settingsAdmin', { 
+            title: 'การตั้งค่าผู้ดูแลระบบ', 
+            name: req.session.userName,
+            user: user,
+            departments: departments,
+            layout: 'layouts/navadmin',
+            activePage: 'setting',
+            req: req
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Server Error");
+    }
+});
+
+
+router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
+    const userId = req.session.userId;
+    const { fname, lname, email, department } = req.body;
+    
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).send("User not found");
+        
+        user.fname = fname;
+        user.lname = lname;
+        user.email = email;
+        user.department = department; // อัปเดตแผนก (เป็น ID)
+
+        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        if (req.file) {
+            // A. เตรียมลบไฟล์เก่า
+            const oldPath = user.userProfile;
+            if (oldPath && oldPath.startsWith('/uploads/')) {
+                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
+                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // ใช้ fs.unlink ในการลบ
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
+                    } else {
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                    }
+                });
+            }
+
+            // B. บันทึก Path รูปใหม่
+            user.userProfile = '/uploads/' + req.file.filename; 
+            console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
+        } else {
+            // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
+            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+        }
+        
+        // ... (โค้ดบันทึกและ redirect เดิม)
+        await user.save();
+        req.session.userName = `${fname} ${lname}`;
+        res.redirect('/admin/setting?msg=updated');
+        
+    } catch (err) {
+        console.error("Error in /admin/setting POST:", err);
+        res.redirect('/admin/setting?err=updatefail');
+    }
+});
+
+// 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
+router.post('/setting/password', isAdmin, ensureUserId, async (req, res) => {
+    const userId = req.session.userId;
+    const { oldPassword, newPassword } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).send("User not found");
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.redirect('/admin/setting?err=wrongpass');
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        
+        await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
+
+        // 📢 โค้ดที่ต้องแก้ไข: ทำลาย Session ทันที
+        req.session.destroy(err => {
+            if (err) {
+                console.error(err);
+                return res.redirect('/admin/setting?err=pass_fail');
+            }
+            // ลบ cookie ด้วย (ถ้าใช้ connect-session)
+            res.clearCookie('connect.sid'); 
+            
+            // 📢 Redirect ไปหน้า Login หรือหน้าแรก เพื่อให้ผู้ใช้ล็อกอินใหม่
+            return res.redirect('/?msg=password_changed_login'); 
+        });
+        
+        // ❌ ลบบรรทัดเดิมนี้ออก เพราะการ Redirect ต้องอยู่ใน req.session.destroy
+        // res.redirect('/users/setting?msg=password_changed');
+
+    } catch (err) {
+        console.error(err);
+        res.redirect('/admin/setting?err=pass_fail');
+    }
+});
+
+
+router.get('/', isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).render('indexUser', {
+        title: 'ไม่พบข้อมูลผู้ใช้',
+        user: null
+      });
+    }
+    res.render('indexAdmin', {
+      title: 'หน้าหลัก Admin',
+      layout: 'layouts/navadmin',
+      activePage: 'dashboard',
+      user: user
+    });
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).render('indexUser', {
+      title: 'เกิดข้อผิดพลาดของระบบ',
+      user: null,
+    });
+}});
 
 router.get("/", isAdmin, (req, res) => {
   res.render("indexAdmin", {
@@ -26,6 +230,14 @@ router.get("/listitemuser", isAdmin, async (req, res) => {
     const listEqt = await listEquipment
       .find({ deleted_at: null })
       .populate("category_id");
+
+    res.render('equipmentAdmin', {
+      title: 'รายการอุปกรณ์',
+      name: req.session.userName,
+      layout: 'layouts/navadmin',
+      activePage: 'listitemuser',
+      equipmentList: listEqt
+    });
 
     res.render("equipmentAdmin", {
       title: "รายการอุปกรณ์",
@@ -49,6 +261,7 @@ router.get("/addEquipment", isAdmin, async (req, res) => {
 
     res.render("addEquipmentAdmin", {
       title: "เพิ่มอุปกรณ์",
+
       name: req.session.userName,
       layout: "layouts/navadmin",
       activePage: "listitemuser",
@@ -60,6 +273,7 @@ router.get("/addEquipment", isAdmin, async (req, res) => {
   }
 });
 
+
 router.post(
   "/addEquipment",
   isAdmin,
@@ -68,29 +282,55 @@ router.post(
     try {
       // ดึงค่าจาก body
       const { name, category_id, description, location } = req.body;
+      const adminId = req.session.userId; // ได้จาก middleware isAdmin
 
       // ไฟล์รูป (ถ้ามี)
       const image = req.file ? req.file.filename : null;
 
-      // สร้าง object ใหม่
+      // ✅ สร้างอุปกรณ์ใหม่
       const newEquipment = new listEquipment({
         name,
         category_id,
         description,
-        status: "available", // กำหนดค่า default
+        status: "available", // ค่า default
         image,
         location,
       });
 
       await newEquipment.save();
 
-      return res.redirect("/admin/listitemuser");
+      // ✅ เตรียมข้อความแจ้งเตือน
+      const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
+      const reason = "";
+      // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
+      // ✅ ดึง user ทั้งหมด
+      const users = await User.find({}, "_id");
+
+      // ✅ สร้าง array ของ notification สำหรับแต่ละ user
+      const notifications = users.map((u) => ({
+        user_id: u._id,
+        equipment_id: newEquipment._id, // ใช้ id ของอุปกรณ์ที่เพิ่งสร้าง
+        message,
+        reason,
+        admin_id: adminId,
+      }));
+
+      // ✅ บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
+      await Notification.insertMany(notifications);
+      res.redirect("/admin/listitemuser");
+
+      // ✅ ส่ง response กลับ
+      res.status(201).json({
+        message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
+        equipment: newEquipment,
+      });
     } catch (error) {
       console.error(error);
-      return res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" });
     }
   }
 );
+
 
 router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
   try {
@@ -102,16 +342,17 @@ router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
     if (!equipment) {
       return res.status(404).send("ไม่พบอุปกรณ์");
     }
-    res.render("equipmentDetailAdmin", {
-      title: "รายละเอียดอุปกรณ์",
-      layout: "layouts/navadmin",
-      activePage: "listitemuser",
+
+    res.render('equipmentDetailAdmin', {
+      title: 'รายละเอียดอุปกรณ์',
+      layout: 'layouts/navadmin',
+      activePage: 'listitemuser',
       equipment,
-      categories,
+      categories
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+    res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
   }
 });
 
@@ -211,13 +452,11 @@ router.get("/deletedEquipment", isAdmin, async (req, res) => {
 router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
   try {
     const equipment = await listEquipment.findById(req.params.id);
-    if (!equipment) return res.status(404).send("ไม่พบอุปกรณ์");
-
-    equipment.status = "available"; // เปลี่ยนสถานะกลับเป็น available
-    equipment.deleted_at = null; // กู้คืน
+    if (!equipment) return res.status(404).send('ไม่พบอุปกรณ์');
+    equipment.status = 'available';
+    equipment.deleted_at = null;
     await equipment.save();
-
-    res.redirect("/admin/deletedEquipment");
+    res.redirect('/admin/deletedEquipment');
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการกู้คืนอุปกรณ์");
@@ -226,10 +465,13 @@ router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
 
 router.get("/logout", (req, res) => {
   req.session.destroy((err) => {
+
     if (err) {
       console.error(err);
       return res.redirect("/");
     }
+    res.clearCookie('connect.sid');
+    res.redirect('/');
     res.clearCookie("connect.sid"); // ลบ cookie ออกด้วย
     res.redirect("/"); // กลับไปหน้า login หรือหน้าแรก
   });
@@ -267,6 +509,152 @@ router.post("/addCategory", isAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์");
+  }
+});
+
+router.get('/returnequipment', async (req, res) => {
+  try {
+    const { status } = req.query; 
+    let filter = {};
+
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $in: ['waitingForReturn', 'returned'] };
+    }
+
+    const borrows = await Borrow.find(filter)
+      .populate('user_id')
+      .populate('equipment_id')
+      .sort({ created_at: -1 });
+
+    res.render('returnEquipmentAdmin', {
+      title: 'รายการยืนยันการคืนอุปกรณ์',
+      layout: 'layouts/navadmin',
+      activePage: 'returnEquipment',
+      borrows,
+      query: req.query, 
+      status: ['waitingForReturn', 'returned'],
+      statusLabels: {
+        waitingForReturn: 'รอคืนอุปกรณ์',
+        returned: 'คืนอุปกรณ์แล้ว'
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error fetching borrow list:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+  }
+});
+
+
+// ✅ ยืนยันการคืนอุปกรณ์
+router.post('/confirmreturn/:id', async (req, res) => {
+  try {
+    const borrowId = req.params.id;
+    const { note, condition } = req.body;
+
+    if (!borrowId) {
+      console.error("❌ Missing borrowId");
+      return res.status(400).send('ไม่มีรหัสรายการยืม');
+    }
+ 
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow) {
+      console.error("❌ Borrow record not found");
+      return res.status(404).send('ไม่พบข้อมูลการยืม');
+    }
+
+    if (!borrow.equipment_id) {
+      console.error("❌ Missing equipment_id in borrow");
+      return res.status(400).send('ไม่พบอุปกรณ์ที่เกี่ยวข้อง');
+    }
+
+    borrow.status = 'returned';
+    borrow.note = note || '';
+    borrow.actual_return_date = new Date();
+    await borrow.save();
+
+    let newStatus = 'available';
+    if (condition === 'เสียหาย') newStatus = 'broken';
+    if (condition === 'สูญหาย') newStatus = 'unavailable';
+
+    await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
+
+    console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
+    res.redirect('/admin/returnequipment');
+  } catch (err) {
+    console.error('❌ Error confirming return:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
+  }
+});
+
+
+
+//บอล
+router.get('/Borrowequipment', isAdmin, async (req, res) => {
+  const borrows = await Borrow.find({})
+    .populate('equipment_id')
+    .populate('user_id')
+    .sort({ created_at: -1 });
+  res.render('borrowEquipment.ejs', {
+    title: 'รายการยืม-คืนอุปกรณ์',
+    layout: 'layouts/navadmin',
+    activePage: 'borrowEquipment',
+    borrows: borrows
+  });
+
+});
+
+router.get("/borrow_Details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const borrow = await Borrow.findById(id)
+      .populate('user_id')
+      .populate('equipment_id')
+      .lean();
+
+    if (!borrow) return res.status(404).send("ไม่พบข้อมูลการยืม");
+
+    res.render("borrowEquipmentDetails", {
+      title: "รายละเอียดการยืมอุปกรณ์",
+      formatThaiDate,
+      layout: "layouts/navadmin",
+      activePage: "borrowEquipment",
+      borrow: borrow 
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
+  }
+});
+router.post("/borrow/update/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "borrowed", 
+      return_date: req.body.Date, 
+      note: req.body.note,   
+    });
+
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+  }
+});
+router.get("/borrow/reject/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await Borrow.findByIdAndUpdate(id, {
+      status: "rejected", 
+    });
+    res.redirect("/admin/Borrowequipment"); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
 
@@ -646,7 +1034,7 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
       password: hashedPassword,
-      userProfile: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
       department: department && department.trim() !== '' ? department.trim() : null, // เก็บเป็น null ถ้าไม่เลือก
     });
@@ -718,8 +1106,9 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
       fname: fname.trim(),
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
-      userRole: userRole,
-      department: department && department.trim() !== '' ? department.trim() : null
+      userRole,
+      department: department && department.trim() !== '' ? department.trim() : null,
+      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
     };
 
     await User.findByIdAndUpdate(req.params.id, updateData);
@@ -813,3 +1202,5 @@ router.post("/verify-superadmin", async (req, res) => {
 
 
 module.exports = router;
+
+

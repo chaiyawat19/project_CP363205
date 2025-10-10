@@ -68,14 +68,12 @@ router.post("/register", async (req, res, next) => {
       lname,
       email,
       password: hashedPassword,
-      userProfile: `https://avatar.iran.liara.run/username?username=${fname}+${lname}`,
-      userRole: "user",
-      department: ""
+      userProfile: `https://ui-avatars.com/api/?name=${fname}+${lname}`,
+      userRole: "user"
     });
 
     await newUser.save();
-
-    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", success: "สมัครสมาชิกเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้" });
+    return res.render("register", { title: "เข้าสู่ระบบ", layout: "layouts/auth", success: "สมัครสมาชิกเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้" });
 
   } catch (error) {
     console.error(error);
@@ -84,38 +82,58 @@ router.post("/register", async (req, res, next) => {
 });
 
 router.post("/login", async (req, res, next) => {
-  const { email, password } = req.body;
-  try {
-    if (!email || !password) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "กรุณากรอกอีเมลและรหัสผ่าน" });
-    }
+    const { email, password } = req.body;
+    const generalError = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; 
     
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
+    try {
+        if (!email || !password) {
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน"
+            });
+        }
+        
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: generalError 
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.render("login", { 
+                title: "เข้าสู่ระบบ", 
+                layout: "layouts/auth", 
+                error: generalError 
+            });
+        }
+
+        // สร้าง Session
+        req.session.userId = user._id;
+        req.session.userRole = user.userRole;
+        req.session.userName = user.fname;
+        req.session.userEmail = user.email;
+        
+        // **เปลี่ยนจาก redirect เป็น render พร้อมส่ง success url**
+        const redirectUrl = user.userRole === 'admin' ? '/admin' : '/users';
+        return res.render("login", { 
+            title: "เข้าสู่ระบบ", 
+            layout: "layouts/auth",
+            success: redirectUrl  // ส่ง URL ที่จะ redirect ไป
+        });
+
+    } catch (error) {
+        console.error("Login System Error:", error);
+        return res.render("login", { 
+            title: "เข้าสู่ระบบ", 
+            layout: "layouts/auth", 
+            error: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" 
+        });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
-    }
-
-    req.session.userId = user._id;
-    req.session.userRole = user.userRole;
-    req.session.userName = user.fname;
-
-    
-    // redirect ตาม role
-    if (user.userRole === 'admin') {
-      return res.redirect('/admin');   // หน้า view ของ admin
-    } else {
-      return res.redirect('/users');   // หน้า view ของ user
-    }
-
-  } catch (error) {
-    console.error(error);
-    return res.render("login", { title: "เข้าสู่ระบบ", layout: "layouts/auth", error: "เกิดข้อผิดพลาดของระบบ" });
-  }
 });
 
 // route สำหรับ logout
@@ -136,5 +154,6 @@ router.get("/logout", (req, res, next) => {
     res.redirect('/');
   });
 });
+
 
 module.exports = router;

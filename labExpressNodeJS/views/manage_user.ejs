@@ -45,7 +45,6 @@
         .add_user {
             margin-bottom: 15px;
             font-size: 1.2rem;
-            
         }
         .box_add_user {
             display: flex;
@@ -103,7 +102,7 @@
                                 <%= user.userRole %>
                             </span>
                         </td>
-                        <td><%= user.department || '-' %></td>
+                        <td><%= user.department  || '-' %></td>
                         <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
                         <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
 
