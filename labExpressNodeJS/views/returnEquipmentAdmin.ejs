@@ -41,7 +41,9 @@
         <% borrows.forEach((borrow, index) => { %>
           <tr>
             <td><%= index + 1 %></td>
-            <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
+            <td>
+              <%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>
+            </td>
             <td><%= borrow.equipment_id.name %></td>
             <td><%= borrow.note || '-' %></td>
             <td>
@@ -58,7 +60,7 @@
                         data-bs-toggle="modal"
                         data-bs-target="#confirmModal"
                         data-id="<%= borrow._id %>"
-                        data-user="<%= borrow.user_id.fname + ' ' + borrow.user_id.lname %>"
+                        data-user="<%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>"
                         data-equipment="<%= borrow.equipment_id.name %>">
                   ยืนยันการคืน
                 </button>

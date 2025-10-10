@@ -16,5 +16,4 @@ const DepartmentSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Export Model ออกไปเพื่อให้ไฟล์อื่นเรียกใช้งานได้
 module.exports = mongoose.model('Department', DepartmentSchema);
