@@ -116,6 +116,7 @@ router.post("/login", async (req, res, next) => {
         // สร้าง Session
         req.session.userId = user._id;
         req.session.userRole = user.userRole;
+        req.session.userProfile = user.userProfile;
         req.session.userName = user.fname;
         req.session.userEmail = user.email;
         
