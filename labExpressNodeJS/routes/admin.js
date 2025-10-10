@@ -242,7 +242,7 @@ router.post(
 
       // ✅ เตรียมข้อความแจ้งเตือน
       const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
-      const reason = "เพิ่มอุปกรณ์ใหม่ในระบบ";
+      const reason = "";
       // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
       // ✅ ดึง user ทั้งหมด
       const users = await User.find({}, "_id");
@@ -258,6 +258,7 @@ router.post(
 
       // ✅ บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
       await Notification.insertMany(notifications);
+      res.redirect("/admin/listitemuser");
 
       // ✅ ส่ง response กลับ
       res.status(201).json({
