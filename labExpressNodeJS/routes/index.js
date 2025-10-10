@@ -2,6 +2,9 @@ var express = require("express");
 var router = express.Router();
 var User = require("../models/User");
 var bcrypt = require("bcryptjs");
+var Borrow = require('../models/Borrow');
+var User = require('../models/User');
+var Equipment = require('../models/listEquipment');
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
@@ -12,6 +15,11 @@ router.get("/", function (req, res, next) {
       return res.redirect('/users');
     }
   }
+
+
+
+
+
   res.render("index", { title: "AssetFlow" });
 });
 
