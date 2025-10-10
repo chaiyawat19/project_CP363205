@@ -10,353 +10,208 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
         body {
-            font-family: 'Kanit', sans-serif;
-            background: #f5f6fa;
-            overflow-x: hidden;
+            box-sizing: border-box;
+            background: #F3F4F6;
+            font-family: "Kanit", sans-serif;
         }
 
-        /* Navbar */
-        .navbar-custom {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1.2rem 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
         }
 
-        .navbar-brand {
-            color: white !important;
-            font-weight: 700;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-        }
-
-        .navbar-brand:hover {
-            transform: scale(1.05);
-        }
-
-        .btn-navbar {
-            margin-left: 10px;
-            padding: 10px 28px;
-            font-weight: 500;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .btn-login {
-            background: white;
-            color: #667eea;
-            border: none;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-login:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
-        }
-
-        .btn-register {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-register:hover {
-            background: white;
-            color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 120px 0 80px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            animation: fadeInUp 1s ease;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 25px;
-            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            line-height: 1.2;
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 40px;
-            font-weight: 300;
-            opacity: 0.95;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 100px 40px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-            position: relative;
-        }
-
-        .features h2 {
-            font-size: 2.8rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-align: center;
-        }
-
-        .features-subtitle {
-            text-align: center;
-            color: #6c757d;
-            font-size: 1.1rem;
-            margin-bottom: 60px;
-            font-weight: 300;
-        }
-
-        .feature-item {
-            padding: 40px 30px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 20px;
-            background: white;
-            margin-bottom: 30px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transform: scaleX(0);
-            transition: transform 0.4s ease;
-        }
-
-        .feature-item:hover::before {
-            transform: scaleX(1);
-        }
-
-        .feature-item:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
-            border-color: rgba(102, 126, 234, 0.2);
-        }
-
-        .feature-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
+        ul.menu,
+        ul.menu-center {
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.4s ease;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .feature-item:hover .feature-icon {
-            transform: rotateY(360deg);
-            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
-        }
-
-        .feature-item i {
-            font-size: 2.5rem;
-            color: white;
-        }
-
-        .feature-item h5 {
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 1.4rem;
-            color: #2d3748;
-        }
-
-        .feature-item p {
-            color: #718096;
-            line-height: 1.7;
-            font-weight: 300;
             margin: 0;
+            padding: 0;
+            list-style: none;
         }
 
-        /* Footer */
-        footer {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        ul.menu li,
+        ul.menu-center li {
+            margin: 0 10px;
+        }
+
+        ul.menu-center a {
+            text-decoration: none;
+            padding: 10px;
+            color: #111111;
+        }
+
+        ul.menu a {
+            text-decoration: none;
+            padding: 10px;
+            background-color: #111111;
             color: white;
-            padding: 50px 40px;
-            text-align: center;
-            position: relative;
+            border-radius: 15px;
         }
 
-        footer::before {
-            content: '';
+        .box {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            z-index: -100;
+            top: 12%;
+            left: 65%;
+            font-size: 24px;
         }
 
-        footer p {
-            margin: 0;
-            font-weight: 300;
-            font-size: 1rem;
-            opacity: 0.9;
+        .box h1 {
+            font-size: 100px;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.2rem;
+        .content {
+            display: flex;
+            justify-content: center;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
             }
 
-            .hero p {
-                font-size: 1rem;
+            50% {
+                transform: translateY(-20px);
             }
 
-            .features h2 {
-                font-size: 2rem;
-            }
-
-            .hero {
-                padding: 80px 20px 60px;
-            }
-
-            .features {
-                padding: 60px 20px;
-            }
-
-            .btn-navbar {
-                padding: 8px 20px;
-                font-size: 0.9rem;
+            100% {
+                transform: translateY(0px);
             }
         }
 
-        /* Smooth scroll */
-        html {
-            scroll-behavior: smooth;
+        .floating-image {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            overflow: hidden;
+        }
+
+        .logo img {
+            width: 120px;
+            object-fit: cover;
+            transform: translate(-25px, -25px);
+        }
+
+        .card {
+            box-shadow: #111111 -5px 5px 0px;
+            transition: all 0.3s ease; 
+        }
+        .card:hover{
+            transform: translateY(-5px); 
+            box-shadow: #111111 -8px 8px 0px;  
+        }
+        footer{
+            background-color: #111111;
+            color: white;
         }
     </style>
 </head>
 
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/">✨ AssetFlow</a>
-            <div class="ms-auto">
-                <a href="/login" class="btn btn-login btn-navbar">เข้าสู่ระบบ</a>
-                <a href="/register" class="btn btn-register btn-navbar">สมัครสมาชิก</a>
+    <div class="container-fluid">
+        <nav>
+            <div class="logo">
+                <img src="../uploads/img/logo.png" alt="">
             </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>ระบบยืม-คืนอุปกรณ์ในบริษัท</h1>
-            <p>จัดการอุปกรณ์ของบริษัทได้อย่างสะดวก รวดเร็ว และเป็นระเบียบ<br>ด้วยเทคโนโลยีที่ทันสมัยและใช้งานง่าย</p>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features">
-        <h2>ฟีเจอร์เด่นของระบบ</h2>
-        <p class="features-subtitle">ระบบที่ออกแบบมาเพื่อความสะดวกสบายและประสิทธิภาพสูงสุด</p>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-clipboard-check"></i>
-                        </div>
-                        <h5>ติดตามอุปกรณ์</h5>
-                        <p>ตรวจสอบรายการยืมและคืนอุปกรณ์แบบเรียลไทม์ได้อย่างง่ายดาย พร้อมระบบแจ้งเตือนอัตโนมัติ</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-tools"></i>
-                        </div>
-                        <h5>แจ้งซ่อมอุปกรณ์</h5>
-                        <p>สามารถแจ้งซ่อมและติดตามสถานะการซ่อมของอุปกรณ์ได้ทันที พร้อมบันทึกประวัติการซ่อม</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <h5>ระบบปลอดภัย</h5>
-                        <p>จำกัดสิทธิ์ผู้ใช้งานและเก็บประวัติการยืมคืนอย่างปลอดภัย ด้วยมาตรฐานความปลอดภัยสูง</p>
-                    </div>
+            <ul class="menu-center">
+                <li><a href="">หน้าแรก</a></li>
+                <li><a href="">ข่าวสาร</a></li>
+            </ul>
+            <ul class="menu">
+                <li><a href="/login">เข้าสู่ระบบ</a></li>
+                <li><a href="/register">สมัครสมาชิก</a></li>
+            </ul>
+        </nav>
+        <div class="container" >
+            <div class="content" data-aos="fade-up">
+                <img class="floating-image"
+                    src="https://cdn.discordapp.com/attachments/1416380695118352455/1426215507618697377/3D_character-Photoroom.png?ex=68ea6a32&is=68e918b2&hm=56d12780b4588a4d78972dfaa5e08189cf9f0ac37721810c3dc692b0c6580161&"
+                    alt="">
+                <div class="box">
+                    <h1>AssetFlow</h1>
+                    <p>บริการระบบยืมและคืนอุปกรณ์ภายในบริษัท</p>
                 </div>
             </div>
         </div>
-    </section>
-
-    <footer>
-        <p>© 2025 AssetFlow. All rights reserved.</p>
-    </footer>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+        <div class="container my-3" >
+            <div class="row" data-aos="fade-up">
+                <div class="col-4">
+                    <div class="card p-2">
+                        <div class="card-bod">
+                            <h5 class="card-title">ผู้ใช้งานเว็บไซต์</h5>
+                            <p class="card-text">100k</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card p-2">
+                        <div class="card-bod">
+                            <h5 class="card-title">จำนวนอุปกรณ์ในเว็บ</h5>
+                            <p class="card-text">100k</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card p-2">
+                        <div class="card-bod">
+                            <h5 class="card-title">จำนวนการยืมทั้งหมด</h5>
+                            <p class="card-text">100k</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="mt-auto" data-aos="fade-up">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <h5>AssetFlow</h5>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ac ante mollis quam tristique
+                            convallis.</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h5>Quick Links</h5>
+                        <ul class="list-unstyled">
+                            <li><a href="#" class="text-decoration-none text-white">Home</a></li>
+                            <li><a href="#" class="text-decoration-none text-white">Services</a></li>
+                            <li><a href="#" class="text-decoration-none text-white">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h5>Follow Us</h5>
+                        <ul class="list-inline social-icons">
+                            <li class="list-inline-item"><a href="#" class="text-white"><i
+                                        class="bi bi-facebook"></i></a></li>
+                            <li class="list-inline-item"><a href="#" class="text-white"><i
+                                        class="bi bi-twitter"></i></a></li>
+                            <li class="list-inline-item"><a href="#" class="text-white"><i
+                                        class="bi bi-instagram"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <hr class="mb-4">
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <p>&copy; 2023 Your Company. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
 </body>
 
 </html>
