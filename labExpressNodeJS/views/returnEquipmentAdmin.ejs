@@ -6,39 +6,24 @@
   <title>รายการยืนยันการคืนอุปกรณ์</title>
 </head>
 <body>
-    <h1>รายการยืนยันคืนอุปกรณ์</h1>
-    <small>เช็คสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</small>
+  <h1>รายการยืนยันคืนอุปกรณ์</h1>
+  <small>เช็คสภาพอุปกรณ์เพื่อตรวจสอบความเสียหาย</small>
   <hr style="color: #3758F9;">
    <div class="card p-4">
     <div class="card-body">
-    <form id="filterForm" class="mb-3" action="/admin/returnequipment" method="get">
-        <div class="filter-form-row">
-          <!-- ช่องค้นหา -->
-          <div class="search-group">
-            <div class="input-group">
-              <input type="text" 
-                     name="q" 
-                     class="form-control" 
-                     placeholder="ค้นหา (อุปกรณ์, ผู้แจ้ง, คำอธิบาย)"
-                     value="<%= (query && query.q) ? query.q : '' %>">
-              <button class="btn btn-primary" type="submit">
-                <i class="fa fa-search"></i> ค้นหา
-              </button>
-            </div>
+      <form method="GET" action="/admin/returnEquipment">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto">
+            <label for="status" class="col-form-label">สถานะ:</label>
           </div>
-          <!-- เลือกสถานะ -->
-          <select name="status" 
-                  class="form-select status-select" 
-                  onchange="document.getElementById('filterForm').submit()">
-            <option value="">ทุกสถานะ</option>
-            <% if (statuses && statuses.length) { %>
-              <% statuses.forEach(function(s) { %>
-                <option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>>
-                  <%= statusLabels[s] || s %>
-                </option>
-              <% }); %>
-            <% } %>
-          </select>
+          <div class="col-auto">
+            <select id="status" name="status" class="form-select" onchange="this.form.submit()">
+              <option value="" <%= !query.status ? 'selected' : '' %>>ทั้งหมด</option>
+              <% status.forEach(s => { %>
+                <option value="<%= s %>" <%= query.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option>
+              <% }) %>
+            </select>
+          </div>
         </div>
       </form>
     <table class="table  table-hover text-center ">
@@ -56,7 +41,9 @@
         <% borrows.forEach((borrow, index) => { %>
           <tr>
             <td><%= index + 1 %></td>
-            <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
+            <td>
+              <%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>
+            </td>
             <td><%= borrow.equipment_id.name %></td>
             <td><%= borrow.note || '-' %></td>
             <td>
@@ -73,7 +60,7 @@
                         data-bs-toggle="modal"
                         data-bs-target="#confirmModal"
                         data-id="<%= borrow._id %>"
-                        data-user="<%= borrow.user_id.fname + ' ' + borrow.user_id.lname %>"
+                        data-user="<%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>"
                         data-equipment="<%= borrow.equipment_id.name %>">
                   ยืนยันการคืน
                 </button>
@@ -86,8 +73,6 @@
       </tbody>
     </table>
   </div>
-
-  <!-- ✅ Modal ยืนยันการคืน -->
   <div class="modal fade" id="confirmModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -120,7 +105,6 @@
     </div>
   </div>
   <script>
-    // ✅ อัปเดต action ของ form ตอนกดปุ่ม "ยืนยันการคืน"
     const confirmModal = document.getElementById('confirmModal');
     confirmModal.addEventListener('show.bs.modal', event => {
       const button = event.relatedTarget;

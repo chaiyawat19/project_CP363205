@@ -5,10 +5,15 @@ const { isAdmin,  } = require ('../middleware/auth');
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
 const upload = require("../middleware/upload");
-
+const Department = require("../models/Department");
+var RepairRequest = require("../models/Reqair_requests");
+const mongoose = require("mongoose");
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
 var bcrypt = require("bcryptjs");
+const Equipment = require('../models/listEquipment');
+
+
 
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
@@ -37,18 +42,23 @@ router.use(isAdmin, async (req, res, next) => {
 router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId; 
 
-
     try {
-        const user = await User.findById(userId).select('-password'); 
+        const user = await User.findById(userId)
+        .select('-password')
+        .populate('department'); 
+
+        const departments = await Department.find({ deleted_at: null }).select('name'); 
+        
         if (!user) {
             return res.status(404).send("User data not found in database.");
         }
-        
+
         // ส่งข้อมูลผู้ใช้ไปยัง view 'settings.ejs'
         res.render('settingsAdmin', { 
             title: 'การตั้งค่าผู้ดูแลระบบ', 
             name: req.session.userName,
             user: user,
+            departments: departments,
             layout: 'layouts/navadmin',
             activePage: 'setting',
             req: req
@@ -138,7 +148,6 @@ router.get('/', isAdmin, async (req, res) => {
         user: null
       });
     }
-
     res.render('indexAdmin', {
       title: 'หน้าหลัก Admin',
       layout: 'layouts/navadmin',
@@ -151,11 +160,7 @@ router.get('/', isAdmin, async (req, res) => {
       title: 'เกิดข้อผิดพลาดของระบบ',
       user: null,
     });
-  }});
-
-var RepairRequest = require("../models/Reqair_requests");
-const mongoose = require("mongoose");
-
+}});
 
 router.get("/", isAdmin, (req, res) => {
   res.render("indexAdmin", {
@@ -297,33 +302,6 @@ router.get("/equipmentDetail/:id", isAdmin, async (req, res) => {
     res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
   }
 });
-
-// router.get('/editEquipment/:id', isAdmin, async (req, res) => {
-//   try {
-//     const equipmentId = req.params.id;
-//     const equipment = await listEquipment.findById(equipmentId).populate('category_id');
-//     const categories = await Category.find({ deleted_at: null });
-//     if (!equipment) {
-//       return res.status(404).send('ไม่พบอุปกรณ์');
-//     }
-//     res.render('editEquipmentAdmin', {
-//       title: equipment.name,
-//       layout: 'layouts/navadmin',
-//       activePage: 'listitemuser',
-//     });
-
-//     res.render("equipmentDetailAdmin", {
-//       title: "รายละเอียดอุปกรณ์",
-//       layout: "layouts/navadmin",
-//       activePage: "listitemuser",
-//       equipment,
-//       categories,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
-//   }
-// });
 
 router.get("/editEquipment/:id", isAdmin, async (req, res) => {
   try {
@@ -481,11 +459,18 @@ router.post("/addCategory", isAdmin, async (req, res) => {
   }
 });
 
-
-// หน้าแสดงรายการยืนยันการคืนอุปกรณ์
 router.get('/returnequipment', async (req, res) => {
   try {
-    const borrows = await Borrow.find({status: { $in: ['waitingForReturn', 'returned'] }})
+    const { status } = req.query; 
+    let filter = {};
+
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $in: ['waitingForReturn', 'returned'] };
+    }
+
+    const borrows = await Borrow.find(filter)
       .populate('user_id')
       .populate('equipment_id')
       .sort({ created_at: -1 });
@@ -495,11 +480,12 @@ router.get('/returnequipment', async (req, res) => {
       layout: 'layouts/navadmin',
       activePage: 'returnEquipment',
       borrows,
-      query: req.query,
-      statuses: ['waitingForReturn', 'returned'], 
-      statusLabels: { 
-        waitingForReturn: 'รอคืนอุปกรณ์', 
-        returned: 'คืนอุปกรณ์แล้ว'}
+      query: req.query, 
+      status: ['waitingForReturn', 'returned'],
+      statusLabels: {
+        waitingForReturn: 'รอคืนอุปกรณ์',
+        returned: 'คืนอุปกรณ์แล้ว'
+      }
     });
   } catch (err) {
     console.error('❌ Error fetching borrow list:', err);
@@ -507,23 +493,48 @@ router.get('/returnequipment', async (req, res) => {
   }
 });
 
+
+// ✅ ยืนยันการคืนอุปกรณ์
 router.post('/confirmreturn/:id', async (req, res) => {
   try {
     const borrowId = req.params.id;
-    const { note } = req.body;
-    
-    await Borrow.findByIdAndUpdate(borrowId, {
-      status: 'returned',
-      note,
-      actual_return_date: new Date()
-    });
+    const { note, condition } = req.body;
 
+    if (!borrowId) {
+      console.error("❌ Missing borrowId");
+      return res.status(400).send('ไม่มีรหัสรายการยืม');
+    }
+ 
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow) {
+      console.error("❌ Borrow record not found");
+      return res.status(404).send('ไม่พบข้อมูลการยืม');
+    }
+
+    if (!borrow.equipment_id) {
+      console.error("❌ Missing equipment_id in borrow");
+      return res.status(400).send('ไม่พบอุปกรณ์ที่เกี่ยวข้อง');
+    }
+
+    borrow.status = 'returned';
+    borrow.note = note || '';
+    borrow.actual_return_date = new Date();
+    await borrow.save();
+
+    let newStatus = 'available';
+    if (condition === 'เสียหาย') newStatus = 'broken';
+    if (condition === 'สูญหาย') newStatus = 'unavailable';
+
+    await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
+
+    console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
   } catch (err) {
     console.error('❌ Error confirming return:', err);
     res.status(500).send('เกิดข้อผิดพลาดในการยืนยันการคืนอุปกรณ์');
   }
 });
+
 
 
 //บอล
@@ -1105,3 +1116,5 @@ router.post("/verify-superadmin", async (req, res) => {
 
 
 module.exports = router;
+
+

@@ -70,7 +70,6 @@ router.post("/register", async (req, res, next) => {
       password: hashedPassword,
       userProfile: `https://avatar.iran.liara.run/username?username=${fname}+${lname}`,
       userRole: "user",
-      department: ""
     });
 
     await newUser.save();
@@ -88,19 +87,16 @@ router.post("/login", async (req, res, next) => {
     const generalError = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; 
     
     try {
-        // 1. ตรวจสอบข้อมูลว่างเปล่า (Clear)
         if (!email || !password) {
             return res.render("login", { 
                 title: "เข้าสู่ระบบ", 
                 layout: "layouts/auth", 
-                error: "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน" // ชัดเจนขึ้น
+                error: "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน"
             });
         }
         
-        // 2. ค้นหา User
         const user = await User.findOne({ email });
         if (!user) {
-            // ไม่พบ User: แจ้ง error แบบทั่วไป
             return res.render("login", { 
                 title: "เข้าสู่ระบบ", 
                 layout: "layouts/auth", 
@@ -108,10 +104,8 @@ router.post("/login", async (req, res, next) => {
             });
         }
 
-        // 3. เปรียบเทียบรหัสผ่าน
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            // รหัสผ่านไม่ตรง: แจ้ง error แบบทั่วไป
             return res.render("login", { 
                 title: "เข้าสู่ระบบ", 
                 layout: "layouts/auth", 
@@ -119,20 +113,21 @@ router.post("/login", async (req, res, next) => {
             });
         }
 
-        // 4. สร้าง Session และ Redirect
+        // สร้าง Session
         req.session.userId = user._id;
         req.session.userRole = user.userRole;
         req.session.userName = user.fname;
         req.session.userEmail = user.email;
         
-        if (user.userRole === 'admin') {
-            return res.redirect('/admin');
-        } else {
-            return res.redirect('/users');
-        }
+        // **เปลี่ยนจาก redirect เป็น render พร้อมส่ง success url**
+        const redirectUrl = user.userRole === 'admin' ? '/admin' : '/users';
+        return res.render("login", { 
+            title: "เข้าสู่ระบบ", 
+            layout: "layouts/auth",
+            success: redirectUrl  // ส่ง URL ที่จะ redirect ไป
+        });
 
     } catch (error) {
-        // 5. จัดการข้อผิดพลาดของระบบ (เช่น DB connection, bcrypt error)
         console.error("Login System Error:", error);
         return res.render("login", { 
             title: "เข้าสู่ระบบ", 
@@ -140,7 +135,7 @@ router.post("/login", async (req, res, next) => {
             error: "เกิดข้อผิดพลาดของระบบ กรุณาลองใหม่อีกครั้ง" 
         });
     }
-})
+});
 
 // route สำหรับ logout
 router.post("/logout", (req, res, next) => {

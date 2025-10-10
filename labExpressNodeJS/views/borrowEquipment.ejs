@@ -46,7 +46,9 @@
             <% borrows.forEach((borrow, index) => { %>
                 <tr data-status="<%= borrow.status %>">
                     <td><%= index + 1 %></td>
-                    <td><%= borrow.user_id.fname %> <%= borrow.user_id.lname %></td>
+                    <td>
+                        <%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>
+                    </td>
                     <td><%= borrow.equipment_id ? borrow.equipment_id.name : 'ไม่มีข้อมูล' %></td>
                     <td><%= borrow.note %></td>
                     <% if (borrow.status==="waiting" ) { %>
@@ -87,7 +89,6 @@
                 row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
             });
         }
-
         searchInput.addEventListener('input', filterTable);
         statusFilter.addEventListener('change', filterTable);
     </script>
