@@ -743,35 +743,48 @@ router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
     if (req.session && req.session.userId === userId) {
       return res.status(400).send("ไม่สามารถลบบัญชีของตัวเองได้");
     }
+
     // ตรวจสอบว่ามีผู้ใช้อยู่จริงหรือไม่
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).send("ไม่พบผู้ใช้ที่ต้องการลบ");
     }
-    // ค้นหาและลบข้อมูลการยืมทั้งหมดที่มี userId นี้
-    const borrowsToDelete = await Borrow.find({ userId: userId });
-    console.log(`พบข้อมูลการยืม: ${borrowsToDelete.length} รายการ`);
+
+    console.log(`\n========================================`);
+    console.log(`🗑️  ลบผู้ใช้: ${user.fname} ${user.lname}`);
+    console.log(`Email: ${user.email}`);
+    console.log(`========================================`);
+
+    // ✅ แก้ไข: ใช้ user_id แทน userId (ตาม Model)
+    const borrowsToDelete = await Borrow.find({ user_id: userId });
+    console.log(`📋 พบข้อมูลการยืม: ${borrowsToDelete.length} รายการ`);
     
     if (borrowsToDelete.length > 0) {
       console.log(`\nรายการที่จะลบ:`);
       borrowsToDelete.forEach((borrow, index) => {
-        console.log(`  ${index + 1}. Borrow ID: ${borrow._id}`);
+        console.log(`  ${index + 1}. Borrow ID: ${borrow._id} | Equipment: ${borrow.equipment_id} | Status: ${borrow.status}`);
       });
     }
-    // ลบข้อมูลการยืมทั้งหมด
-    const deletedBorrows = await Borrow.deleteMany({ 
-      userId: userId 
-    });
-    console.log(`\n ลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
 
-    // ลบผู้ใช้
+    // ✅ ลบข้อมูลการยืมทั้งหมด (ใช้ user_id)
+    const deletedBorrows = await Borrow.deleteMany({ 
+      user_id: userId 
+    });
+    console.log(`\n✅ ลบข้อมูลการยืมสำเร็จ: ${deletedBorrows.deletedCount} รายการ`);
+
+    // ✅ ลบผู้ใช้
     await User.findByIdAndDelete(userId);
-    console.log(` ลบผู้ใช้สำเร็จ`);
+    console.log(`✅ ลบผู้ใช้สำเร็จ`);
+    console.log(`========================================\n`);
+    
     res.redirect("/admin/manage_user");
     
   } catch (err) {
+    console.error("\n========================================");
+    console.error("❌ เกิดข้อผิดพลาด");
     console.error("Error Name    :", err.name);
     console.error("Error Message :", err.message);
+    console.error("========================================\n");
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
