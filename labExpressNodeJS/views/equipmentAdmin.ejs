@@ -69,12 +69,11 @@
                     <option value="available">พร้อมใช้งาน</option>
                     <option value="unavailable">ไม่พร้อมใช้งาน</option>
                     <option value="repair">อยู่ระหว่างซ่อม</option>
-                    <option value="unknown">ไม่ทราบสถานะ</option>
+                    <option value="broken">เสียหาย</option>
                 </select>
             </div>
         </div>
     </div>
-
     <div class="container">
         <div class="row" id="equipmentContainer">
             <% equipmentList.forEach(equipment=> { %>
@@ -89,8 +88,8 @@
                                     <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
                                 <% } else if (equipment.status==="repair" ) { %>
                                     <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
-                                <% } else { %>
-                                    <p class="badge bg-secondary p-3">ไม่ทราบสถานะ</p>
+                                <% } else if (equipment.status==="broken" ) { %>
+                                    <p class="badge bg-secondary p-3">เสียหาย</p>
                                 <% } %>
                             </div>
                         </div>
@@ -114,7 +113,7 @@
                             </p>
                             <div class="botton">
                                 <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
-                                <a href="/admin/equipmentDetail/<%= equipment._id%>" class="btn btn-primary">แก้ไข</a>
+                                <a href="/admin/editEquipment/<%= equipment._id%>" class="btn btn-primary">แก้ไข</a>
                             </div>
                             <small class="font">
                                 วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>

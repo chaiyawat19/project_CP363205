@@ -140,10 +140,6 @@
               <a class="<%= activePage === 'borrowreturn' ? 'active-link' : '' %>"
                     href="/users/borrowreturn">รายการยืมและคืนอุปกรณ์</a>
             </li>
-            <li>
-              <a class="<%= activePage === 'notification' ? 'active-link' : '' %>"
-                    href="/users/notifications">การแจ้งเตือน</a>
-            </li>
             <hr>
             <li>
               <a class="" href="/users/setting">การตั้งค่า</a>
@@ -157,7 +153,7 @@
         <div class="user">
           <div class="uer-profile">
             <img
-              src="https://st.depositphotos.com/2101611/3925/v/950/depositphotos_39258143-stock-illustration-businessman-avatar-profile-picture.jpg"
+              src="<%= user.userProfile%>"
               alt="">
           </div>
           <div class="detail">
