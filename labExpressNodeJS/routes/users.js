@@ -194,33 +194,6 @@ router.get('/listitemuser', async (req, res) => {
   }
 });
 
-router.get('/historyBorrowed',async (req,res) =>{
-   try {
-        const user = await User.findById(req.session.userId);
-        const equipments = await Equipment.find({ deleted_at: null }).populate('category_id');
-        const borrows = await Borrow.find({ user_id: req.session.userId }).populate('equipment_id').populate('user_id').sort({ created_at: -1 });
-        res.render('historyBorrowedUser', { 
-            title: 'หน้าหลัก User', 
-            name: `${user.fname} ${user.lname}`, 
-            layout: 'layouts/navuser', 
-            activePage: 'history', 
-            user: user,
-            equipments: equipments,
-            borrows: borrows
-        });
-    } catch (error) {
-        console.error('Error fetching user info:', error);
-        res.status(500).render('indexUser', { 
-            title: 'เกิดข้อผิดพลาดของระบบ', 
-            name: '', 
-            layout: 'layouts/navuser', 
-            activePage: 'history', 
-            user: null,
-            equipments: [] ,
-            borrows: []
-        });
-    }
-});
 
 router.get('/equipments/:id', async (req, res) => {
 
@@ -286,24 +259,95 @@ router.post('/borrow/:id', isUser, async (req, res) => {
 });
 
 router.get('/borrowreturn', isUser, async (req, res) => {
-    
-    const userId = req.session.userId; 
-    
+    const userId = req.session.userId;
+    const search = req.query.search || ''; // ดึงค่าค้นหาจาก query string
+
     try {
-        const borrows = await Borrow.find({ user_id: userId })
-            .populate('equipment_id') 
+        let query = { user_id: userId };
+
+        // ถ้ามีคำค้นหา ให้เพิ่มเงื่อนไขค้นหาใน populate
+        if (search) {
+            const borrows = await Borrow.find(query)
+                .populate('equipment_id')
+                .sort({ created_at: -1 });
+
+            const filteredBorrows = borrows.filter(b =>
+                b.equipment_id?.name?.toLowerCase().includes(search.toLowerCase()) 
+            );
+
+            return res.render('userBorrowHistory', {
+                title: 'ประวัติการยืม',
+                borrows: filteredBorrows,
+                getStatusBadge: getStatusBadge,
+                layout: 'layouts/navuser',
+                activePage: 'borrowreturn',
+                search: search
+            });
+        }
+
+        // ถ้าไม่มีการค้นหาให้ดึงข้อมูลทั้งหมด
+        const borrows = await Borrow.find(query)
+            .populate('equipment_id')
             .sort({ created_at: -1 });
 
         res.render('userBorrowHistory', {
             title: 'ประวัติการยืม',
             borrows: borrows,
+            getStatusBadge: getStatusBadge,
             layout: 'layouts/navuser',
-            activePage: 'borrowreturn'
+            activePage: 'borrowreturn',
+            search: ''
         });
 
     } catch (err) {
         console.error(err);
         res.status(500).send('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    }
+});
+
+const getStatusBadge = (status) => {
+    switch (status) {
+        case 'waiting':
+            return '<span class="badge bg-warning text-dark">รอยืนยัน</span>';
+        case 'borrowed':
+            return '<span class="badge bg-primary">กำลังยืม</span>';
+        case 'returned':
+            return '<span class="badge bg-success">คืนแล้ว</span>';
+        case 'rejected':
+            return '<span class="badge bg-danger">ถูกปฏิเสธ</span>';
+        case 'waitingForReturn': // สถานะใหม่ที่คุณเพิ่ม
+            return '<span class="badge bg-info">รอการยืนยันการคืน</span>';
+        default:
+            return `<span class="badge bg-secondary">${status}</span>`;
+    }
+};
+
+router.post('/return/:borrowId', isUser, async (req, res) => {
+    try {
+        const { borrowId } = req.params;
+        const userId = req.session.userId;
+
+        const borrowRecord = await Borrow.findOne({ 
+            _id: borrowId, 
+            user_id: userId,
+            status: 'borrowed'
+        });
+
+        if (!borrowRecord) {
+            return res.status(404).redirect('/users/borrowreturn'); 
+        }
+
+        borrowRecord.status = 'waitingForReturn'; 
+        
+        borrowRecord.actual_return_date = new Date(); 
+
+        await borrowRecord.save();
+
+        res.redirect('/users/borrowreturn'); 
+
+    } catch (err) {
+        console.error("Error submitting return request:", err);
+        res.status(500).redirect('/users/borrowreturn');
     }
 });
 
