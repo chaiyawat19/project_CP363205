@@ -216,16 +216,20 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
 // 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
 router.post('/setting/password', isUser, ensureUserId, async (req, res) => {
     const userId = req.session.userId;
-    const { oldPassword, newPassword } = req.body;
+    
+    // ✅ แก้ไข: เปลี่ยน 'oldPassword' เป็น 'currentPassword' 
+    // เพื่อให้ตรงกับ name="currentPassword" ในฟอร์ม settings.ejs
+    const { currentPassword, newPassword } = req.body; 
 
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).send("User not found");
 
-        // 1. ตรวจสอบรหัสผ่านเดิม
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        // 1. ตรวจสอบรหัสผ่านเดิม (ใช้ currentPassword)
+        const isMatch = await bcrypt.compare(currentPassword, user.password); 
         if (!isMatch) {
             // รหัสผ่านเดิมไม่ถูกต้อง
+            // EJS จะแสดง Modal: 'รหัสผ่านเดิมไม่ถูกต้อง! โปรดลองใหม่อีกครั้ง'
             return res.redirect('/users/setting?err=wrongpass');
         }
 
@@ -235,14 +239,14 @@ router.post('/setting/password', isUser, ensureUserId, async (req, res) => {
         
         await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
 
-        // ✅ แก้ไข: ไม่ทำลาย Session และไม่ Redirect ไปหน้า Login
-        // แต่ Redirect กลับมาที่หน้า Setting เดิม พร้อม Query Message
-        // JavaScript ใน settings.ejs จะดักจับข้อความนี้และแสดง Modal
+        // 3. Redirect กลับไปที่หน้า Setting เดิมพร้อม Query Message
+        // EJS จะแสดง Modal: 'เปลี่ยนรหัสผ่านสำเร็จ! คุณเปลี่ยนรหัสผ่านเรียบร้อยแล้ว'
         return res.redirect('/users/setting?msg=password_changed'); 
         
     } catch (err) {
-        console.error("Error changing password:", err);
+        console.error("Error changing user password:", err);
         // แสดงข้อผิดพลาดทั่วไป
+        // EJS จะแสดง Modal: 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล โปรดลองใหม่อีกครั้ง'
         res.redirect('/users/setting?err=updatefail'); 
     }
 });
