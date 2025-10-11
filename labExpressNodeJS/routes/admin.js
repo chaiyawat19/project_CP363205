@@ -250,7 +250,7 @@ router.get("/listitemuser", isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+    return res.status(500).send(`เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}`); 
   }
 });
 
