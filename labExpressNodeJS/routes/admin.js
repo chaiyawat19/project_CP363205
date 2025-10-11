@@ -160,44 +160,37 @@ router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage')
     }
 });
 
-// 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
+/// 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
 router.post('/setting/password', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId;
     const { oldPassword, newPassword } = req.body;
 
     try {
         const user = await User.findById(userId);
-        if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("ไม่พบผู้ใช้");
 
+        // 1. ตรวจสอบรหัสผ่านเดิม
         const isMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isMatch) {
+            // รหัสผ่านเดิมไม่ถูกต้อง
             return res.redirect('/admin/setting?err=wrongpass');
         }
 
+        // 2. เข้ารหัสและบันทึกรหัสผ่านใหม่
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         
         await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
 
-        // 📢 โค้ดที่ต้องแก้ไข: ทำลาย Session ทันที
-        req.session.destroy(err => {
-            if (err) {
-                console.error(err);
-                return res.redirect('/admin/setting?err=pass_fail');
-            }
-            // ลบ cookie ด้วย (ถ้าใช้ connect-session)
-            res.clearCookie('connect.sid'); 
-            
-            // 📢 Redirect ไปหน้า Login หรือหน้าแรก เพื่อให้ผู้ใช้ล็อกอินใหม่
-            return res.redirect('/?msg=password_changed_login'); 
-        });
+        // ✅ แก้ไข: ไม่ทำลาย Session และไม่ Redirect ไปหน้า Login
+        // แต่ Redirect กลับมาที่หน้า Setting เดิม พร้อม Query Message
+        // JavaScript ใน settingAdmin.ejs จะดักจับข้อความนี้และแสดง Modal
+        return res.redirect('/admin/setting?msg=password_changed'); 
         
-        // ❌ ลบบรรทัดเดิมนี้ออก เพราะการ Redirect ต้องอยู่ใน req.session.destroy
-        // res.redirect('/users/setting?msg=password_changed');
-
     } catch (err) {
-        console.error(err);
-        res.redirect('/admin/setting?err=pass_fail');
+        console.error("Error changing password:", err);
+        // แสดงข้อผิดพลาดทั่วไป
+        res.redirect('/admin/setting?err=updatefail'); 
     }
 });
 
