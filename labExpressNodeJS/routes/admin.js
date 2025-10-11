@@ -217,15 +217,6 @@ router.get('/', isAdmin, async (req, res) => {
     });
 }});
 
-router.get("/", isAdmin, (req, res) => {
-  res.render("indexAdmin", {
-    title: "หน้าหลัก Admin",
-    name: req.session.userName,
-    layout: "layouts/navadmin",
-    activePage: "dashboard",
-  });
-});
-
 router.get("/listitemuser", isAdmin, async (req, res) => {
   try {
     const listEqt = await listEquipment
