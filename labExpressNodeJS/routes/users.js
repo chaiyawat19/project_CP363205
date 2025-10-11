@@ -349,7 +349,7 @@ router.post('/borrow/:id', isUser, async (req, res) => {
 
 router.get('/borrowreturn', isUser, async (req, res) => {
   const userId = req.session.userId;
-  const search = req.query.search || ''; // ดึงค่าค้นหาจาก query string
+  const search = req.query.search || '';
 
   try {
     let query = { user_id: userId };
