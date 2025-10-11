@@ -115,8 +115,8 @@
                 <select id="department" name="department">
                     <% if (departments && departments.length > 0) { %>
                         <% departments.forEach(dept => { %>
-                            <option value="<%= dept.name %>" 
-                                <%= (user.department && user.department === dept.name) ? 'selected' : '' %>>
+                            <option value="<%= dept._id %>" 
+                                <%= (user.department && user.department.toString() === dept._id.toString()) ? 'selected' : '' %>>
                                 <%= dept.name %>
                             </option>
                         <% }) %>

@@ -125,10 +125,10 @@
                         const defaultDept = 'Customer Service'; 
                         %>
                         <% departments.forEach(dept => { %>
-                            <option value="<%= dept.name %>" 
-                                <%= dept.name === defaultDept ? 'selected' : '' %>>
-                                <%= dept.name %>
-                            </option>
+                          <option value="<%= dept._id %>" 
+                            <%= dept.name === defaultDept ? 'selected' : '' %>>
+                            <%= dept.name %>
+                        </option>
                         <% }) %>
                     <% } else { %>
                         <option value="" disabled>ไม่มีข้อมูลแผนก</option>

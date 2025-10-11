@@ -100,7 +100,7 @@
                                 <%= user.userRole %>
                             </span>
                         </td>
-                        <td><%= user.department  || '-' %></td>
+                        <td><%= user.department ? user.department.name : '-' %></td>
                         <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
                         <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
 
