@@ -378,7 +378,7 @@ router.post(
         equipment.image = image;
       }
       await equipment.save();
-      res.redirect("/admin/equipmentDetail/" + id);
+      res.redirect("/admin/seedetails/" + id);
     } catch (err) {
       console.error(err);
       res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
