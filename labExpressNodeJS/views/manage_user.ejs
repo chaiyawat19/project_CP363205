@@ -1,184 +1,168 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title><%= title %></title>
-    <style>
-        .btn {
-            padding: 8px 15px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .btn-primary { background-color: #007bff; color: white; }
-        .btn-success { background-color: #28a745; color: white; }
-        .btn-warning { background-color: #ffc107; color: black; }
-        .btn-danger { background-color: #dc3545; color: white; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            padding: 20px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        th { background-color: #f8f9fa; }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .badge-admin { background-color: #dc3545; color: white; }
-        .badge-user { background-color: #6c757d; color: white; }
-        .user-profile {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-        .add_user {
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-        .box_add_user {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
-    <div class="container-fluid">
-        <h1><%= title %></h1>
-        <div class="box_add_user">
-            <a href="/admin/manage_user/add" class="btn btn-success add_user">+ เพิ่มผู้ใช้ใหม่</a>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th rowspan="2">รูปโปรไฟล์</th>
-                    <th rowspan="2">ชื่อผู้ใช้</th>
-                    <th rowspan="2">อีเมล</th>
-                    <th rowspan="2">บทบาท</th>
-                    <th rowspan="2">แผนก</th>
-                    <th rowspan="2">วันที่สร้าง</th>
-                    <th rowspan="2">วันที่แก้ไขล่าสุด</th>
-                    <th colspan="2">จัดการ</th>
-                </tr>
-                <tr>
-                    <th>แก้ไข</th>
-                    <th>ลบ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (users.length === 0) { %>
-                    <tr>
-                        <td colspan="9" style="text-align: center;">ไม่พบข้อมูลผู้ใช้</td>
-                    </tr>
-                <% } else { %>
-                    <% users.forEach(user => { %>
-                    <tr>
-                        <!-- <td>
-                            <img 
-                                src="<%= user.userProfile && user.userProfile.includes('iran.liara.run') ? 
-                                    'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.fname + '+' + user.lname) + '&background=37b594&color=fff' 
-                                    : user.userProfile %>" 
-                                alt="Profile" class="user-profile">
-                        </td> -->
-                        <td><img src="<%= user.userProfile %>" alt="Profile" class="user-profile"></td>
-                        <td><%= user.fname %> <%= user.lname %></td>
-                        <td><%= user.email %></td>
-                        <td>
-                            <span class="badge <%= user.userRole === 'admin' ? 'badge-admin' : 'badge-user' %>">
-                                <%= user.userRole %>
-                            </span>
-                        </td>
-                        <td><%= user.department  || '-' %></td>
-                        <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
-                        <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
 
-                        <% if (user.email === 'testadmin@gmail.com' && user.fname === 'Super' && user.lname === 'Admin') { %>
-                            <td colspan="2">
-                                <button class="btn btn-warning" onclick="verifySuperAdmin('<%= user._id %>')">แก้ไข (ต้องยืนยันรหัส)</button>
-                            </td>
-                        <% } else { %>
-                            <td>
-                                <a href="/admin/manage_user/edit/<%= user._id %>" class="btn btn-warning">แก้ไข</a>
-                            </td>
-                            <td>
-                                <form action="/admin/manage_user/delete/<%= user._id %>" method="POST" class="delete-form" style="display:inline;">
-                                    <button type="button" class="btn btn-danger" onclick="confirmDelete(this.form)">ลบ</button>
-                                </form>
-                            </td>
-                        <% } %>
-                    </tr>
-                    <% }) %>
-                <% } %>
-            </tbody>
-        </table>
+<body class="bg-light">
+  <header class="d-flex align-items-center">
+    <div class="box1">
+      <h1>จัดการข้อมูลผู้ใช้</h1>
+      <small>เพิ่ม แก้ไข หรือ ลบข้อมูลผู้ใช้งานระบบ</small>
     </div>
+  </header>
+    <hr style="color: #3758F9;">  
+    <div class="card p-4">
+    <div class="card-body">
+      <div class="row align-items-center g-2">
+        <div class="col-6">
+          <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาจากชื่อ, อีเมล หรือแผนก...">
+        </div>
+        <div class="col-3">
+          <select id="roleFilter" class="form-select">
+            <option value="" selected>บทบาทผู้ใช้</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+        <div class="col text-end">
+          <a href="/admin/manage_user/add" class="btn btn-success">
+            <i class="bi bi-person-plus"></i>  เพิ่มผู้ใช้ใหม่
+          </a>
+        </div>
+      </div>
+      <table class="table table-hover text-center align-middle mt-3">
+        <thead>
+          <tr>
+            <th>รูปโปรไฟล์</th>
+            <th>ชื่อผู้ใช้</th>
+            <th>อีเมล</th>
+            <th>บทบาท</th>
+            <th>แผนก</th>
+            <th>วันที่สร้าง</th>
+            <th>วันที่แก้ไขล่าสุด</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="userTable">
+          <% if (users.length === 0) { %>
+            <tr><td colspan="8" class="text-center">ไม่พบข้อมูลผู้ใช้</td></tr>
+          <% } else { %>
+            <% users.forEach(user => { %>
+              <tr data-role="<%= user.userRole %>">
+                <td><img src="<%= user.userProfile %>" alt="Profile" class="rounded-circle" width="45" height="45"></td>
+                <td><%= user.fname %> <%= user.lname %></td>
+                <td><%= user.email %></td>
+                <td>
+                  <% if (user.userRole === 'admin') { %>
+                    <span class="badge bg-danger">Admin</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">User</span>
+                  <% } %>
+                </td>
+                <td><%= user.department || '-' %></td>
+                <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
+                <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
+                <td>
+                  <% if (user.email === 'testadmin@gmail.com' && user.fname === 'Super' && user.lname === 'Admin') { %>
+                    <button class="btn btn-warning btn-sm" onclick="verifySuperAdmin('<%= user._id %>')">
+                      แก้ไข (ต้องยืนยันรหัส)
+                    </button>
+                  <% } else { %>
+                    <a href="/admin/manage_user/edit/<%= user._id %>" class="btn btn-warning btn-sm">แก้ไข</a>
+                    <form action="/admin/manage_user/delete/<%= user._id %>" method="POST" class="d-inline">
+                      <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(this.form)">ลบ</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <script>
-        function verifySuperAdmin(userId) {
-            Swal.fire({
-                title: 'ยืนยันตัวตน Super Admin',
-                text: 'กรุณากรอกรหัสผ่านเพื่อดำเนินการต่อ',
-                input: 'password',
-                inputPlaceholder: 'รหัสผ่านของคุณ',
-                inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยัน',
-                cancelButtonText: 'ยกเลิก',
-                preConfirm: (password) => {
-                    if (!password) {
-                        Swal.showValidationMessage('กรุณากรอกรหัสผ่าน');
-                        return false;
-                    }
-                    return fetch('/admin/verify-superadmin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.success) {
-                            Swal.showValidationMessage(data.message || 'รหัสผ่านไม่ถูกต้อง');
-                        }
-                        return data;
-                    })
-                    .catch(() => {
-                        Swal.showValidationMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
-                    });
-                }
-            }).then((result) => {
-                if (result.isConfirmed && result.value.success) {
-                    window.location.href = `/admin/manage_user/edit/${userId}`;
-                }
-            });
-        }
-         function confirmDelete(form) {
-        Swal.fire({
-            title: 'คุณต้องการลบใช่ไหม?',
-            text: "คุณจะไม่สามารถย้อนกลับได้",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
+  <!-- ✅ สคริปต์กรองข้อมูล -->
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const tableRows = document.querySelectorAll('#userTable tr');
+
+    function filterTable() {
+      const searchValue = searchInput.value.toLowerCase();
+      const roleValue = roleFilter.value;
+
+      tableRows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const role = row.getAttribute('data-role');
+
+        const matchesSearch = text.includes(searchValue);
+        const matchesRole = !roleValue || role === roleValue;
+
+        row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
+      });
     }
-    </script>
+
+    searchInput.addEventListener('input', filterTable);
+    roleFilter.addEventListener('change', filterTable);
+
+    function verifySuperAdmin(userId) {
+      Swal.fire({
+        title: 'ยืนยันตัวตน Super Admin',
+        input: 'password',
+        inputPlaceholder: 'กรุณากรอกรหัสผ่าน',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: (password) => {
+          if (!password) {
+            Swal.showValidationMessage('กรุณากรอกรหัสผ่าน');
+            return false;
+          }
+          return fetch('/admin/verify-superadmin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success) {
+              Swal.showValidationMessage(data.message || 'รหัสผ่านไม่ถูกต้อง');
+            }
+            return data;
+          })
+          .catch(() => {
+            Swal.showValidationMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
+          });
+        }
+      }).then((result) => {
+        if (result.isConfirmed && result.value.success) {
+          window.location.href = `/admin/manage_user/edit/${userId}`;
+        }
+      });
+    }
+
+    function confirmDelete(form) {
+      Swal.fire({
+        title: 'คุณต้องการลบใช่ไหม?',
+        text: "การลบนี้ไม่สามารถย้อนกลับได้",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    }
+  </script>
+
 </body>
 </html>

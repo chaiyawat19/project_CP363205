@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <title>
+    <%= title %>
+  </title>
 </head>
 <body>
   <div class="container my-5">
@@ -55,11 +57,178 @@
               </tbody>
             </table>
           </div>
-        <% } else { %>
-          <div class="alert alert-info m-3">ยังไม่มีประเภทอุปกรณ์</div>
-        <% } %>
+          <div class="card-body">
+            <form action="/admin/addCategory" method="post" class="row g-3 align-items-end">
+              <div class="col-md-8 col-lg-9">
+                <label for="categoryName" class="form-label visually-hidden">ชื่อประเภทอุปกรณ์:</label>
+                <input type="text" id="categoryName" name="name" class="form-control"
+                  placeholder="เช่น อุปกรณ์ IT, เครื่องเสียง, กล้องถ่ายรูป" required>
+              </div>
+              <div class="col-md-4 col-lg-3">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-plus me-2"></i> เพิ่มประเภท
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">รายการประเภทอุปกรณ์ทั้งหมด (<%= categories.length %> รายการ)</h5>
+          </div>
+          <div class="card-body p-0">
+            <% if (categories && categories.length> 0) { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col" style="width: 10%;">#</th>
+                      <th scope="col" style="width: 50%;">ชื่อประเภทอุปกรณ์</th>
+                      <th scope="col" style="width: 40%;" class="text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% categories.forEach((category, index)=> { %>
+                      <tr>
+                        <td>
+                          <%= index + 1 %>
+                        </td>
+                        <td>
+                          <%= category.name %>
+                        </td>
+                        <td class="text-center">
+                          <button onclick="edit('<%= category._id %>', '<%= category.name %>')"
+                            class="btn btn-sm btn-warning me-2">
+                            <i class="fas fa-edit"></i> แก้ไข
+                          </button>
+                          <a href="javascript:void(0)"
+                            onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')"
+                            class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash-alt"></i> ลบ
+                          </a>
+                        </td>
+                      </tr>
+                      <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="alert alert-info m-3" role="alert">
+                  ยังไม่มีการเพิ่มประเภทอุปกรณ์
+                </div>
+                <% } %>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+  <script>
+    async function edit(categoryId, categoryName) {
+      const { value: newName } = await Swal.fire({
+        title: "แก้ไขประเภทอุปกรณ์",
+        input: "text",
+        inputLabel: "ชื่อประเภทอุปกรณ์",
+        inputValue: categoryName,
+        showCancelButton: true,
+        cancelButtonText: "ยกเลิก",
+        confirmButtonText: "บันทึก",
+        inputValidator: (value) => {
+          if (!value) {
+            return "กรุณากรอกชื่อประเภทอุปกรณ์!";
+          }
+          if (value.trim() === categoryName) {
+            return "ชื่อไม่มีการเปลี่ยนแปลง";
+          }
+        }
+      });
+
+      if (newName) {
+        try {
+          const response = await fetch(`/admin/updatecategory/${categoryId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: newName })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "สำเร็จ",
+              text: "แก้ไขประเภทอุปกรณ์เรียบร้อย",
+              timer: 1500,
+              willClose: () => {
+                location.reload();
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "ผิดพลาด",
+              text: data.message || "ไม่สามารถแก้ไขประเภทอุปกรณ์ได้"
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "ข้อผิดพลาด",
+            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
+          });
+        }
+      }
+    }
+    async function deleteCategory(categoryId, categoryName) {
+      const { isConfirmed } = await Swal.fire({
+        title: "ยืนยันการลบ",
+        text: `คุณต้องการลบประเภทอุปกรณ์ "${categoryName}" หรือไม่?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545", 
+        cancelButtonColor: "#6c757d", 
+        cancelButtonText: "ยกเลิก"
+      });
+
+      if (isConfirmed) {
+        try {
+          const response = await fetch(`/admin/deletecategory/${categoryId}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "สำเร็จ",
+              text: "ลบประเภทอุปกรณ์เรียบร้อย",
+              timer: 1500,
+              willClose: () => {
+                location.reload();
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "ผิดพลาด",
+              text: data.message || "ไม่สามารถลบประเภทอุปกรณ์ได้"
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "ข้อผิดพลาด",
+            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
+          });
+        }
+      }
+    }
+  </script>
 </body>
 </html>
