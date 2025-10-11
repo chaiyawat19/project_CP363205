@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="container my-5">
+  <a href="/admin/addCategory" class="btn btn-secondary mb-3">กลับ</a>
+  <h2 class="mb-4"><%= title %></h2>
+
+  <form action="/admin/editCategory/<%= category._id %>" method="POST">
+    <div class="mb-3">
+      <label for="name" class="form-label">ชื่อประเภทอุปกรณ์:</label>
+      <input type="text" id="name" name="name" class="form-control" value="<%= category.name %>" required>
+    </div>
+    <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+  </form>
+</body>
+</html>
