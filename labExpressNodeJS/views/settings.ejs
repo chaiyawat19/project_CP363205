@@ -68,31 +68,21 @@
 
         <div class="input-group">
             <label for="department">แผนก</label>
-            <select id="department" name="department" >
+            <select id="department" name="department">
                 <option value="">-- กรุณาเลือกแผนก --</option>
-                
                 <% departments.forEach(dept => { %>
-                    
-                    <% 
-                         // ตรวจสอบและซ่อนแผนก 'admin' 
-                         if (dept.name.toLowerCase().includes('admin')) { 
-                             return; // ถ้าใช่ให้ข้ามการสร้าง option นี้ไปเลย
-                         } 
-                    %>
-
-                    <option 
-                        value="<%= dept._id %>" 
-                        <% 
-                             // ตรวจสอบว่า user.department มีค่าและ ID ตรงกันหรือไม่
-                             if (user.department && user.department._id.toString() === dept._id.toString()) { 
-                        %>
-                            selected
-                        <% } %>
-                    >
-                        <%= dept.name %>
-                    </option>
+                    <% if (!dept.name.toLowerCase().includes('admin')) { %>
+                        <option value="<%= dept._id %>"
+                            <% if (user.department && user.department._id.toString() === dept._id.toString()) { %>
+                                selected
+                            <% } %>
+                        >
+                            <%= dept.name %>
+                        </option>
+                    <% } %>
                 <% }) %>
             </select>
+
         </div>
             </form>
         </div>
