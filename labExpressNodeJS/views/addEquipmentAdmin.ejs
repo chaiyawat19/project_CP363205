@@ -1,50 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title %></title>
-  </head>
-  <body>
-    <a href="/admin/listitemuser">กลับ</a>
-    <h1><%= title %></h1>
-    <form
-      action="/admin/addEquipment"
-      method="post"
-      enctype="multipart/form-data"
-    >
-      <input
-        type="text"
-        class="input form-control"
-        placeholder="ชื่ออุปกรณ์"
-        name="name"
-        required
-      />
 
-      <input
-        type="text"
-        class="input form-control"
-        placeholder="รายละเอียดอุปกรณ์"
-        name="description"
-      />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    <%= title %>
+  </title>
+</head>
 
-      <input type="file" class="input form-control" name="image" />
+<body>
 
-      <select class="form-select" name="category_id" required>
-        <option value="" selected>เลือกหมวดหมู่อุปกรณ์</option>
-        <% categories.forEach(function(category) { %>
-        <option value="<%= category._id %>"><%= category.name %></option>
-        <% }); %>
-      </select>
+  <div class="container my-5">
+    <div class="row">
+      <div class="col-12 mb-3">
+        <a href="/admin/listitemuser" class="btn btn-dark">กลับ</a>
+      </div>
 
-      <input
-        type="text"
-        class="input form-control"
-        placeholder="สถานที่เก็บ"
-        name="location"
-      />
+      <div class="col-lg-8 offset-lg-2">
+        <h2 class="mb-4">
+          <%= title %>
+        </h2>
 
-      <button type="submit" class="btn btn-primary">เพิ่มอุปกรณ์</button>
-    </form>
-  </body>
+        <div class="card shadow p-4">
+          <form action="/admin/addEquipment" method="post" enctype="multipart/form-data">
+            <div class="row g-4">
+
+              <div class="col-12">
+                <label for="equipmentName" class="form-label">ชื่ออุปกรณ์ <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="equipmentName"
+                  placeholder="เช่น Sony A7R III หรือ ไมค์ Condenser" name="name" required />
+              </div>
+
+              <div class="col-12">
+                <label for="description" class="form-label">รายละเอียดอุปกรณ์</label>
+                <textarea class="form-control" id="description"
+                  placeholder="ระบุรายละเอียด, คุณสมบัติ, หรือข้อมูลจำเพาะ" name="description" rows="4"></textarea>
+              </div>
+
+              <div class="col-12">
+                <label for="imageUpload" class="form-label">รูปภาพอุปกรณ์</label>
+                <input type="file" class="form-control" id="imageUpload" name="image" accept="image/*" />
+              </div>
+
+              <div class="col-md-6">
+                <label for="category" class="form-label">หมวดหมู่อุปกรณ์ <span class="text-danger">*</span></label>
+                <select class="form-select" id="category" name="category_id" required>
+                  <option value="" selected>เลือกหมวดหมู่อุปกรณ์</option>
+                  <% categories.forEach(function(category) { %>
+                    <option value="<%= category._id %>">
+                      <%= category.name %>
+                    </option>
+                    <% }); %>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label for="location" class="form-label">สถานที่เก็บ</label>
+                <input type="text" class="form-control" id="location" placeholder="เช่น ห้องสตูดิโอ 2, GL124"
+                  name="location" />
+              </div>
+
+              <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary w-100 py-2">เพิ่มอุปกรณ์</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
 </html>

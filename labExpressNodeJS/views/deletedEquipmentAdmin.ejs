@@ -4,64 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <a href="/admin/listitemuser">กลับไปยังรายการอุปกรณ์ปกติ</a>
+    <div class="container mt-4">
+        <a href="/admin/listitemuser" class="btn btn-secondary mb-3">
+            <i class="fas fa-arrow-left"></i> กลับ
+        </a>
+        
+        <h1><%= title %></h1>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ชื่ออุปกรณ์</th>
-                <th>ประเภท</th>
-                <th>รายละเอียด</th>
-                <th>สถานะ</th>
-                <th>รูปภาพ</th>
-                <th>สถานที่เก็บ</th>
-                <th>วันเวลาที่ลบ</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (deletedEquipmentList.length === 0) { %>
-                <tr>
-                    <td colspan="8">ไม่มีอุปกรณ์ที่ถูกลบ</td>
-                </tr>
-            <% } %>
-            <% deletedEquipmentList.forEach(equipment => { %>
-                <tr>
-                    <td><%= equipment.name %></td>
-                    <td><%= equipment.category_id ? equipment.category_id.name : '-' %></td>
-                    <td><%= equipment.description %></td>
-                    <td> 
-                        <% if (equipment.status === "available") { %>
-                            <span class="badge bg-success">พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "unavailable") { %>
-                            <span class="badge bg-danger">ไม่พร้อมใช้งาน</span>
-                        <% } else if (equipment.status === "repair") { %>
-                            <span class="badge bg-warning text-dark">อยู่ระหว่างซ่อม</span>
-                        <% } else { %>
-                            <span class="badge bg-secondary">ไม่ทราบสถานะ</span>
-                        <% } %>
-                    </td>
-                    <td>
-                        <% if (equipment.image) { %>
-                            <img src="/uploads/<%= equipment.image %>" alt="" width="100" height="100">
-                        <% } else { %>
-                            -
-                        <% } %>
-                    </td>
-                    <td><%= equipment.location %></td>
-                    <td><%= equipment.deleted_at.toLocaleDateString('th-TH') %></td>
-                    <td>
-                        <!-- ตัวอย่างปุ่มกู้คืน -->
-                        <form action="/admin/restoreEquipment/<%= equipment._id %>" method="post" style="display:inline;" onsubmit="return confirm('คุณต้องการกู้คืน <%= equipment.name %>?')">
-                            <button type="submit">กู้คืน</button>
-                        </form>
-                    </td>
-                </tr>
-            <% }) %>
-        </tbody>
-    </table>
+        <% if (deletedEquipmentList.length === 0) { %>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> ไม่มีอุปกรณ์ในถังขยะ
+            </div>
+        <% } else { %>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ลำดับ</th>
+                            <th>รูปภาพ</th>
+                            <th>ชื่ออุปกรณ์</th>
+                            <th>หมวดหมู่</th>
+                            <th>สถานที่เก็บ</th>
+                            <th>วันที่ลบ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% deletedEquipmentList.forEach((equipment, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td>
+                                    <% if (equipment.image) { %>
+                                        <img src="/uploads/<%= equipment.image %>" 
+                                             alt="<%= equipment.name %>" 
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">
+                                    <% } else { %>
+                                        <img src="https://via.placeholder.com/60" 
+                                             alt="No Image" 
+                                             style="border-radius: 5px;">
+                                    <% } %>
+                                </td>
+                                <td><%= equipment.name %></td>
+                                <td>
+                                    <%= equipment.category_id ? equipment.category_id.name : 'ไม่มีหมวดหมู่' %>
+                                </td>
+                                <td><%= equipment.location || '-' %></td>
+                                <td>
+                                    <%= equipment.deleted_at ? new Date(equipment.deleted_at).toLocaleDateString('th-TH') : '-' %>
+                                </td>
+                                <td>
+                                    <!-- ปุ่มกู้คืน -->
+                                    <form action="/admin/restoreEquipment/<%= equipment._id %>" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          id="restore-form-<%= equipment._id %>">
+                                        <button type="button" 
+                                                class="btn btn-success btn-sm" 
+                                                onclick="confirmRestore(event, '<%= equipment._id %>', '<%= equipment.name %>')">
+                                            <i class="fas fa-undo"></i> กู้คืน
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // ฟังก์ชันยืนยันการกู้คืน
+        function confirmRestore(event, equipmentId, equipmentName) {
+            event.preventDefault();
+            
+            Swal.fire({
+                title: "ต้องการกู้คืนอุปกรณ์นี้หรือไม่?",
+                text: `อุปกรณ์: ${equipmentName}`,
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#28a745",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "ยืนยันการกู้คืน",
+                cancelButtonText: "ยกเลิก"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('restore-form-' + equipmentId);
+                    
+                    if (form) {
+                        Swal.fire({
+                            title: "กำลังกู้คืนอุปกรณ์...",
+                            text: "กรุณารอสักครู่",
+                            icon: "success",
+                            showConfirmButton: false,
+                            timer: 800
+                        });
+                        
+                        setTimeout(() => {
+                            form.submit();
+                        }, 800);
+                    } else {
+                        Swal.fire({
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่พบฟอร์มสำหรับกู้คืนอุปกรณ์',
+                            icon: 'error'
+                        });
+                    }
+                }
+            });
+        }
+
+    </script>
 </body>
 </html>

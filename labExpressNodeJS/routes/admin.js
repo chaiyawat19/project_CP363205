@@ -1,7 +1,9 @@
 var express = require("express");
 var router = express.Router();
 var Category = require("../models/Category");
+
 const { isAdmin,  } = require ('../middleware/auth');
+
 const listEquipment = require("../models/listEquipment");
 const Notification = require("../models/Notification");
 const Department = require('../models/Department');
@@ -39,7 +41,6 @@ const upload = multer({
     storage: storage,
     limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
 });
-
 
 
 
@@ -329,12 +330,6 @@ router.post(
       // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
       await Notification.insertMany(notifications);
       res.redirect("/admin/listitemuser");
-
-      // ส่ง response กลับ
-      res.status(201).json({
-        message: "เพิ่มอุปกรณ์และส่งการแจ้งเตือนให้ผู้ใช้ทั้งหมดแล้ว",
-        equipment: newEquipment,
-      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" });
@@ -423,7 +418,7 @@ router.post(
   }
 );
 
-router.get("/deleteEquipment/:id", isAdmin, async (req, res) => {
+router.post("/deleteEquipment/:id", isAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const equipment = await listEquipment.findById(id);
@@ -522,6 +517,28 @@ router.post("/addCategory", isAdmin, async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการเพิ่มประเภทอุปกรณ์");
   }
 });
+
+// ✅ หน้าแสดงรายละเอียดอุปกรณ์ (เฉพาะดู)
+router.get('/seedetails/:id', async (req, res) => {
+  try {
+    const equipment = await Equipment.findById(req.params.id).populate('category_id');
+    if (!equipment) {
+      return res.status(404).send('ไม่พบข้อมูลอุปกรณ์');
+    }
+
+    res.render('seedetailsAdmin', {
+  title: 'รายละเอียดอุปกรณ์',
+  layout: 'layouts/navadmin',
+  activePage: 'listitemuser', 
+  equipment,
+  category: equipment.category_id
+});
+  } catch (err) {
+    console.error('❌ Error loading equipment details:', err);
+    res.status(500).send('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+  }
+});
+
 
 router.get('/returnequipment', async (req, res) => {
   try {

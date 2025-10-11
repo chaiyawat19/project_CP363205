@@ -7,7 +7,7 @@
     <title>
         <%= title %>
     </title>
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">    
     <style>
         .card-img-top {
             height: 300px;
@@ -19,7 +19,8 @@
             border: 1px solid rgba(55, 88, 249, 0.3);
             border-radius: 5px;
             padding: 5px;
-            width: 30%;
+            /* ปรับ width ให้เป็น auto หรือ fit-content เพื่อให้ปรับตามเนื้อหา */
+            width: fit-content;
         }
 
         .status {
@@ -35,89 +36,92 @@
 </head>
 
 <body>
-    <header class="d-flex align-items-center justify-content-between">
-        <div class="box1">
-            <h1>รายการอุปกรณ์</h1>
-            <small>จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</small>
-        </div>
-        <div class="box2">
-            <a href="/admin/addEquipment" class="btn btn-primary px-4 py-2">
-                เพิ่มอุปกรณ์ <i class="bi bi-plus-circle"></i>
-            </a>
-        </div>
-    </header>
-
-    <hr style="color: #3758F9;">
-
-    <div class="container">
-        <div class="row d-flex align-items-center">
-            <div class="col-6">
-                <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
+    <div class="container my-5">
+        <header class="d-flex align-items-center justify-content-between mb-4">
+            <div class="box1">
+                <h1>รายการอุปกรณ์</h1>
+                <small class="text-muted">จัดการอุปกรณ์ เพิ่ม แก้ไข ลบ</small>
             </div>
-
-            <div class="col-3">
-                <select id="pageSelect1" class="form-select my-3" aria-label="Default select example">
-                    <option value="" selected disabled>หมวดหมู่การทำงาน</option>
-                    <option value="/admin/listcategory">จัดการประเภทอุปกรณ์</option>
-                    <option value="/admin/deletedEquipment">รายการอุปกรณ์ที่ถูกลบ</option>
-                </select>
+            <div class="box2 d-flex align-items-center">
+                 <a href="/admin/deletedEquipment" class="btn btn-danger px-3 py-2 me-3 custom-hover-danger">
+                    <i class="bi bi-trash3"></i></i>
+                </a>
+                <a href="/admin/listcategory" class="btn btn-dark px-3 py-2 me-2 custom-hover-dark">
+                    <i class="fas fa-tags me-1"></i> จัดการประเภท
+                </a>
+               
+                <a href="/admin/addEquipment" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-plus-circle"></i> เพิ่มอุปกรณ์
+                </a>
             </div>
+        </header>
+        <hr style="color: #3758F9;">
 
-            <div class="col-3">
-                <select id="statusFilter" class="form-select my-3" aria-label="Default select example">
-                    <option value="" selected>สถานะการใช้งาน</option>
-                    <option value="available">พร้อมใช้งาน</option>
-                    <option value="unavailable">ไม่พร้อมใช้งาน</option>
-                    <option value="repair">อยู่ระหว่างซ่อม</option>
-                    <option value="broken">เสียหาย</option>
-                </select>
+        <div class="container p-0">
+            <div class="row d-flex align-items-center my-3">
+                <div class="col-9">
+                    <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาอุปกรณ์...">
+                </div>
+
+                <div class="col-3">
+                    <select id="statusFilter" class="form-select" aria-label="Default select example">
+                        <option value="" selected>สถานะการใช้งาน (ทั้งหมด)</option>
+                        <option value="available">พร้อมใช้งาน</option>
+                        <option value="unavailable">ไม่พร้อมใช้งาน</option>
+                        <option value="repair">อยู่ระหว่างซ่อม</option>
+                        <option value="broken">เสียหาย</option>
+                    </select>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="container">
+
         <div class="row" id="equipmentContainer">
             <% equipmentList.forEach(equipment=> { %>
-                <div class="col-4 equipment-card g-4" data-status="<%= equipment.status %>">
-                    <div class="card text-center">
-                        <div class="img-content">
+                <div class="col-md-4 equipment-card g-4" data-status="<%= equipment.status %>">
+                    <div class="card text-center h-100">
+                        <div class="img-content" style="position: relative;">
                             <img class="card-img-top" src="/uploads/<%= equipment.image %>" alt="">
                             <div class="status">
                                 <% if (equipment.status==="available" ) { %>
                                     <p class="badge bg-success p-3">พร้อมใช้งาน</p>
-                                <% } else if (equipment.status==="unavailable" ) { %>
-                                    <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
-                                <% } else if (equipment.status==="repair" ) { %>
-                                    <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
-                                <% } else if (equipment.status==="broken" ) { %>
-                                    <p class="badge bg-secondary p-3">เสียหาย</p>
-                                <% } %>
+                                    <% } else if (equipment.status==="unavailable" ) { %>
+                                        <p class="badge bg-danger p-3">ไม่พร้อมใช้งาน</p>
+                                        <% } else if (equipment.status==="repair" ) { %>
+                                            <p class="badge bg-warning text-dark p-3">อยู่ระหว่างซ่อม</p>
+                                            <% } else if (equipment.status==="broken" ) { %>
+                                                <p class="badge bg-secondary p-3">เสียหาย</p>
+                                                <% } %>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-center my-2">
-                                <div class="category mx-2">
-                                    <%= equipment.category_id.name %>
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-center my-2">
+                                    <div class="category mx-2">
+                                        <i class="fas fa-tag me-1"></i>
+                                        <%= equipment.category_id.name %>
+                                    </div>
+                                    <div class="category mx-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        <%= equipment.location %>
+                                    </div>
                                 </div>
-                                <div class="category mx-2">
-                                    <%= equipment.location %>
-                                </div>
+                                <h5 class="card-title mt-2">
+                                    <%= equipment.name %>
+                                </h5>
+                                <p class="card-text text-muted small mb-3" style="min-height: 40px;">
+                                    <%= equipment.description && equipment.description.length> 40
+                                        ? equipment.description.substring(0, 40) + '...'
+                                        : equipment.description %>
+                                </p>
                             </div>
-
-                            <h5 class="card-title">
-                                <%= equipment.name %>
-                            </h5>
-                            <p class="card-text h-6">
-                                <%= equipment.description && equipment.description.length> 30
-                                    ? equipment.description.substring(0, 40) + '...'
-                                    : equipment.description %>
-                            </p>
-                            <div class="botton">
-                                <a href="#" class="btn btn-outline-secondary">ดูรายละเอียด</a>
-                                <a href="/admin/editEquipment/<%= equipment._id%>" class="btn btn-primary">แก้ไข</a>
+                            <div class="button">
+                                <a href="/admin/seedetails/<%= equipment._id %>" class="btn btn-outline-secondary">ดูรายละเอียด</a>
+                                <a href="/admin/editEquipment/<%= equipment._id %>" class="btn btn-primary">แก้ไข</a>
                             </div>
                             <small class="font">
                                 วันเวลาที่สร้าง: <%= equipment.created_at.toLocaleDateString('th-TH') %>
                             </small>
+
                         </div>
                     </div>
                 </div>
@@ -128,14 +132,13 @@
     <script>
         const searchInput = document.getElementById("searchInput");
         const cards = document.querySelectorAll(".equipment-card");
-        const pageSelect1 = document.getElementById("pageSelect1");
+        // const pageSelect1 = document.getElementById("pageSelect1"); // 🛑 ลบออก 🛑
         const statusFilter = document.getElementById("statusFilter");
 
         // โหลดค่าที่บันทึกไว้ก่อนหน้า
         window.addEventListener("DOMContentLoaded", () => {
             const savedSearch = localStorage.getItem("searchInput");
             const savedStatus = localStorage.getItem("statusFilter");
-            const savedPageSelect = localStorage.getItem("pageSelect1");
 
             if (savedSearch) searchInput.value = savedSearch;
             if (savedStatus) statusFilter.value = savedStatus;
@@ -150,7 +153,11 @@
             const filter = searchInput.value.toLowerCase();
             cards.forEach(card => {
                 const text = card.innerText.toLowerCase();
-                card.style.display = text.includes(filter) ? "" : "none";
+                const statusMatch = card.style.display !== "none"; // ตรวจสอบว่าถูกกรองด้วยสถานะอยู่หรือไม่
+
+                if (statusMatch) {
+                    card.style.display = text.includes(filter) ? "" : "none";
+                }
             });
         }
 
@@ -159,8 +166,11 @@
             const selectedStatus = statusFilter.value;
             cards.forEach(card => {
                 const cardStatus = card.getAttribute("data-status");
+                const searchMatch = card.innerText.toLowerCase().includes(searchInput.value.toLowerCase()); // ตรวจสอบว่าถูกกรองด้วยค้นหาอยู่หรือไม่
+
                 if (selectedStatus === "" || cardStatus === selectedStatus) {
-                    card.style.display = "";
+                    // ถ้าตรงกับสถานะที่เลือก ให้แสดง ถ้าตรงกับการค้นหาด้วย
+                    card.style.display = searchMatch ? "" : "none";
                 } else {
                     card.style.display = "none";
                 }
@@ -170,22 +180,21 @@
         // ค้นหาแบบเรียลไทม์ + บันทึกค่า
         searchInput.addEventListener("keyup", function () {
             localStorage.setItem("searchInput", this.value);
+            // เมื่อค้นหาเปลี่ยน ให้เรียกทั้งสอง filter เพื่อให้ทำงานร่วมกัน
             applySearchFilter();
-        });
-
-        //กรองตามสถานะ + บันทึกค่า
-        statusFilter.addEventListener("change", function () {
-            localStorage.setItem("statusFilter", this.value);
             applyStatusFilter();
         });
 
-        // เปลี่ยนหน้าอัตโนมัติ + บันทึกค่า
-        pageSelect1.addEventListener("change", function () {
-            const url = this.value;
-            if (url) window.location.href = url;
+        // กรองตามสถานะ + บันทึกค่า
+        statusFilter.addEventListener("change", function () {
+            localStorage.setItem("statusFilter", this.value);
+            // เมื่อสถานะเปลี่ยน ให้เรียกทั้งสอง filter เพื่อให้ทำงานร่วมกัน
+            applySearchFilter();
+            applyStatusFilter();
         });
-    </script>
 
+        // ลบโค้ดส่วน pageSelect1.addEventListener("change", ...) ออก
+    </script>
 </body>
 
 </html>

@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body >
-
+<body>
     <a href="/admin/listitemuser" class="btn btn-secondary mb-3">กลับ</a>
     <h1><%= title %></h1>
 
@@ -72,9 +72,63 @@
             </select>
         </div>
 
+
+       
+            
         <!-- ปุ่มบันทึก -->
         <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
-    </form>
 
+</form> 
+<form 
+    action="/admin/deleteEquipment/<%= equipment._id %>" 
+        method="POST" 
+    class="d-inline"
+    id="delete-form-<%= equipment._id %>" 
+>
+    <button 
+    type="button" 
+        class="btn btn-danger" 
+        onclick="ConfirmDelete(event, '<%= equipment._id %>')"
+    >
+        <i class="fas fa-trash-alt me-1"></i> ลบ
+    </button>
+</form>
+
+
+    <script>
+function ConfirmDelete(event, equipmentId){
+    event.preventDefault();
+        Swal.fire({
+        title: "ต้องการที่จะลบอุปกรณ์นี้จริงหรือไม่?", 
+        text: "เมื่อลบแล้วอุปกรณ์จะถูกย้ายไปที่ถังขยะและต้องกู้คืนจึงจะกลับมาใช้งานได้", 
+        icon: "error", 
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545", 
+        cancelButtonColor: "#6c757d", 
+        cancelButtonText: "ยกเลิก"
+    }).then((result) => {
+    if (result.isConfirmed) {
+    const form = document.getElementById('delete-form-' + equipmentId);
+        
+    if(form) {
+        Swal.fire({
+                title: "ลบอุปกรณ์เสร็จสิ้น",
+                text: "",
+                icon: "success",
+                showConfirmButton: false,
+                timer: 500
+            });
+        setTimeout(() => {
+        form.submit();
+}, 500); 
+
+            } else {
+        console.error("Form not found for equipment ID:", equipmentId);
+        Swal.fire('Error', 'ไม่พบฟอร์มสำหรับลบอุปกรณ์นี้', 'error');
+        }
+}
+});
+}
+        </script>
 </body>
 </html>

@@ -54,15 +54,15 @@ router.use(isUser, async (req, res, next) => {
 const getRepairStatusBadge = (status) => {
   switch (status) {
     case 'pending':
-      return '<span class="badge bg-warning text-dark">รอดำเนินการ</span>';
+      return '<span class="btn btn-warning btn-sm disable">รอดำเนินการ</span>';
     case 'in_progress':
-      return '<span class="badge bg-info text-white">กำลังซ่อม</span>';
+      return '<span class="btn btn-info btn-sm disable">กำลังซ่อม</span>';
     case 'completed':
-      return '<span class="badge bg-success">ซ่อมเสร็จแล้ว</span>';
+      return '<span class="btn btn-success btn-sm disable">ซ่อมเสร็จแล้ว</span>';
     case 'rejected':
-      return '<span class="badge bg-danger">ปฏิเสธ</span>';
+      return '<span class="btn btn-danger btn-sm disable">ปฏิเสธ</span>';
     default:
-      return `<span class="badge bg-secondary">${status}</span>`;
+      return `<span class="btn btn-secondary btn-sm disable">${status}</span>`;
   }
 };
 

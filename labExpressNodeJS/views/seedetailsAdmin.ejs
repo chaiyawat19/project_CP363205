@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= equipment.name %> - รายละเอียดอุปกรณ์</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background-color: #f5f6fa;
+      color: #333;
+    }
+
+    .container {
+      max-width: 750px;
+      margin: 50px auto;
+      background: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px 35px;
+      transition: transform 0.2s;
+    }
+
+    .container:hover {
+      transform: translateY(-3px);
+    }
+
+    h3 {
+      color: #2c3e50;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    img {
+      
+      width: 50%;
+      border-radius: 10px;
+      margin: 15px auto;
+      object-fit: cover;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .category-badge {
+      background-color: #e9f0ff;
+      color: #0d6efd;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    .badge-status {
+      font-size: 0.95rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .btn-back {
+      background-color: #212529;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-back:hover {
+      background-color: #333;
+    }
+
+    .btn-edit {
+      background-color: #0d6efd;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    .btn-edit:hover {
+      background-color: #0b5ed7;
+    }
+
+    .btn-delete {
+      background-color: #f8f9fa;
+      color: #dc3545;
+      border: 1px solid #dc3545;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background-color: #dc3545;
+      color: #fff;
+    }
+
+    .info-section {
+      margin-top: 10px;
+    }
+
+    .info-section h6 {
+      font-weight: 600;
+      color: #495057;
+    }
+
+    small.text-muted {
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  
+    <div class="btn-group mb-3">
+      <a href="/admin/listitemuser" class="btn-back">กลับ</a>
+      <div>
+        <a href="/admin/editEquipment/<%= equipment._id %>" class="btn btn-primary ">แก้ไข</a>
+        <form 
+          action="/admin/deleteEquipment/<%= equipment._id %>" 
+          method="POST" 
+          class="d-inline"
+          id="delete-form-<%= equipment._id %>" 
+        >       
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          onclick="ConfirmDelete(event, '<%= equipment._id %>')"
+          >
+          <i class="fas fa-trash-alt me-1"></i> ลบ
+        </button>
+    </form>
+      </div>
+    </div>
+
+    <h3><%= equipment.name %></h3>
+
+    <% if (equipment.image) { %>
+      <img src="/uploads/<%= equipment.image %>" alt="<%= equipment.name %>">
+    <% } else { %>
+      <div class="text-muted mb-3">ไม่มีรูปภาพ</div>
+    <% } %>
+
+    <div class="mb-3">
+      <% if (category) { %>
+        <span class="category-badge">หมวดหมู่</span>
+        <span class="category-badge"><%= category.name %></span>
+      <% } %>
+    </div>
+
+    <div class="info-section">
+      <h6>รายละเอียด</h6>
+      <p><%= equipment.description || 'ไม่มีรายละเอียดเพิ่มเติม' %></p>
+    </div>
+
+    <div class="info-section">
+      <h6>สถานที่เก็บ</h6>
+      <p><%= equipment.location || 'ไม่ระบุ' %></p>
+    </div>
+
+    <div class="info-section">
+      <h6>สถานะ</h6>
+      <% if (equipment.status === 'available') { %>
+        <span class="badge-status bg-success text-white">พร้อมใช้งาน</span>
+      <% } else if (equipment.status === 'unavailable') { %>
+        <span class="badge-status bg-danger text-white">ไม่พร้อมใช้งาน</span>
+      <% } else if (equipment.status === 'repair') { %>
+        <span class="badge-status bg-warning text-dark">อยู่ระหว่างซ่อม</span>
+      <% } %>
+    </div>
+
+    <small class="text-muted">*อุปกรณ์นี้สามารถยืมได้ไม่เกิน 3 วัน</small>
+  </div>
+
+
+
+  <script>
+function ConfirmDelete(event, equipmentId){
+    event.preventDefault();
+        Swal.fire({
+        title: "ต้องการที่จะลบอุปกรณ์นี้จริงหรือไม่?", 
+        text: "เมื่อลบแล้วอุปกรณ์จะถูกย้ายไปที่ถังขยะและต้องกู้คืนจึงจะกลับมาใช้งานได้", 
+        icon: "error", 
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545", 
+        cancelButtonColor: "#6c757d", 
+        cancelButtonText: "ยกเลิก"
+    }).then((result) => {
+    if (result.isConfirmed) {
+    const form = document.getElementById('delete-form-' + equipmentId);
+        
+    if(form) {
+        Swal.fire({
+                title: "ลบอุปกรณ์เสร็จสิ้น",
+                text: "",
+                icon: "success",
+                showConfirmButton: false,
+                timer: 500
+            });
+        setTimeout(() => {
+        form.submit();
+}, 500); 
+
+            } else {
+        console.error("Form not found for equipment ID:", equipmentId);
+        Swal.fire('Error', 'ไม่พบฟอร์มสำหรับลบอุปกรณ์นี้', 'error');
+        }
+}
+});
+}
+        </script>
+</body>
+</html>

@@ -7,26 +7,49 @@ var User = require('../models/User');
 var Equipment = require('../models/listEquipment');
 
 /* GET home page. */
-router.get("/", function (req, res, next) {
+router.get("/", async function (req, res, next) {
+
+    let userCount = 0;
+    let equipmentCount = 0;
+    let borrowCount = 0;
+
+    [userCount, equipmentCount, borrowCount] = await Promise.all([
+        User.countDocuments({}), 
+        Equipment.countDocuments({}), 
+        Borrow.countDocuments({}) 
+    ]);
+
+
+
+
+
   if (req.session && req.session.userId) {
     if (req.session.userRole === 'admin') {
-      return res.redirect('/admin');
+      return res.redirect('/admin/listitemuser');
     } else if (req.session.userRole === 'user') {
       return res.redirect('/users');
     }
+
+
+
   }
 
 
 
 
 
-  res.render("index", { title: "AssetFlow" });
+  res.render("index", { 
+    title: "AssetFlow",
+    userCount: userCount,
+    equipmentCount: equipmentCount,
+    borrowCount: borrowCount
+   });
 });
 
 router.get("/login", function (req, res, next) {
   if (req.session && req.session.userId) {
     if (req.session.userRole === 'admin') {
-      return res.redirect('/admin');
+      return res.redirect('/admin/listitemuser');
     } else if (req.session.userRole === 'user') {
       return res.redirect('/users');
     }
@@ -45,7 +68,7 @@ router.get("/listitemuser", function (req,res,next){
 router.get("/register", function (req, res, next) {
   if (req.session && req.session.userId) {
     if (req.session.userRole === 'admin') {
-      return res.redirect('/admin');
+      return res.redirect('/admin/listitemuser');
     } else if (req.session.userRole === 'user') {
       return res.redirect('/users');
     }
@@ -128,7 +151,7 @@ router.post("/login", async (req, res, next) => {
         req.session.userEmail = user.email;
         
         // **เปลี่ยนจาก redirect เป็น render พร้อมส่ง success url**
-        const redirectUrl = user.userRole === 'admin' ? '/admin' : '/users';
+        const redirectUrl = user.userRole === 'admin' ? '/admin/listitemuser' : '/users';
         return res.render("login", { 
             title: "เข้าสู่ระบบ", 
             layout: "layouts/auth",
