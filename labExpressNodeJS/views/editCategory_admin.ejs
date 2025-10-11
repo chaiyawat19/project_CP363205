@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <title>Document</title>
+    <style>
+        .img-content {
+            display: flex;
+            justify-content: center;
+        }
+
+        .card-img-top {
+            width: 350px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 22px;
+        }
+
+        .status {
+            position: absolute;
+            top: 15%;
+            right: 30%;
+        }
+
+        .badge {
+            border-radius: 10px 0 0 10px;
+        }
+
+        form {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <header class="d-flex">
+        <h1> <a href="/admin/listcategory"><i class="bi bi-arrow-left"></i></a> รายละเอียดเภทอุปกรณ์</h1>
+    </header>
+    
+    <hr>
+    <form action="/admin/borrow/update/" method="POST">
+        <label><strong>ชื่อ - นามสกุล</strong></label>
+        <input type="text" value="" class="form-control" readonly>
+        <input type="submit" class="btn btn-primary my-3" value="อนุมัติการยืม">
+    </form>
+</body>
+</html>

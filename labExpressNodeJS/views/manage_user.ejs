@@ -18,23 +18,6 @@
         .btn-warning { background-color: #ffc107; color: black; }
         .btn-danger { background-color: #dc3545; color: white; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            padding: 20px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        th { background-color: #f8f9fa; }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
         .badge-admin { background-color: #dc3545; color: white; }
         .badge-user { background-color: #6c757d; color: white; }
         .user-profile {
@@ -55,12 +38,16 @@
     </style>
 </head>
 <body>
+    <h1><%= title %></h1>
     <div class="container-fluid">
-        <h1><%= title %></h1>
+        <small>จัดการแก้ไขบัญชีผู้ใช้ และเพิ่มบัญชีใหม่</small>
+        <hr>
         <div class="box_add_user">
             <a href="/admin/manage_user/add" class="btn btn-success add_user">+ เพิ่มผู้ใช้ใหม่</a>
         </div>
-        <table>
+
+        <div class="card p-4">
+        <table class="table table-striped table-hover text-center mt-3">
             <thead>
                 <tr>
                     <th rowspan="2">รูปโปรไฟล์</th>
@@ -100,7 +87,7 @@
                                 <%= user.userRole %>
                             </span>
                         </td>
-                        <td><%= user.department  || '-' %></td>
+                        <td><%= user.department ? user.department.name : '-' %></td>
                         <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
                         <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
 
@@ -123,6 +110,7 @@
                 <% } %>
             </tbody>
         </table>
+        </div>
     </div>
 
     <script>

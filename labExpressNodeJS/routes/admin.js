@@ -448,6 +448,7 @@ router.get("/deletedEquipment", isAdmin, async (req, res) => {
   }
 });
 
+
 router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
   try {
     const equipment = await listEquipment.findById(req.params.id);
@@ -666,11 +667,127 @@ router.get("/borrow_Details/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
   }
 });
+
+// router.get("/editcategory/:id", async (req, res) => {
+//   const id = req.params.id;
+//   const category = await Category.findById(id);
+//   res.render("editCategory_admin", {
+//     title: "แก้ไขหมวดหมู่",
+//     category,
+//     layout: "layouts/navadmin",
+//     activePage: 'editcategory' 
+//   });
+// });
+
+router.put("/updatecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณากรอกชื่อประเภทอุปกรณ์"
+      });
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      id,
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "อัปเดตประเภทอุปกรณ์เรียบร้อย",
+      category: updatedCategory
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอัปเดต",
+      error: error.message
+    });
+  }
+});
+router.delete("/deletecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedCategory = await Category.findByIdAndUpdate(
+      id,
+      { deleted_at: new Date() },
+      { new: true }
+    );
+
+    if (!deletedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "ลบประเภทอุปกรณ์เรียบร้อย"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบ",
+      error: error.message
+    });
+  }
+});
+
+router.get("/clearall", isAdmin, async (req, res) => {
+  try {
+    // ค้นหาเฉพาะอุปกรณ์ที่มี deleted_at ไม่เป็น null
+    const deletedEquipmentList = await Equipment.find({ deleted_at: { $ne: null } });
+
+    return res.render("deletedEquipmentAdmin", {
+      title: "รายการอุปกรณ์ที่ถูกลบ",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      deletedEquipmentList,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
+  }
+});
+router.post("/deleteallapermanently", isAdmin, async (req, res) => {
+  try {
+    // ลบอุปกรณ์ที่มี deleted_at ไม่เป็น null ออกจากฐานข้อมูล
+    const result = await Equipment.deleteMany({ deleted_at: { $ne: null } });
+
+    return res.json({
+      success: true,
+      message: "ลบอุปกรณ์ทั้งหมดออกจากฐานข้อมูลแล้ว",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบอุปกรณ์ทั้งหมด",
+    });
+  }
+});
+
+
 router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");
+      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");  
     if (!borrowRecord) {
       return res.status(404).send("ไม่พบข้อมูลการยืม");
     }
@@ -1077,7 +1194,7 @@ router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => 
 // แสดงรายการผู้ใช้
 router.get("/manage_user", isAdmin, async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.find().populate("department").sort({ createdAt: -1 });
     res.render("manage_user", {
       title: "จัดการผู้ใช้",
       layout: "layouts/navadmin",
@@ -1090,12 +1207,10 @@ router.get("/manage_user", isAdmin, async (req, res) => {
   }
 });
 
-// หน้าเพิ่มผู้ใช้ใหม่
 router.get("/manage_user/add", isAdmin, async (req, res) => {
   try {
-    // กรองเฉพาะแผนกที่ยังไม่ถูกลบ
-    const departments = await Department.find({ deleted_at: null }).sort({ name: 1 });
-    
+    // const departments = await Department.find({ deleted_at: null }).sort({ name: 1 });
+    const departments = await Department.find({ deleted_at: null });
     res.render("add_user", {
       title: "เพิ่มผู้ใช้ใหม่",
       layout: "layouts/navadmin",
@@ -1115,25 +1230,17 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
     console.log("=== เริ่มเพิ่มผู้ใช้ ===");
     console.log("ข้อมูลที่ได้รับ:", { fname, lname, email, userRole, department });
 
-    // ตรวจสอบข้อมูลครบหรือไม่
     if (!fname || !lname || !email || !password) {
-      console.log("ข้อมูลไม่ครบ");
       return res.status(400).send("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
 
-    // ตรวจสอบ email ซ้ำ
     const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (existingUser) {
-      console.log("Email ซ้ำ:", email);
       return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
     }
 
-    // เข้ารหัสรหัสผ่านด้วย bcrypt
-    console.log("กำลังเข้ารหัสรหัสผ่าน...");
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("เข้ารหัสสำเร็จ");
 
-    // สร้าง user object
     const newUser = new User({
       fname: fname.trim(),
       lname: lname.trim(),
@@ -1141,20 +1248,16 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       password: hashedPassword,
       userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
-      department: department && department.trim() !== '' ? department.trim() : null, // เก็บเป็น null ถ้าไม่เลือก
+      department: mongoose.Types.ObjectId.isValid(department) ? department : null,
     });
 
-    console.log("กำลังบันทึกข้อมูล...");
     await newUser.save();
     console.log("บันทึกสำเร็จ! User ID:", newUser._id);
 
     res.redirect("/admin/manage_user");
   } catch (err) {
     console.error("=== เกิดข้อผิดพลาด ===");
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    console.error("Error stack:", err.stack);
-    
+    console.error(err);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
@@ -1212,7 +1315,7 @@ router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
       lname: lname.trim(),
       email: email.trim().toLowerCase(),
       userRole,
-      department: department && department.trim() !== '' ? department.trim() : null,
+      department: mongoose.Types.ObjectId.isValid(department) ? department : null,
       userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
     };
 
