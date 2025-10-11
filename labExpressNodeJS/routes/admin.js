@@ -410,7 +410,7 @@ router.post(
   }
 );
 
-router.get("/deleteEquipment/:id", isAdmin, async (req, res) => {
+router.post("/deleteEquipment/:id", isAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const equipment = await listEquipment.findById(id);
