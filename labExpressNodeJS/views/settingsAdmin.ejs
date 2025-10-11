@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title><%= title %></title> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ 
     <style>
         .content-area { max-width: 900px; margin: 30px auto; padding: 20px; }
         .card { background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; }
@@ -13,33 +15,20 @@
         .btn-primary { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; float: right; }
         .btn-change-pass { background-color: transparent; color: #007bff; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
         .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-         /* 📢 เพิ่ม selector สำหรับแท็ก <select> */
         .input-group select { 
-        width: 100%; 
-        padding: 10px; 
-        margin-bottom: 15px; 
-        border: 1px solid #ccc; 
-        border-radius: 4px; 
-        box-sizing: border-box; 
-        margin-top: 5px; 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            margin-top: 5px; 
         }
     </style>
 </head>
 <body>
     
     <div class="content-area">
-
-        <% 
-            const msg = req.query.msg;
-            const err = req.query.err;
-            if(msg === 'updated') { %>
-                <div style="color: green; padding: 10px; background-color: #d4edda; border-radius: 4px; margin-bottom: 15px;">อัปเดตข้อมูลส่วนตัวสำเร็จแล้ว!</div>
-        <% } else if(msg === 'password_changed') { %>
-                <div style="color: green; padding: 10px; background-color: #d4edda; border-radius: 4px; margin-bottom: 15px;">เปลี่ยนรหัสผ่านสำเร็จแล้ว!</div>
-        <% } else if(err === 'wrongpass') { %>
-                <div style="color: red; padding: 10px; background-color: #f8d7da; border-radius: 4px; margin-bottom: 15px;">รหัสผ่านเดิมไม่ถูกต้อง! โปรดลองใหม่อีกครั้ง</div>
-        <% } %>
-
 
         <div class="card">
         
@@ -57,7 +46,7 @@
                 <div class="input-group">
                     <label for="profileImage">อัปโหลดรูปโปรไฟล์ใหม่:</label>
                     <input type="file" id="profileImage" name="userProfileImage" accept="image/*">
-                    <p class="note">*ไฟล์ที่รองรับ: .jpg, .jpeg, .png (สูงสุด 2MB)</p>
+                    <p class="note">*ไฟล์ที่รองรับ: .jpg, .jpeg, .png หรือไม่ต้องเลือกไฟล์หากไม่ต้องการเปลี่ยนรูป</p>
                 </div>
                 <div class="row">
                     <div class="input-group">
@@ -77,27 +66,46 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="department">แผนก</label>
-                    <select id="department" name="department" required>
-                        <option value="">-- กรุณาเลือกแผนก --</option>
-                        
-                        <% departments.forEach(dept => { %>
-                            <option 
-                                value="<%= dept._id %>" 
-                                <% 
-                                    // ตรวจสอบว่า user.department มีค่าและ ID ตรงกันหรือไม่
-                                    // ใช้ .toString() เพื่อเปรียบเทียบ ObjectId กับ ID ที่ถูก Populate มาอย่างถูกต้อง
-                                    if (user.department && user.department._id.toString() === dept._id.toString()) { 
-                                %>
-                                    selected
-                                <% } %>
-                            >
-                                <%= dept.name %>
-                            </option>
-                        <% }) %>
-                    </select>
-                </div>
+        <div class="input-group">
+            <label for="department">แผนก</label>
+            <select id="department" name="department" required>
+                <option value="">-- กรุณาเลือกแผนก --</option>
+                
+                <% departments.forEach(dept => { %>
+                    
+                    <% 
+                         // ตรวจสอบและซ่อนแผนก 'admin' (ป้องกันไม่ให้เลือกตัวเองเป็น Admin ซ้อนกัน)
+                         // 💡 หมายเหตุ: ในไฟล์ settings.ejs ก่อนหน้า คุณซ่อน 'admin' ให้ user ทั่วไป
+                         // สำหรับ Admin อาจจะอนุญาตให้เห็น แต่เราจะคง Logic การซ่อนตามความต้องการก่อนหน้า
+                         if (dept.name.toLowerCase().includes('admin') && dept._id.toString() !== user.department._id.toString()) { 
+                             // ถ้าเป็น Admin ที่ไม่ใช่แผนก admin เดิม อาจจะมีความซับซ้อน แต่ถ้าไม่ใช่ admin เราจะซ่อน
+                             // เนื่องจาก Admin มักจะอยู่ในแผนก Admin อยู่แล้ว เราจึงอนุญาตให้เลือกได้ (ถ้า Logic Server ไม่ได้กรองไว้)
+                             // แต่เพื่อให้โค้ดนี้ปลอดภัยเหมือน settings.ejs เราจะคงการซ่อนไว้
+                             // ถ้าผู้ใช้เป็น Admin อยู่แล้ว จะต้องแก้ไข Logic นี้ใน routes/admin.js ให้กรองแผนก 'Admin' ออกมาอย่างถูกต้อง
+                             
+                             // ณ ที่นี้ เราจะอนุญาตให้ Admin เห็นทุกแผนก (เนื่องจากไฟล์นี้เป็นของ Admin)
+                             // แต่ถ้าคุณต้องการซ่อน Admin department ออกจากรายการทั้งหมด ควรทำที่ฝั่ง Server (routes/admin.js)
+                             
+                             /* // โค้ดที่เคยใช้ซ่อนใน settings.ejs (ถ้าใช้ใน settingAdmin ต้องปรับ)
+                             if (dept.name.toLowerCase().includes('admin')) { 
+                                 return; 
+                             } */
+                    %>
+                    <% } %>
+
+                    <option 
+                        value="<%= dept._id %>" 
+                        <% 
+                             if (user.department && user.department._id.toString() === dept._id.toString()) { 
+                        %>
+                            selected
+                        <% } %>
+                    >
+                        <%= dept.name %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
             </form>
         </div>
 
@@ -119,7 +127,79 @@
                 <button type="submit" class="btn-change-pass">บันทึกรหัสผ่านใหม่</button>
             </form>
         </div>
-
     </div>
+    
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // 1. Logic การแสดง Modal
+    const urlParams = new URLSearchParams(window.location.search);
+    const msg = urlParams.get('msg');
+    const err = urlParams.get('err');
+    
+    // ฟังก์ชันสำหรับแสดง Modal (Success/Error)
+    const showModal = (iconType, titleText, bodyText) => {
+        // ใช้ SweetAlert2
+        Swal.fire({
+            icon: iconType,
+            title: titleText,
+            text: bodyText,
+            showConfirmButton: true,
+            confirmButtonText: 'ตกลง',
+            allowOutsideClick: false 
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // เมื่อกด 'ตกลง' ให้ลบ query ออกจาก URL เพื่อป้องกัน Modal ขึ้นซ้ำ
+                window.location.href = window.location.pathname;
+            }
+        });
+    };
+
+    // 2. ตรวจสอบข้อความแจ้งเตือนจาก Server (เมื่อโหลดหน้า)
+    if (msg === 'updated') {
+        showModal('success', 'บันทึกข้อมูลสำเร็จ!', 'อัปเดตข้อมูลส่วนตัวของคุณเรียบร้อยแล้ว'); 
+    } else if (msg === 'password_changed') {
+        showModal('success', 'เปลี่ยนรหัสผ่านสำเร็จ!', 'คุณเปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+    } else if (err === 'wrongpass') {
+        showModal('error', 'บันทึกไม่สำเร็จ!', 'รหัสผ่านเดิมไม่ถูกต้อง! โปรดลองใหม่อีกครั้ง');
+    } else if (err === 'updatefail') {
+        showModal('error', 'บันทึกไม่สำเร็จ!', 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล โปรดลองใหม่อีกครั้ง');
+    }
+
+
+    // 3. Logic ตรวจสอบฟอร์มรหัสผ่าน
+    const passwordForm = document.getElementById('passwordForm');
+    
+    if (passwordForm) {
+        const oldPass = document.getElementById('oldPassword');
+        const newPass = document.getElementById('newPassword');
+        const confirmPass = document.getElementById('confirmPassword');
+
+        passwordForm.addEventListener('submit', (event) => {
+            event.preventDefault(); 
+            
+            const oldVal = oldPass?.value.trim() || '';
+            const newVal = newPass?.value.trim() || '';
+            const confirmVal = confirmPass?.value.trim() || '';
+
+            // ตรวจสอบว่ากรอกครบทั้งสามช่องหรือไม่ (ไม่จำเป็นต้องเช็ค isAllFieldsEmpty ซ้ำ)
+            const isAllFieldsFilled = oldVal && newVal && confirmVal;
+
+            if (!isAllFieldsFilled) {
+                alert('โปรดกรอกข้อมูลรหัสผ่านให้ครบทั้ง 3 ช่อง (รหัสผ่านเดิม, ใหม่, ยืนยัน) หากต้องการเปลี่ยน');
+                
+                if (!oldVal && oldPass) oldPass.focus();
+                else if (!newVal && newPass) newPass.focus();
+                else if (!confirmVal && confirmPass) confirmPass.focus();
+                
+                return; 
+            }
+            
+            passwordForm.submit();
+        });
+    } else {
+        console.error("Error: Cannot find 'passwordForm' element. Password form functionality disabled.");
+    }
+</script>
 </body>
 </html>
