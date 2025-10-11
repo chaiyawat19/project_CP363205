@@ -362,7 +362,7 @@ router.post("/editEquipment", isAdmin, upload.single("image"), async (req, res) 
         }
         
         await equipment.save();
-        res.redirect("/admin/seedetails/" + id);
+        res.redirect("/admin/listitemuser/");
     } catch (err) {
         console.error(err);
         res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
