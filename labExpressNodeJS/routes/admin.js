@@ -795,10 +795,6 @@ router.post("/deleteallapermanently", isAdmin, async (req, res) => {
 router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const borrowRecord = await Borrow.findById(id)
-      .populate("user_id")
-      .populate("equipment_id");
-
       const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");  
     if (!borrowRecord) {
       return res.status(404).send("ไม่พบข้อมูลการยืม");
