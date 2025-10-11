@@ -8,8 +8,9 @@ const Borrow = require('../models/Borrow');
 const Department = require('../models/Department');;
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs')
+const fs = require('fs');
 const RepairRequest = require("../models/Reqair_requests");
+
 
 // ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
 
@@ -169,7 +170,9 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
         user.fname = fname;
         user.lname = lname;
         user.email = email;
-        user.department = department;
+        user.department = department && department !== '' ? department : null;
+
+
 
         // 📢 โค้ดที่แก้ไขแล้ว: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
         if (req.file) {

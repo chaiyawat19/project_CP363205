@@ -1330,50 +1330,62 @@ router.get("/manage_user/edit/:id", isAdmin, async (req, res) => {
 });
 
 // อัปเดตข้อมูลผู้ใช้
-router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
+router.post("/manage_user/edit/:id", isAdmin, upload.single('userProfileImage'), async (req, res) => {
   try {
     const { fname, lname, email, userRole, department } = req.body;
 
     console.log("=== เริ่มอัปเดตผู้ใช้ ===");
     console.log("ข้อมูลที่ได้รับ:", { fname, lname, email, userRole, department });
 
-    // ตรวจสอบข้อมูลครบหรือไม่
     if (!fname || !lname || !email || !userRole) {
       return res.status(400).send("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
 
-    // ตรวจสอบ email ซ้ำ (ยกเว้น user ที่กำลังแก้ไข)
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).send("ไม่พบผู้ใช้");
+
+    // ตรวจสอบ email ซ้ำ
     const existingUser = await User.findOne({ 
       email: email.trim().toLowerCase(),
-      _id: { $ne: req.params.id } // ไม่รวม user ที่กำลังแก้ไข
+      _id: { $ne: req.params.id }
     });
-    
-    if (existingUser) {
-      return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
-    }
+    if (existingUser) return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
 
     // อัปเดตข้อมูล
-    const updateData = {
-      fname: fname.trim(),
-      lname: lname.trim(),
-      email: email.trim().toLowerCase(),
-      userRole,
-      department: mongoose.Types.ObjectId.isValid(department) ? department : null,
-      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
-    };
+    user.fname = fname.trim();
+    user.lname = lname.trim();
+    user.email = email.trim().toLowerCase();
+    user.userRole = userRole;
+    user.department = department && mongoose.Types.ObjectId.isValid(department) ? department : null;
 
-    await User.findByIdAndUpdate(req.params.id, updateData);
+    // จัดการรูปโปรไฟล์
+    if (req.file) {
+      // ลบไฟล์เก่า ถ้าเป็นไฟล์อัปโหลดจริง
+      if (user.userProfile && user.userProfile.startsWith('/uploads/')) {
+        const oldPath = path.join(__dirname, '..', user.userProfile.substring(1));
+        fs.unlink(oldPath, (err) => {
+          if (err) console.error("ไม่สามารถลบไฟล์เก่าได้:", err);
+          else console.log("ลบไฟล์เก่าเรียบร้อย:", oldPath);
+        });
+      }
+      // บันทึกไฟล์ใหม่
+      user.userProfile = '/uploads/' + req.file.filename;
+    } else if (!user.userProfile || user.userProfile.includes('ui-avatars.com')) {
+      // ถ้าไม่มีรูปเดิม ให้สร้าง Avatar
+      user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+    }
     
+    await user.save();
+
     console.log("อัปเดตสำเร็จ!");
     res.redirect("/admin/manage_user");
-    
+
   } catch (err) {
     console.error("=== เกิดข้อผิดพลาด ===");
     console.error("Error:", err.message);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
-
 
 // ลบผู้ใช้และข้อมูลการยืมทั้งหมดที่เกี่ยวข้อง
 router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {
