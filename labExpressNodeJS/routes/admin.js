@@ -43,7 +43,6 @@ const upload = multer({
 });
 
 
-
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/login'); 
@@ -447,6 +446,50 @@ router.get("/deletedEquipment", isAdmin, async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
   }
 });
+
+// GET หน้าแก้ไข Category
+router.get("/editCategory/:id", isAdmin, async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+      return res.status(404).send("ไม่พบประเภทอุปกรณ์นี้");
+    }
+
+    res.render("admin/editCategory", {
+      title: `แก้ไข: ${category.name}`,
+      layout: "layouts/navadmin", // ถ้าใช้ layout admin
+      activePage: "editCategory",
+      category
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+  }
+});
+
+// POST บันทึกการแก้ไข Category
+router.post("/editCategory/:id", isAdmin, async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const { name } = req.body;
+
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).send("ไม่พบประเภทอุปกรณ์นี้");
+    }
+
+    category.name = name;
+    await category.save();
+
+    res.redirect("/admin/addCategory");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+  }
+});
+
 
 
 router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {

@@ -13,8 +13,11 @@
     <div class="card-body">
       <form method="GET" action="/admin/returnEquipment">
         <div class="row g-3 align-items-center">
+           <div class="col-6">
+                <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาจากรายชื่อ, อุปกรณ์, หรือหมายเหตุ...">
+            </div>
           <div class="col-auto">
-            <label for="status" class="col-form-label">สถานะ:</label>
+            <label for="status" class="col-form-label">สถานะ</label>
           </div>
           <div class="col-auto">
             <select id="status" name="status" class="form-select" onchange="this.form.submit()">
@@ -40,11 +43,9 @@
       </thead>
       <tbody>
         <% borrows.forEach((borrow, index) => { %>
-          <tr>
+          <tr data-status="<%= borrow.status %>">
             <td><%= index + 1 %></td>
-            <td>
-              <%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>
-            </td>
+            <td><%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %></td>
             <td><%= borrow.equipment_id.name %></td>
             <td><%= borrow.note || '-' %></td>
             <td>
@@ -60,9 +61,7 @@
                 <button class="btn btn-primary btn-sm"
                         data-bs-toggle="modal"
                         data-bs-target="#confirmModal"
-                        data-id="<%= borrow._id %>"
-                        data-user="<%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %>"
-                        data-equipment="<%= borrow.equipment_id.name %>">
+                        data-id="<%= borrow._id %>">
                   ยืนยันการคืน
                 </button>
               <% } else { %>
@@ -112,6 +111,29 @@
       const id = button.getAttribute('data-id');
       document.getElementById('confirmForm').action = `/admin/confirmreturn/${id}`;
     });
+  </script>
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('status'); // แก้ให้ตรงกับ id ของ select
+    const tableRows = document.querySelectorAll('tbody tr'); // ใช้ tbody เพื่อความชัดเจน
+
+    function filterTable() {
+      const searchValue = searchInput.value.toLowerCase();
+      const statusValue = statusFilter.value;
+
+      tableRows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const rowStatus = row.getAttribute('data-status');
+
+        const matchesSearch = text.includes(searchValue);
+        const matchesStatus = !statusValue || rowStatus === statusValue;
+
+        row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
   </script>
 </body>
 </html>
