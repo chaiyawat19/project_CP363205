@@ -8,8 +8,9 @@ const Borrow = require('../models/Borrow');
 const Department = require('../models/Department');;
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs')
+const fs = require('fs');
 const RepairRequest = require("../models/Reqair_requests");
+
 
 // ใน routes/users.js (ส่วนบนสุด หลังจากการ require Modules ต่างๆ)
 
@@ -165,28 +166,32 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).send("User not found");
-    user.fname = fname;
-    user.lname = lname;
-    user.email = email;
-    user.department = department;
+        
+        user.fname = fname;
+        user.lname = lname;
+        user.email = email;
+        user.department = department && department !== '' ? department : null;
 
 
-        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+
+        // 📢 โค้ดที่แก้ไขแล้ว: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
         if (req.file) {
-            
-            // A. เตรียมลบไฟล์เก่า
+            // A. ถ้ามีไฟล์ใหม่ถูกอัปโหลด: เตรียมลบไฟล์เก่า
             const oldPath = user.userProfile;
+            
+            // ตรวจสอบว่า Path เก่าเป็นรูปภาพที่อัปโหลดไว้ (ไม่ใช่ URL Avatar)
             if (oldPath && oldPath.startsWith('/uploads/')) {
-                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
-                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
                 
-                // ใช้ fs.unlink ในการลบ (Non-blocking I/O)
+                // 🛠️ แก้ไข Path การลบไฟล์เก่า: ตัด 'public' ออก และใช้ Path ที่ถูกต้องตามโครงสร้างโปรเจกต์
+                // oldPath.substring(1) จะได้ "uploads/ชื่อไฟล์.jpg"
+                const fullPath = path.join(__dirname, '..', oldPath.substring(1)); 
+                
+                // ใช้ fs.unlink ในการลบ
                 fs.unlink(fullPath, (err) => {
                     if (err) {
-                        // ไม่ต้องส่ง error ให้ user เห็น แค่ log ไว้
                         console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
                     } else {
-                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${fullPath}`);
                     }
                 });
             }
@@ -194,66 +199,59 @@ router.post('/setting', isUser, ensureUserId, upload.single('userProfileImage'),
             // B. บันทึก Path รูปใหม่
             user.userProfile = '/uploads/' + req.file.filename; 
             console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
-        } else {
-            // ถ้าไม่ได้อัปโหลดรูปใหม่ (req.file เป็น null/undefined)
-            // แต่มีการเปลี่ยนชื่อ ให้สร้าง URL Avatar ใหม่
-            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
-        }
+        } 
+        // ❌ ลบส่วน else { ... } ออกไปแล้ว
+        // การทำแบบนี้จะทำให้: 
+        // 1. ถ้าไม่ได้อัปโหลดรูปใหม่ (req.file เป็น undefined) 
+        // 2. user.userProfile จะ **คงค่าเดิม** ไว้ในฐานข้อมูล รูปจึงไม่หาย
 
         await user.save();
 
-        // อัปเดต userName ใน Session
         req.session.userName = `${fname} ${lname}`;
-
         res.redirect('/users/setting?msg=updated');
 
     } catch (err) {
-        // หากเกิด Error จาก Multer (เช่น ไฟล์ใหญ่เกิน) จะมาตกที่นี่
         console.error("Error in /users/setting POST:", err);
         res.redirect('/users/setting?err=updatefail');
     }
 });
 
-
 // 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
 router.post('/setting/password', isUser, ensureUserId, async (req, res) => {
-  const userId = req.session.userId;
-  const { oldPassword, newPassword } = req.body;
+    const userId = req.session.userId;
+    
+    // ✅ แก้ไข: เปลี่ยน 'oldPassword' เป็น 'currentPassword' 
+    // เพื่อให้ตรงกับ name="currentPassword" ในฟอร์ม settings.ejs
+    const { currentPassword, newPassword } = req.body; 
 
-  try {
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).send("User not found");
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).send("User not found");
 
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) {
-      return res.redirect('/users/setting?err=wrongpass');
+        // 1. ตรวจสอบรหัสผ่านเดิม (ใช้ currentPassword)
+        const isMatch = await bcrypt.compare(currentPassword, user.password); 
+        if (!isMatch) {
+            // รหัสผ่านเดิมไม่ถูกต้อง
+            // EJS จะแสดง Modal: 'รหัสผ่านเดิมไม่ถูกต้อง! โปรดลองใหม่อีกครั้ง'
+            return res.redirect('/users/setting?err=wrongpass');
+        }
+
+        // 2. เข้ารหัสและบันทึกรหัสผ่านใหม่
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        
+        await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
+
+        // 3. Redirect กลับไปที่หน้า Setting เดิมพร้อม Query Message
+        // EJS จะแสดง Modal: 'เปลี่ยนรหัสผ่านสำเร็จ! คุณเปลี่ยนรหัสผ่านเรียบร้อยแล้ว'
+        return res.redirect('/users/setting?msg=password_changed'); 
+        
+    } catch (err) {
+        console.error("Error changing user password:", err);
+        // แสดงข้อผิดพลาดทั่วไป
+        // EJS จะแสดง Modal: 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล โปรดลองใหม่อีกครั้ง'
+        res.redirect('/users/setting?err=updatefail'); 
     }
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
-    await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
-
-    // 📢 โค้ดที่ต้องแก้ไข: ทำลาย Session ทันที
-    req.session.destroy(err => {
-      if (err) {
-        console.error(err);
-        return res.redirect('/users/setting?err=pass_fail');
-      }
-      // ลบ cookie ด้วย (ถ้าใช้ connect-session)
-      res.clearCookie('connect.sid');
-
-      // 📢 Redirect ไปหน้า Login หรือหน้าแรก เพื่อให้ผู้ใช้ล็อกอินใหม่
-      return res.redirect('/?msg=password_changed_login');
-    });
-
-    // ❌ ลบบรรทัดเดิมนี้ออก เพราะการ Redirect ต้องอยู่ใน req.session.destroy
-    // res.redirect('/users/setting?msg=password_changed');
-
-  } catch (err) {
-    console.error(err);
-    res.redirect('/users/setting?err=pass_fail');
-  }
 });
 
 router.get('/logout', (req, res) => {
@@ -349,7 +347,7 @@ router.post('/borrow/:id', isUser, async (req, res) => {
 
 router.get('/borrowreturn', isUser, async (req, res) => {
   const userId = req.session.userId;
-  const search = req.query.search || ''; // ดึงค่าค้นหาจาก query string
+  const search = req.query.search || '';
 
   try {
     let query = { user_id: userId };

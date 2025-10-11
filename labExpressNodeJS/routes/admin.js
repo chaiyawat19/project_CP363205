@@ -43,7 +43,6 @@ const upload = multer({
 });
 
 
-
 const ensureUserId = (req, res, next) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/login'); 
@@ -102,33 +101,41 @@ router.get('/setting', isAdmin, ensureUserId, async (req, res) => {
 });
 
 
+// Route Handler สำหรับ router.post('/setting')
 router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage'), async (req, res) => {
     const userId = req.session.userId;
     const { fname, lname, email, department } = req.body;
-    
+
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).send("User not found");
+
+         console.log("OLD DB PATH:", user.userProfile); 
         
+        // 1. อัปเดตข้อมูลทั่วไป
         user.fname = fname;
         user.lname = lname;
         user.email = email;
-        user.department = department; // อัปเดตแผนก (เป็น ID)
+        user.department = department;
 
-        // 📢 NEW: จัดการการอัปโหลดรูปโปรไฟล์และการลบรูปเก่า
+        // 2. 📢 แก้ไข Logic การอัปโหลดรูปโปรไฟล์ (ตัวหลักที่แก้ปัญหาให้คุณ)
         if (req.file) {
-            // A. เตรียมลบไฟล์เก่า
+            // A. ถ้ามีไฟล์ใหม่ถูกอัปโหลด: เตรียมลบไฟล์เก่า
             const oldPath = user.userProfile;
+            
+            // ตรวจสอบว่า Path เก่าเป็นรูปภาพที่อัปโหลดไว้ (ไม่ใช่ URL Avatar)
             if (oldPath && oldPath.startsWith('/uploads/')) {
-                // สร้าง Path จริงของไฟล์: (ตำแหน่งปัจจุบัน)/(กลับไปหนึ่งขั้น)/public/uploads/ชื่อไฟล์.jpg
-                const fullPath = path.join(__dirname, '..', 'public', oldPath); 
+                
+                // 🛠️ แก้ไข Path การลบไฟล์เก่า: ใช้ Path ที่ถูกต้องสำหรับ [Root Project]/uploads/
+                // oldPath.substring(1) จะตัด '/' ตัวแรกออก (ได้ 'uploads/ชื่อไฟล์.jpg')
+                const fullPath = path.join(__dirname, '..', oldPath.substring(1)); 
                 
                 // ใช้ fs.unlink ในการลบ
                 fs.unlink(fullPath, (err) => {
                     if (err) {
                         console.error(`ERROR: ไม่สามารถลบไฟล์เก่า (${fullPath}) ได้:`, err);
                     } else {
-                        console.log(`ลบไฟล์เก่าสำเร็จ: ${oldPath}`);
+                        console.log(`ลบไฟล์เก่าสำเร็จ: ${fullPath}`);
                     }
                 });
             }
@@ -136,60 +143,53 @@ router.post('/setting', isAdmin, ensureUserId, upload.single('userProfileImage')
             // B. บันทึก Path รูปใหม่
             user.userProfile = '/uploads/' + req.file.filename; 
             console.log(`User ID ${userId} อัปโหลดรูปใหม่: ${user.userProfile}`);
-        } else {
-            // ถ้าไม่ได้อัปโหลดรูปใหม่ แต่มีการเปลี่ยนชื่อ (อัปเดต URL Avatar)
-            user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
-        }
+        } 
+        // ❌ สำคัญ: ส่วน else {...} ที่สั่งให้สร้าง URL Avatar ใหม่ ได้ถูกลบออกไปแล้ว
+        // ทำให้ถ้าไม่ได้อัปโหลดรูปใหม่ ข้อมูล userProfile เดิมจะถูกคงไว้
         
-        // ... (โค้ดบันทึกและ redirect เดิม)
+        console.log("PATH TO BE SAVED:", user.userProfile); 
         await user.save();
+
         req.session.userName = `${fname} ${lname}`;
         res.redirect('/admin/setting?msg=updated');
-        
+
     } catch (err) {
         console.error("Error in /admin/setting POST:", err);
         res.redirect('/admin/setting?err=updatefail');
     }
 });
 
-// 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
+/// 3. POST /setting/password (สำหรับเปลี่ยนรหัสผ่าน)
 router.post('/setting/password', isAdmin, ensureUserId, async (req, res) => {
     const userId = req.session.userId;
     const { oldPassword, newPassword } = req.body;
 
     try {
         const user = await User.findById(userId);
-        if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("ไม่พบผู้ใช้");
 
+        // 1. ตรวจสอบรหัสผ่านเดิม
         const isMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isMatch) {
+            // รหัสผ่านเดิมไม่ถูกต้อง
             return res.redirect('/admin/setting?err=wrongpass');
         }
 
+        // 2. เข้ารหัสและบันทึกรหัสผ่านใหม่
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         
         await user.save(); // บันทึกรหัสผ่านใหม่สำเร็จแล้ว
 
-        // 📢 โค้ดที่ต้องแก้ไข: ทำลาย Session ทันที
-        req.session.destroy(err => {
-            if (err) {
-                console.error(err);
-                return res.redirect('/admin/setting?err=pass_fail');
-            }
-            // ลบ cookie ด้วย (ถ้าใช้ connect-session)
-            res.clearCookie('connect.sid'); 
-            
-            // 📢 Redirect ไปหน้า Login หรือหน้าแรก เพื่อให้ผู้ใช้ล็อกอินใหม่
-            return res.redirect('/?msg=password_changed_login'); 
-        });
+        // ✅ แก้ไข: ไม่ทำลาย Session และไม่ Redirect ไปหน้า Login
+        // แต่ Redirect กลับมาที่หน้า Setting เดิม พร้อม Query Message
+        // JavaScript ใน settingAdmin.ejs จะดักจับข้อความนี้และแสดง Modal
+        return res.redirect('/admin/setting?msg=password_changed'); 
         
-        // ❌ ลบบรรทัดเดิมนี้ออก เพราะการ Redirect ต้องอยู่ใน req.session.destroy
-        // res.redirect('/users/setting?msg=password_changed');
-
     } catch (err) {
-        console.error(err);
-        res.redirect('/admin/setting?err=pass_fail');
+        console.error("Error changing password:", err);
+        // แสดงข้อผิดพลาดทั่วไป
+        res.redirect('/admin/setting?err=updatefail'); 
     }
 });
 
@@ -228,7 +228,6 @@ router.get("/", isAdmin, (req, res) => {
 
 router.get("/listitemuser", isAdmin, async (req, res) => {
   try {
-    // ดึงข้อมูลอุปกรณ์, populate category_id เพื่อเอาชื่อหมวดหมู่
     const listEqt = await listEquipment
       .find({ deleted_at: null })
       .populate("category_id");
@@ -240,17 +239,10 @@ router.get("/listitemuser", isAdmin, async (req, res) => {
       activePage: 'listitemuser',
       equipmentList: listEqt
     });
-
-    res.render("equipmentAdmin", {
-      title: "รายการอุปกรณ์",
-      name: req.session.userName,
-      layout: "layouts/navadmin",
-      activePage: "listitemuser",
-      equipmentList: listEqt,
-    });
+    
   } catch (error) {
     console.error(error);
-    res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูล");
+    return res.status(500).send(`เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`); 
   }
 });
 
@@ -430,6 +422,51 @@ router.get("/deletedEquipment", isAdmin, async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
   }
 });
+
+// GET หน้าแก้ไข Category
+router.get("/editCategory/:id", isAdmin, async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+      return res.status(404).send("ไม่พบประเภทอุปกรณ์นี้");
+    }
+
+    res.render("admin/editCategory", {
+      title: `แก้ไข: ${category.name}`,
+      layout: "layouts/navadmin", // ถ้าใช้ layout admin
+      activePage: "editCategory",
+      category
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+  }
+});
+
+// POST บันทึกการแก้ไข Category
+router.post("/editCategory/:id", isAdmin, async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const { name } = req.body;
+
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).send("ไม่พบประเภทอุปกรณ์นี้");
+    }
+
+    category.name = name;
+    await category.save();
+
+    res.redirect("/admin/addCategory");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+  }
+});
+
+
 
 router.post("/restoreEquipment/:id", isAdmin, async (req, res) => {
   try {
@@ -640,6 +677,120 @@ router.get("/borrow_Details/:id", async (req, res) => {
   }
 });
 
+// router.get("/editcategory/:id", async (req, res) => {
+//   const id = req.params.id;
+//   const category = await Category.findById(id);
+//   res.render("editCategory_admin", {
+//     title: "แก้ไขหมวดหมู่",
+//     category,
+//     layout: "layouts/navadmin",
+//     activePage: 'editcategory' 
+//   });
+// });
+
+router.put("/updatecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "กรุณากรอกชื่อประเภทอุปกรณ์"
+      });
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      id,
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "อัปเดตประเภทอุปกรณ์เรียบร้อย",
+      category: updatedCategory
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการอัปเดต",
+      error: error.message
+    });
+  }
+});
+router.delete("/deletecategory/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedCategory = await Category.findByIdAndUpdate(
+      id,
+      { deleted_at: new Date() },
+      { new: true }
+    );
+
+    if (!deletedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "ไม่พบประเภทอุปกรณ์"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "ลบประเภทอุปกรณ์เรียบร้อย"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบ",
+      error: error.message
+    });
+  }
+});
+
+router.get("/clearall", isAdmin, async (req, res) => {
+  try {
+    // ค้นหาเฉพาะอุปกรณ์ที่มี deleted_at ไม่เป็น null
+    const deletedEquipmentList = await Equipment.find({ deleted_at: { $ne: null } });
+
+    return res.render("deletedEquipmentAdmin", {
+      title: "รายการอุปกรณ์ที่ถูกลบ",
+      layout: "layouts/navadmin",
+      activePage: "listitemuser",
+      deletedEquipmentList,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("เกิดข้อผิดพลาดในการดึงข้อมูลอุปกรณ์ที่ถูกลบ");
+  }
+});
+router.post("/deleteallapermanently", isAdmin, async (req, res) => {
+  try {
+    // ลบอุปกรณ์ที่มี deleted_at ไม่เป็น null ออกจากฐานข้อมูล
+    const result = await Equipment.deleteMany({ deleted_at: { $ne: null } });
+
+    return res.json({
+      success: true,
+      message: "ลบอุปกรณ์ทั้งหมดออกจากฐานข้อมูลแล้ว",
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในการลบอุปกรณ์ทั้งหมด",
+    });
+  }
+});
+
 
 router.post("/borrow/update/:id", async (req, res) => {
   try {
@@ -648,6 +799,7 @@ router.post("/borrow/update/:id", async (req, res) => {
       .populate("user_id")
       .populate("equipment_id");
 
+      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");  
     if (!borrowRecord) {
       return res.status(404).send("ไม่พบข้อมูลการยืม");
     }
@@ -1019,7 +1171,7 @@ router.post("/reqair_requests_detailadmin/:id/reply", async (req, res, next) => 
 // แสดงรายการผู้ใช้
 router.get("/manage_user", isAdmin, async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.find().populate("department").sort({ createdAt: -1 });
     res.render("manage_user", {
       title: "จัดการผู้ใช้",
       layout: "layouts/navadmin",
@@ -1032,12 +1184,10 @@ router.get("/manage_user", isAdmin, async (req, res) => {
   }
 });
 
-// หน้าเพิ่มผู้ใช้ใหม่
 router.get("/manage_user/add", isAdmin, async (req, res) => {
   try {
-    // กรองเฉพาะแผนกที่ยังไม่ถูกลบ
-    const departments = await Department.find({ deleted_at: null }).sort({ name: 1 });
-    
+    // const departments = await Department.find({ deleted_at: null }).sort({ name: 1 });
+    const departments = await Department.find({ deleted_at: null });
     res.render("add_user", {
       title: "เพิ่มผู้ใช้ใหม่",
       layout: "layouts/navadmin",
@@ -1057,25 +1207,17 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
     console.log("=== เริ่มเพิ่มผู้ใช้ ===");
     console.log("ข้อมูลที่ได้รับ:", { fname, lname, email, userRole, department });
 
-    // ตรวจสอบข้อมูลครบหรือไม่
     if (!fname || !lname || !email || !password) {
-      console.log("ข้อมูลไม่ครบ");
       return res.status(400).send("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
 
-    // ตรวจสอบ email ซ้ำ
     const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (existingUser) {
-      console.log("Email ซ้ำ:", email);
       return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
     }
 
-    // เข้ารหัสรหัสผ่านด้วย bcrypt
-    console.log("กำลังเข้ารหัสรหัสผ่าน...");
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("เข้ารหัสสำเร็จ");
 
-    // สร้าง user object
     const newUser = new User({
       fname: fname.trim(),
       lname: lname.trim(),
@@ -1083,20 +1225,16 @@ router.post("/manage_user/add", isAdmin, async (req, res) => {
       password: hashedPassword,
       userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
       userRole: userRole || 'user',
-      department: department && department.trim() !== '' ? department.trim() : null, // เก็บเป็น null ถ้าไม่เลือก
+      department: mongoose.Types.ObjectId.isValid(department) ? department : null,
     });
 
-    console.log("กำลังบันทึกข้อมูล...");
     await newUser.save();
     console.log("บันทึกสำเร็จ! User ID:", newUser._id);
 
     res.redirect("/admin/manage_user");
   } catch (err) {
     console.error("=== เกิดข้อผิดพลาด ===");
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    console.error("Error stack:", err.stack);
-    
+    console.error(err);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
@@ -1126,50 +1264,62 @@ router.get("/manage_user/edit/:id", isAdmin, async (req, res) => {
 });
 
 // อัปเดตข้อมูลผู้ใช้
-router.post("/manage_user/edit/:id", isAdmin, async (req, res) => {
+router.post("/manage_user/edit/:id", isAdmin, upload.single('userProfileImage'), async (req, res) => {
   try {
     const { fname, lname, email, userRole, department } = req.body;
 
     console.log("=== เริ่มอัปเดตผู้ใช้ ===");
     console.log("ข้อมูลที่ได้รับ:", { fname, lname, email, userRole, department });
 
-    // ตรวจสอบข้อมูลครบหรือไม่
     if (!fname || !lname || !email || !userRole) {
       return res.status(400).send("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
 
-    // ตรวจสอบ email ซ้ำ (ยกเว้น user ที่กำลังแก้ไข)
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).send("ไม่พบผู้ใช้");
+
+    // ตรวจสอบ email ซ้ำ
     const existingUser = await User.findOne({ 
       email: email.trim().toLowerCase(),
-      _id: { $ne: req.params.id } // ไม่รวม user ที่กำลังแก้ไข
+      _id: { $ne: req.params.id }
     });
-    
-    if (existingUser) {
-      return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
-    }
+    if (existingUser) return res.status(400).send("อีเมลนี้มีในระบบแล้ว");
 
     // อัปเดตข้อมูล
-    const updateData = {
-      fname: fname.trim(),
-      lname: lname.trim(),
-      email: email.trim().toLowerCase(),
-      userRole,
-      department: department && department.trim() !== '' ? department.trim() : null,
-      userProfile: `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`,
-    };
+    user.fname = fname.trim();
+    user.lname = lname.trim();
+    user.email = email.trim().toLowerCase();
+    user.userRole = userRole;
+    user.department = department && mongoose.Types.ObjectId.isValid(department) ? department : null;
 
-    await User.findByIdAndUpdate(req.params.id, updateData);
+    // จัดการรูปโปรไฟล์
+    if (req.file) {
+      // ลบไฟล์เก่า ถ้าเป็นไฟล์อัปโหลดจริง
+      if (user.userProfile && user.userProfile.startsWith('/uploads/')) {
+        const oldPath = path.join(__dirname, '..', user.userProfile.substring(1));
+        fs.unlink(oldPath, (err) => {
+          if (err) console.error("ไม่สามารถลบไฟล์เก่าได้:", err);
+          else console.log("ลบไฟล์เก่าเรียบร้อย:", oldPath);
+        });
+      }
+      // บันทึกไฟล์ใหม่
+      user.userProfile = '/uploads/' + req.file.filename;
+    } else if (!user.userProfile || user.userProfile.includes('ui-avatars.com')) {
+      // ถ้าไม่มีรูปเดิม ให้สร้าง Avatar
+      user.userProfile = `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}+${encodeURIComponent(lname)}`;
+    }
     
+    await user.save();
+
     console.log("อัปเดตสำเร็จ!");
     res.redirect("/admin/manage_user");
-    
+
   } catch (err) {
     console.error("=== เกิดข้อผิดพลาด ===");
     console.error("Error:", err.message);
     res.status(500).send(`เกิดข้อผิดพลาด: ${err.message}`);
   }
 });
-
 
 // ลบผู้ใช้และข้อมูลการยืมทั้งหมดที่เกี่ยวข้อง
 router.post("/manage_user/delete/:id", isAdmin, async (req, res) => {

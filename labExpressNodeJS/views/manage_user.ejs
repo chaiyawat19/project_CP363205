@@ -18,23 +18,6 @@
         .btn-warning { background-color: #ffc107; color: black; }
         .btn-danger { background-color: #dc3545; color: white; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            padding: 20px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        th { background-color: #f8f9fa; }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
         .badge-admin { background-color: #dc3545; color: white; }
         .badge-user { background-color: #6c757d; color: white; }
         .user-profile {
@@ -55,12 +38,30 @@
     </style>
 </head>
 <body>
+    <h1><%= title %></h1>
     <div class="container-fluid">
-        <h1><%= title %></h1>
-        <div class="box_add_user">
-            <a href="/admin/manage_user/add" class="btn btn-success add_user">+ เพิ่มผู้ใช้ใหม่</a>
+        <small>จัดการแก้ไขบัญชีผู้ใช้ และเพิ่มบัญชีใหม่</small>
+        <hr>
+        <div class="card p-4">
+        <table class="table table-striped table-hover text-center mt-3" id="userTable">
+            <div class="row align-items-center g-2">
+        <div class="col-6">
+          <input type="search" id="searchInput" class="form-control" placeholder="ค้นหาจากชื่อ, อีเมล หรือแผนก...">
         </div>
-        <table>
+        <div class="col-3">
+          <select id="roleFilter" class="form-select">
+            <option value="" selected>บทบาทผู้ใช้</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+        <div class="col text-end">
+          <a href="/admin/manage_user/add" class="btn btn-success">
+            <i class="bi bi-person-plus"></i>  เพิ่มผู้ใช้ใหม่
+          </a>
+        </div>
+      </div>
+
             <thead>
                 <tr>
                     <th rowspan="2">รูปโปรไฟล์</th>
@@ -84,7 +85,7 @@
                     </tr>
                 <% } else { %>
                     <% users.forEach(user => { %>
-                    <tr>
+                    <tr data-role="<%= user.userRole %>">
                         <!-- <td>
                             <img 
                                 src="<%= user.userProfile && user.userProfile.includes('iran.liara.run') ? 
@@ -100,7 +101,7 @@
                                 <%= user.userRole %>
                             </span>
                         </td>
-                        <td><%= user.department  || '-' %></td>
+                        <td><%= user.department ? user.department.name : '-' %></td>
                         <td><%= new Date(user.createdAt).toLocaleDateString('th-TH') %></td>
                         <td><%= new Date(user.updatedAt).toLocaleDateString('th-TH') %></td>
 
@@ -123,62 +124,84 @@
                 <% } %>
             </tbody>
         </table>
-    </div>
+        </div>
 
-    <script>
-        function verifySuperAdmin(userId) {
-            Swal.fire({
-                title: 'ยืนยันตัวตน Super Admin',
-                text: 'กรุณากรอกรหัสผ่านเพื่อดำเนินการต่อ',
-                input: 'password',
-                inputPlaceholder: 'รหัสผ่านของคุณ',
-                inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยัน',
-                cancelButtonText: 'ยกเลิก',
-                preConfirm: (password) => {
-                    if (!password) {
-                        Swal.showValidationMessage('กรุณากรอกรหัสผ่าน');
-                        return false;
-                    }
-                    return fetch('/admin/verify-superadmin', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.success) {
-                            Swal.showValidationMessage(data.message || 'รหัสผ่านไม่ถูกต้อง');
-                        }
-                        return data;
-                    })
-                    .catch(() => {
-                        Swal.showValidationMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
-                    });
-                }
-            }).then((result) => {
-                if (result.isConfirmed && result.value.success) {
-                    window.location.href = `/admin/manage_user/edit/${userId}`;
-                }
-            });
-        }
-         function confirmDelete(form) {
-        Swal.fire({
-            title: 'คุณต้องการลบใช่ไหม?',
-            text: "คุณจะไม่สามารถย้อนกลับได้",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'ใช่, ลบเลย!',
-            cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const tableRows = document.querySelectorAll('#userTable tbody tr');
+
+    function filterTable() {
+      const searchValue = searchInput.value.toLowerCase();
+      const roleValue = roleFilter.value;
+
+      tableRows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const role = row.getAttribute('data-role');
+
+        const matchesSearch = text.includes(searchValue);
+        const matchesRole = !roleValue || role === roleValue;
+
+        row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
+      });
     }
-    </script>
+
+    searchInput.addEventListener('input', filterTable);
+    roleFilter.addEventListener('change', filterTable);
+
+    function verifySuperAdmin(userId) {
+      Swal.fire({
+        title: 'ยืนยันตัวตน Super Admin',
+        input: 'password',
+        inputPlaceholder: 'กรุณากรอกรหัสผ่าน',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: (password) => {
+          if (!password) {
+            Swal.showValidationMessage('กรุณากรอกรหัสผ่าน');
+            return false;
+          }
+          return fetch('/admin/verify-superadmin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success) {
+              Swal.showValidationMessage(data.message || 'รหัสผ่านไม่ถูกต้อง');
+            }
+            return data;
+          })
+          .catch(() => {
+            Swal.showValidationMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
+          });
+        }
+      }).then((result) => {
+        if (result.isConfirmed && result.value.success) {
+          window.location.href = `/admin/manage_user/edit/${userId}`;
+        }
+      });
+    }
+
+    function confirmDelete(form) {
+      Swal.fire({
+        title: 'คุณต้องการลบใช่ไหม?',
+        text: "การลบนี้ไม่สามารถย้อนกลับได้",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    }
+  </script>
+
 </body>
 </html>

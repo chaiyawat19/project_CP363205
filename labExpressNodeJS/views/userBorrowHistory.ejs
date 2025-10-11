@@ -3,14 +3,10 @@
         <h2 class="mb-0">ประวัติการยืมอุปกรณ์ของฉัน</h2>
     </div>
 
-    <form action="/users/borrowreturn" method="get" class="mb-3 d-flex" style="gap: 10px;">
-        <input type="text" name="search" class="form-control" placeholder="🔍 ค้นหาชื่ออุปกรณ์"
-            value="<%= search || '' %>" />
-        <button type="submit" class="btn btn-primary">ค้นหา</button>
-        <% if (search) { %>
-            <a href="/users/borrowreturn" class="btn btn-secondary">รีเซ็ต</a>
-            <% } %>
-    </form>
+    <div class="mb-3 d-flex" style="gap: 10px;">
+        <input type="text" id="searchInput" class="form-control" placeholder="🔍 ค้นหาชื่ออุปกรณ์ในตาราง...">
+        <button type="button" class="btn btn-secondary" id="clearSearch">รีเซ็ต</button>
+    </div>
 
     <div class="card shadow-sm p-4">
 
@@ -205,5 +201,30 @@
                 }
             });
         }
+
+
+        const searchInput = document.getElementById('searchInput');
+const clearSearch = document.getElementById('clearSearch');
+
+if (searchInput) {
+    searchInput.addEventListener('keyup', function () {
+        const filter = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('table tbody tr');
+
+        rows.forEach(row => {
+            const equipmentCell = row.querySelector('td:nth-child(2)');
+            if (equipmentCell) {
+                const text = equipmentCell.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            }
+        });
+    });
+
+    clearSearch.addEventListener('click', function () {
+        searchInput.value = '';
+        const rows = document.querySelectorAll('table tbody tr');
+        rows.forEach(row => row.style.display = '');
+    });
+}
     });
 </script>
