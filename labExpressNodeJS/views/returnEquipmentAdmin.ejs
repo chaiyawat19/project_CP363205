@@ -46,7 +46,7 @@
           <tr data-status="<%= borrow.status %>">
             <td><%= index + 1 %></td>
             <td><%= borrow.user_id ? borrow.user_id.fname + ' ' + borrow.user_id.lname : '-' %></td>
-            <td><%= borrow.equipment_id.name %></td>
+            <td><%= borrow.equipment_id ? borrow.equipment_id.name : '(อุปกรณ์ถูกลบ)' %></td>
             <td><%= borrow.note || '-' %></td>
             <td>
               <% if (borrow.status === 'waitingForReturn') { %>
@@ -57,7 +57,7 @@
             </td>
             <td><%= borrow.actual_return_date ? borrow.actual_return_date.toLocaleString('th-TH') : '-' %></td>
             <td>
-              <% if (borrow.status === 'waitingForReturn') { %>
+              <% if (borrow.status === 'waitingForReturn' && borrow.equipment_id) { %>
                 <button class="btn btn-primary btn-sm"
                         data-bs-toggle="modal"
                         data-bs-target="#confirmModal"
@@ -114,8 +114,8 @@
   </script>
   <script>
     const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('status'); // แก้ให้ตรงกับ id ของ select
-    const tableRows = document.querySelectorAll('tbody tr'); // ใช้ tbody เพื่อความชัดเจน
+    const statusFilter = document.getElementById('status');
+    const tableRows = document.querySelectorAll('tbody tr');
 
     function filterTable() {
       const searchValue = searchInput.value.toLowerCase();

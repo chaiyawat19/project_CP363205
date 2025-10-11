@@ -4,24 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <title>
-    <%= title %>
-  </title>
+  <title><%= title %></title>
 </head>
 <body>
   <div class="container my-5">
+      <div class="col-12 mb-3">
+          <a href="/admin/listitemuser" class="btn btn-dark">กลับ</a>
+      </div>
     <h2 class="mb-4">ประเภทอุปกรณ์ทั้งหมด</h2>
 
     <!-- เพิ่ม Category -->
     <div class="card shadow mb-5">
-      <div class="card-header bg-light"><h5>เพิ่มประเภทอุปกรณ์ใหม่</h5></div>
+      <div class="card-header bg-light">
+        <h5>เพิ่มประเภทอุปกรณ์ใหม่</h5>
+      </div>
       <div class="card-body">
         <form action="/admin/addCategory" method="POST" class="row g-3 align-items-end">
           <div class="col-md-8 col-lg-9">
-            <input type="text" name="name" class="form-control" placeholder="เช่น อุปกรณ์ IT" required>
+            <label for="categoryName" class="form-label visually-hidden">ชื่อประเภทอุปกรณ์:</label>
+            <input 
+              type="text" 
+              id="categoryName" 
+              name="name" 
+              class="form-control" 
+              placeholder="เช่น อุปกรณ์ IT, เครื่องเสียง, กล้องถ่ายรูป" 
+              required
+            />
           </div>
           <div class="col-md-4 col-lg-3">
-            <button type="submit" class="btn btn-primary w-100">เพิ่มประเภท</button>
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-plus me-2"></i> เพิ่มประเภท
+            </button>
           </div>
         </form>
       </div>
@@ -30,17 +43,17 @@
     <!-- ตาราง Category -->
     <div class="card shadow">
       <div class="card-header bg-light">
-        <h5>รายการทั้งหมด (<%= categories.length %>)</h5>
+        <h5 class="mb-0">รายการประเภทอุปกรณ์ทั้งหมด (<%= categories.length %> รายการ)</h5>
       </div>
       <div class="card-body p-0">
-        <% if (categories.length > 0) { %>
+        <% if (categories && categories.length > 0) { %>
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
               <thead class="table-light">
                 <tr>
-                  <th>#</th>
-                  <th>ชื่อประเภท</th>
-                  <th class="text-center">จัดการ</th>
+                  <th scope="col" style="width: 10%;">#</th>
+                  <th scope="col" style="width: 50%;">ชื่อประเภทอุปกรณ์</th>
+                  <th scope="col" style="width: 40%;" class="text-center">จัดการ</th>
                 </tr>
               </thead>
               <tbody>
@@ -49,80 +62,33 @@
                     <td><%= index + 1 %></td>
                     <td><%= category.name %></td>
                     <td class="text-center">
-                      <a href="/admin/editCategory/<%= category._id %>" class="btn btn-sm btn-warning">แก้ไข</a>
-                      <a href="/admin/deletecategory/<%= category._id %>" class="btn btn-sm btn-danger">ลบ</a>
+                      <button 
+                        onclick="edit('<%= category._id %>', '<%= category.name %>')" 
+                        class="btn btn-sm btn-warning me-2"
+                      >
+                        <i class="fas fa-edit"></i> แก้ไข
+                      </button>
+                      <button
+                        onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')" 
+                        class="btn btn-sm btn-danger"
+                      >
+                        <i class="fas fa-trash-alt"></i> ลบ
+                      </button>
                     </td>
                   </tr>
                 <% }) %>
               </tbody>
             </table>
           </div>
-          <div class="card-body">
-            <form action="/admin/addCategory" method="post" class="row g-3 align-items-end">
-              <div class="col-md-8 col-lg-9">
-                <label for="categoryName" class="form-label visually-hidden">ชื่อประเภทอุปกรณ์:</label>
-                <input type="text" id="categoryName" name="name" class="form-control"
-                  placeholder="เช่น อุปกรณ์ IT, เครื่องเสียง, กล้องถ่ายรูป" required>
-              </div>
-              <div class="col-md-4 col-lg-3">
-                <button type="submit" class="btn btn-primary w-100">
-                  <i class="fas fa-plus me-2"></i> เพิ่มประเภท
-                </button>
-              </div>
-            </form>
+        <% } else { %>
+          <div class="alert alert-info m-3" role="alert">
+            ยังไม่มีการเพิ่มประเภทอุปกรณ์
           </div>
-        </div>
-
-        <div class="card shadow">
-          <div class="card-header bg-light">
-            <h5 class="mb-0">รายการประเภทอุปกรณ์ทั้งหมด (<%= categories.length %> รายการ)</h5>
-          </div>
-          <div class="card-body p-0">
-            <% if (categories && categories.length> 0) { %>
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th scope="col" style="width: 10%;">#</th>
-                      <th scope="col" style="width: 50%;">ชื่อประเภทอุปกรณ์</th>
-                      <th scope="col" style="width: 40%;" class="text-center">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% categories.forEach((category, index)=> { %>
-                      <tr>
-                        <td>
-                          <%= index + 1 %>
-                        </td>
-                        <td>
-                          <%= category.name %>
-                        </td>
-                        <td class="text-center">
-                          <button onclick="edit('<%= category._id %>', '<%= category.name %>')"
-                            class="btn btn-sm btn-warning me-2">
-                            <i class="fas fa-edit"></i> แก้ไข
-                          </button>
-                          <a href="javascript:void(0)"
-                            onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')"
-                            class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash-alt"></i> ลบ
-                          </a>
-                        </td>
-                      </tr>
-                      <% }) %>
-                  </tbody>
-                </table>
-              </div>
-              <% } else { %>
-                <div class="alert alert-info m-3" role="alert">
-                  ยังไม่มีการเพิ่มประเภทอุปกรณ์
-                </div>
-                <% } %>
-          </div>
-        </div>
+        <% } %>
       </div>
     </div>
   </div>
+
   <script>
     async function edit(categoryId, categoryName) {
       const { value: newName } = await Swal.fire({
@@ -181,6 +147,7 @@
         }
       }
     }
+
     async function deleteCategory(categoryId, categoryName) {
       const { isConfirmed } = await Swal.fire({
         title: "ยืนยันการลบ",
@@ -188,7 +155,8 @@
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#dc3545", 
-        cancelButtonColor: "#6c757d", 
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "ลบ",
         cancelButtonText: "ยกเลิก"
       });
 
