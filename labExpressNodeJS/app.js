@@ -7,17 +7,11 @@ const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-
+const axios = require('axios');
 // import routers
 const indexRouter = require('./routes/index');
 const adminRouter = require('./routes/admin');
 const userRouter = require('./routes/users');
-// require module
-const { Resend } = require('resend');
-
-// สร้าง instance ด้วย API Key
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 
 
 const app = express();
@@ -29,7 +23,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/index'); 
 app.set('view engine', 'ejs');
-app.locals.resend = resend;
+
 // middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -77,6 +71,6 @@ app.use(function(err, req, res, next) {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
+global.axios = axios;
 module.exports = app;
 

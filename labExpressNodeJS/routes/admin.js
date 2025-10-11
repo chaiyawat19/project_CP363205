@@ -5,7 +5,7 @@ var Category = require("../models/Category");
 const { isAdmin,  } = require ('../middleware/auth');
 
 const listEquipment = require("../models/listEquipment");
-const Notification = require("../models/Notification");
+
 const Department = require('../models/Department');
 const Borrow = require("../models/Borrow")
 const User = require('../models/User');
@@ -302,25 +302,9 @@ router.post(
 
       await newEquipment.save();
 
-      // เตรียมข้อความแจ้งเตือน
-      const message = `มีการเพิ่มอุปกรณ์ใหม่: ${name}`;
-      const reason = "";
-      // const equipmentLink = `${baseUrl}/equipment/${newEquipment._id}`;
-      // ดึง user ทั้งหมด
+   
       const users = await User.find({}, "_id");
 
-      // สร้าง array ของ notification สำหรับแต่ละ user
-      const notifications = users.map((u) => ({
-        user_id: u._id,
-        equipment_id: newEquipment._id, // ใช้ id ของอุปกรณ์ที่เพิ่งสร้าง
-        message,
-        reason,
-        admin_id: adminId,
-        type: "add"
-      }));
-
-      // บันทึกแจ้งเตือนทั้งหมดในครั้งเดียว
-      await Notification.insertMany(notifications);
       res.redirect("/admin/listitemuser");
     } catch (error) {
       console.error(error);
@@ -605,17 +589,7 @@ router.post('/confirmreturn/:id', async (req, res) => {
     await Equipment.findByIdAndUpdate(borrow.equipment_id, { status: newStatus });
 
     console.log(`อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
-    const noti = new Notification({
-      user_id: borrow.user_id,
-      equipment_id: borrow.equipment_id,
-      message: `การคืนอุปกรณ์ "${borrow.equipment_id.name}" ของคุณได้รับการยืนยันแล้ว`,
-      reason: condition,
-      type: 'return',
-      admin_id: req.session.userId,
-      admin_profile: req.session.userProfile || null
-    });
-
-    await noti.save();
+   
 
     console.log(`✅ อัปเดตการคืนสำเร็จ: borrow=${borrowId}, equipment=${borrow.equipment_id}, status=${newStatus}`);
     res.redirect('/admin/returnequipment');
@@ -665,11 +639,15 @@ router.get("/borrow_Details/:id", async (req, res) => {
     res.status(500).send("เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์");
   }
 });
+
+
 router.post("/borrow/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    const borrowRecord = await Borrow.findById(id)
+      .populate("user_id")
+      .populate("equipment_id");
 
-      const borrowRecord = await Borrow.findById(id).populate("user_id").populate("equipment_id");
     if (!borrowRecord) {
       return res.status(404).send("ไม่พบข้อมูลการยืม");
     }
@@ -680,31 +658,14 @@ router.post("/borrow/update/:id", async (req, res) => {
     borrowRecord.note = req.body.note;
     await borrowRecord.save();
 
-   // ✅ สร้าง Notification
-    const notification = new Notification({
-      user_id: borrowRecord.user_id._id,
-      equipment_id: borrowRecord.equipment_id._id,
-      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`,
-      admin_id: req.session.userId,
-      admin_profile: req.session.userProfile
-    });
-    await notification.save();
 
-    // ✅ ส่งอีเมลแจ้งผู้ใช้ (await เพื่อรอให้เสร็จ)
-    const resend = req.app.locals.resend;
-    await resend.emails.send({
-      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
-      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
-      subject: "คำขอยืมอุปกรณ์ของคุณได้รับการอนุมัติ",
-      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณได้รับการอนุมัติแล้ว`
-    });
-
-    res.redirect("/admin/Borrowequipment"); 
+    res.redirect("/admin/Borrowequipment");
   } catch (err) {
-    console.error(err);
+    console.error("❌ เกิดข้อผิดพลาด:", err);
     res.status(500).send("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
   }
 });
+
 
 router.post("/borrow/reject/:id", async (req, res) => {
   try {
@@ -732,25 +693,7 @@ router.post("/borrow/reject/:id", async (req, res) => {
       });
     }
 
-    // สร้าง Notification
-    const notification = new Notification({
-      user_id: borrowRecord.user_id._id,
-      equipment_id: borrowRecord.equipment_id._id,
-      message: `คำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณถูกปฏิเสธ`,
-      reason: rejectReason,
-      type: 'reject',
-      admin_id: req.session.userId,
-      admin_profile: req.session.userProfile
-    });
-    await notification.save();
 
-    const resend = req.app.locals.resend;
-    await resend.emails.send({
-      from: process.env.DOMAIN_EMAIL, // ใช้อีเมลผู้ดูแลระบบจริง
-      to: borrowRecord.user_id.email, // ใช้อีเมลผู้ใช้จริง
-      subject: "คำขอยืมอุปกรณ์ของคุณไม่ได้รับการอนุมัติ",
-      text: `สวัสดี ${borrowRecord.equipment_id.name}!\nคำขอยืมอุปกรณ์ "${borrowRecord.equipment_id.name}" ของคุณไม่ได้รับการอนุมัติ\nเหตุผล: ${rejectReason}`
-    });
 
     res.redirect("/admin/Borrowequipment");
   } catch (err) {
