@@ -98,7 +98,7 @@
 
     <!-- ฟอร์มปฏิเสธ -->
     <div id="rejectSection">
-        <form action="/admin/borrow/reject/<%= borrow._id %>" method="post">
+        <form action="/admin/borrow/reject/<%= borrow._id %>" method="post" id="rejectForm">
             <h5 class="text-danger mb-3">
                 <i class="bi bi-exclamation-triangle-fill"></i> เหตุผลในการปฏิเสธ
             </h5>
@@ -138,6 +138,71 @@
             document.getElementById('rejectReason').value = '';
         }
     </script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+ 
+  (function() {
+    emailjs.init("h-u1QBXnmtRjAUXJ4"); 
+  })();
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const email = "<%= borrow.user_id.email %>";
+    const name = "<%= borrow.user_id.fname %> <%= borrow.user_id.lname %>";
+    const equipment_name = "<%= borrow.equipment_id.name %>";
+    const equipment_returnDate = new Date("<%= borrow.return_date.toISOString() %>").toLocaleDateString('th-TH', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    // ส่งอีเมล
+    emailjs.send("service_kiij725", "template_0ckrvba", {
+      email: email,
+      name: name,
+      equipment_name: equipment_name,
+      equipment_returnDate: equipment_returnDate
+    })
+    .then(function(response) {
+      console.log('SUCCESS!', response.status, response.text);
+      alert('ส่งอีเมลเรียบร้อย!');
+      // ส่ง form ต่อไปยัง server
+      e.target.submit();
+    }, function(error) {
+      console.log('FAILED...', error);
+      alert('ส่งอีเมลไม่สำเร็จ: ' + error.text);
+    });
+  });
+  // ฟอร์มปฏิเสธ
+  document.getElementById('rejectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const email = "<%= borrow.user_id.email %>";
+    const name = "<%= borrow.user_id.fname %> <%= borrow.user_id.lname %>";
+    const equipment_name = "<%= borrow.equipment_id.name %>";
+    const rejectReason = document.getElementById('rejectReason').value;
+
+    console.log('Sending rejection email to:', email);
+    console.log('Reject reason:', rejectReason);
+
+    // ส่งอีเมลปฏิเสธ 
+    emailjs.send("service_kiij725", "template_a76deel", { 
+      email: email,
+      name: name,
+      equipment_name: equipment_name,
+      reject_reason: rejectReason
+    })
+    .then(function(response) {
+      console.log('SUCCESS!', response);
+      alert('ส่งอีเมลแจ้งการปฏิเสธเรียบร้อย!');
+      e.target.submit();
+    })
+    .catch(function(error) {
+      console.log('FAILED...', error);
+      alert('ส่งอีเมลไม่สำเร็จ: ' + error.text);
+    });
+  });
+</script>
+
 </body>
 
 </html>
