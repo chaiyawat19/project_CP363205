@@ -11,6 +11,13 @@ const storage = multer.diskStorage({
   }
 });
 
+
 const upload = multer({ storage: storage });
 
 module.exports = upload;
+
+
+
+// จัดการการอัปโหลดไฟล์จากผู้ใช้ รับไฟล์จากฟอร์ม เช่น รูปภาพ
+// ตั้งชื่อไฟล์ใหม่ให้ไม่ซ้ำกัน บันทึกไฟล์ลงในโฟลเดอร์ที่กำหนด เช่น uploads
+// ส่งข้อมูลไฟล์นั้นไปให้ route หรือ controller ใช้ต่อ
