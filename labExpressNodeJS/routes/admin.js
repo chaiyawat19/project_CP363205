@@ -923,7 +923,7 @@ router.get("/reqair_requestsadmin", isAdmin, async (req, res, next) => {
                 rejected: "ยกเลิก",
             },
             layout: "layouts/navadmin",
-            activePage: "/admin/reqair_requestsadmin",
+            activePage: "reqair_requestsadmin",
             formatThaiDate,
             noResults: q && items.length === 0,
         });
@@ -949,7 +949,7 @@ router.get("/reqair_requests_detailadmin/:id", isAdmin, async (req, res, next) =
             item,
             formatThaiDate,
             layout: "layouts/navadmin",
-            activePage: "/admin/reqair_requestsadmin",
+            activePage: "reqair_requestsadmin",
         });
     } catch (err) {
         next(err);
