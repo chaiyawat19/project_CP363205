@@ -53,11 +53,13 @@
                     <% if (borrow.status==="waiting" ) { %>
                         <td><span class="badge bg-warning">รอยืนยัน</span></td>
                     <% } else if (borrow.status==="returned" ) { %>
-                        <td><span class="badge bg-info">คืนสินค้า</span></td>
+                        <td><span class="badge bg-info">คืนอุปกรณ์</span></td>
                     <% } else if (borrow.status==="borrowed" ) { %>
                         <td><span class="badge bg-primary">กำลังยืม</span></td>
                     <% } else if (borrow.status==="rejected" ) { %>
                         <td><span class="badge bg-danger">ไม่ถูกอนุมัติการยืม</span></td>
+                    <% } else if (borrow.status==="waitingForReturn" ) { %>
+                        <td><span class="badge bg-danger">รออนุมัติการคืน</span></td>
                     <% } %>
                     <td><%= new Date(borrow.return_date).toLocaleString('th-TH') %></td>
                     <td><a href="/admin/borrow_Details/<%= borrow._id %>" class="btn btn-warning btn-sm">ดูรายละเอียด</a></td>
@@ -70,7 +72,6 @@
     </table>
     </div>
     </div>
-
     <script>
         const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');

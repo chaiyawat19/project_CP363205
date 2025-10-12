@@ -62,6 +62,13 @@
                     <td><%= index + 1 %></td>
                     <td><%= category.name %></td>
                     <td class="text-center">
+                      <button onclick="edit('<%= category._id %>', '<%= category.name %>')" class="btn btn-sm btn-warning me-2">
+                        แก้ไข
+                      </button>
+                      <a href="javascript:void(0)" onclick="deleteCategory('<%= category._id %>', '<%= category.name %>')" class="btn btn-sm btn-danger">
+                        ลบ
+                      </a>
+
                       <button 
                         onclick="edit('<%= category._id %>', '<%= category.name %>')" 
                         class="btn btn-sm btn-warning me-2"
@@ -74,6 +81,7 @@
                       >
                         <i class="fas fa-trash-alt"></i> ลบ
                       </button>
+
                     </td>
                   </tr>
                 <% }) %>
@@ -88,7 +96,6 @@
       </div>
     </div>
   </div>
-
   <script>
     async function edit(categoryId, categoryName) {
       const { value: newName } = await Swal.fire({
@@ -100,12 +107,8 @@
         cancelButtonText: "ยกเลิก",
         confirmButtonText: "บันทึก",
         inputValidator: (value) => {
-          if (!value) {
-            return "กรุณากรอกชื่อประเภทอุปกรณ์!";
-          }
-          if (value.trim() === categoryName) {
-            return "ชื่อไม่มีการเปลี่ยนแปลง";
-          }
+          if (!value) return "กรุณากรอกชื่อประเภทอุปกรณ์!";
+          if (value.trim() === categoryName) return "ชื่อไม่มีการเปลี่ยนแปลง";
         }
       });
 
@@ -113,9 +116,7 @@
         try {
           const response = await fetch(`/admin/updatecategory/${categoryId}`, {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: newName })
           });
 
@@ -127,23 +128,13 @@
               title: "สำเร็จ",
               text: "แก้ไขประเภทอุปกรณ์เรียบร้อย",
               timer: 1500,
-              willClose: () => {
-                location.reload();
-              }
+              willClose: () => location.reload()
             });
           } else {
-            Swal.fire({
-              icon: "error",
-              title: "ผิดพลาด",
-              text: data.message || "ไม่สามารถแก้ไขประเภทอุปกรณ์ได้"
-            });
+            Swal.fire({ icon: "error", title: "ผิดพลาด", text: data.message || "ไม่สามารถแก้ไขได้" });
           }
         } catch (error) {
-          Swal.fire({
-            icon: "error",
-            title: "ข้อผิดพลาด",
-            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
-          });
+          Swal.fire({ icon: "error", title: "ข้อผิดพลาด", text: "เกิดข้อผิดพลาด: " + error.message });
         }
       }
     }
@@ -162,13 +153,7 @@
 
       if (isConfirmed) {
         try {
-          const response = await fetch(`/admin/deletecategory/${categoryId}`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            }
-          });
-
+          const response = await fetch(`/admin/deletecategory/${categoryId}`, { method: "DELETE" });
           const data = await response.json();
 
           if (response.ok) {
@@ -177,23 +162,13 @@
               title: "สำเร็จ",
               text: "ลบประเภทอุปกรณ์เรียบร้อย",
               timer: 1500,
-              willClose: () => {
-                location.reload();
-              }
+              willClose: () => location.reload()
             });
           } else {
-            Swal.fire({
-              icon: "error",
-              title: "ผิดพลาด",
-              text: data.message || "ไม่สามารถลบประเภทอุปกรณ์ได้"
-            });
+            Swal.fire({ icon: "error", title: "ผิดพลาด", text: data.message || "ไม่สามารถลบได้" });
           }
         } catch (error) {
-          Swal.fire({
-            icon: "error",
-            title: "ข้อผิดพลาด",
-            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message
-          });
+          Swal.fire({ icon: "error", title: "ข้อผิดพลาด", text: "เกิดข้อผิดพลาด: " + error.message });
         }
       }
     }
